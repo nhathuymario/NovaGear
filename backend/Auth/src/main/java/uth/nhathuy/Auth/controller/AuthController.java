@@ -26,8 +26,22 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<MeResponse> me(@AuthenticationPrincipal CustomUserDetails currentUser) {
         return ResponseEntity.ok(authService.me(currentUser));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(currentUser, request);
+        return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 }

@@ -18,10 +18,10 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.access-expiration}")
+    private long accessExpiration;
 
-    public String generateToken(CustomUserDetails userDetails) {
+    public String generateAccessToken(CustomUserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userDetails.getId());
         claims.put("username", userDetails.getUsername());
@@ -32,7 +32,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .expiration(new Date(System.currentTimeMillis() + accessExpiration))
                 .signWith(getSignInKey())
                 .compact();
     }
@@ -41,17 +41,8 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public Long extractUserId(String token) {
-        Claims claims = extractAllClaims(token);
-        Object userId = claims.get("userId");
-        if (userId instanceof Integer i) return i.longValue();
-        if (userId instanceof Long l) return l;
-        return Long.valueOf(String.valueOf(userId));
-    }
-
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        return extractUsername(token).equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
@@ -59,8 +50,7 @@ public class JwtService {
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {
-        Claims claims = extractAllClaims(token);
-        return resolver.apply(claims);
+        return resolver.apply(extractAllClaims(token));
     }
 
     private Claims extractAllClaims(String token) {
@@ -72,7 +62,9 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(Base64.getEncoder().encodeToString(secretKey.getBytes()));
+        byte[] keyBytes = Decoders.BASE64.decode(
+                Base64.getEncoder().encodeToString(secretKey.getBytes())
+        );
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
