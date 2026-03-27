@@ -1,8 +1,26 @@
-# Default ignored files
+### IDE & System ###
+.idea/
+*.iml
+/out/
+/target/
+.DS_Store
 /shelf/
 /workspace.xml
-# Editor-based HTTP Client requests
+
+### HTTP Client ###
 /httpRequests/
-# Datasource local storage ignored files
+
+### Database ###
 /dataSources/
 /dataSources.local.xml
+
+### SPRING BOOT CONFIG PROTECTION ###
+# 1. Không bao giờ commit file chứa key thật
+src/main/resources/application-local.yaml
+src/main/resources/application-dev.yaml
+
+# 2. (Tùy chọn) Nếu bạn muốn dùng file .env
+.env
+
+# 3. KHÔNG nên ignore application.yaml nếu nó là file cấu hình chính.
+# Thay vào đó, hãy dùng file -local để ghi đè (override) nó.
