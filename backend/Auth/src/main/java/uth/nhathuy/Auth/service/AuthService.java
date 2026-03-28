@@ -1,5 +1,6 @@
 package uth.nhathuy.Auth.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import uth.nhathuy.Auth.dto.*;
 import uth.nhathuy.Auth.entity.*;
 import uth.nhathuy.Auth.exception.BadRequestException;
@@ -64,6 +65,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
