@@ -37,7 +37,7 @@ public class User {
     private Boolean enabled = true;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "auth_provider", nullable = false)
     private String authProvider = "LOCAL"; // LOCAL, GOOGLE
 
     @Builder.Default
