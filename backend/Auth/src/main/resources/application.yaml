@@ -5,10 +5,6 @@ spring:
   application:
     name: auth-service
 
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.vectorstore.redis.autoconfigure.RedisVectorStoreAutoConfiguration
-
   datasource:
     url: jdbc:postgresql://localhost:5432/auth_db
     username: postgres
@@ -29,8 +25,8 @@ spring:
       client:
         registration:
           google:
-            client-id: YOUR_GOOGLE_CLIENT_ID
-            client-secret: YOUR_GOOGLE_CLIENT_SECRET
+            client-id: 729316149106-6039bgrd6a34pv4lroauscrc599ce9l1.apps.googleusercontent.com
+            client-secret: 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
             scope:
               - openid
               - profile
