@@ -18,7 +18,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="gateway" />
       </profile>
-      <profile name="Annotation profile for Auth" enabled="true">
+      <profile name="Annotation profile for Inventory" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -30,8 +30,8 @@
         <module name="User" />
         <module name="Auth" />
         <module name="Product" />
-        <module name="Notification" />
         <module name="Inventory" />
+        <module name="Notification" />
       </profile>
     </annotationProcessing>
   </component>
