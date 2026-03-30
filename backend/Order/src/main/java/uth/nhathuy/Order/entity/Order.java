@@ -59,4 +59,6 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
+    @Column(name = "payment_status", length = 30)
+    private String paymentStatus;
 }

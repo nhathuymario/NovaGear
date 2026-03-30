@@ -16,7 +16,7 @@ spring:
         - id: user-service
           uri: http://localhost:8082
           predicates:
-            - Path=/api/users/**
+            - Path=/api/users/**,/api/admin/users/**
 
         - id: product-service-public
           uri: http://localhost:8083
@@ -36,12 +36,12 @@ spring:
         - id: order-service
           uri: http://localhost:8085
           predicates:
-            - Path=/api/orders/**
+            - Path=/api/orders/**,/api/admin/orders/**
 
         - id: payment-service
           uri: http://localhost:8086
           predicates:
-            - Path=/api/payments/**
+            - Path=/api/payments/**,/api/admin/payments/**
 
         - id: inventory-service-admin
           uri: http://localhost:8087
