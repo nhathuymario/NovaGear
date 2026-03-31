@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { getProductById } from "../api/productApi"
+import { getProductBySlug  } from "../api/productApi"
 import type { Product } from "../types/product"
 
 export default function ProductDetailPage() {
@@ -9,7 +9,7 @@ export default function ProductDetailPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        getProductById(id)
+        getProductBySlug (id)
             .then(setProduct)
             .finally(() => setLoading(false))
     }, [id])

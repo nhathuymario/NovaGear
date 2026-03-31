@@ -2,11 +2,16 @@ import axiosClient from "./axiosClient"
 import type { Product } from "../types/product"
 
 export async function getProducts(): Promise<Product[]> {
-    const res = await axiosClient.get("/products")
-    return Array.isArray(res.data) ? res.data : (res.data.content ?? [])
+    const res = await axiosClient.get("/products/public")
+    return res.data?.content ?? []
 }
 
-export async function getProductById(id: string): Promise<Product> {
-    const res = await axiosClient.get(`/products/${id}`)
+export async function getProductBySlug(slug: string): Promise<Product> {
+    const res = await axiosClient.get(`/products/public/${slug}`)
+    return res.data
+}
+
+export async function getPublicCategories() {
+    const res = await axiosClient.get("/products/public/categories")
     return res.data
 }

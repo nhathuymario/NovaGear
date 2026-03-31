@@ -25,13 +25,13 @@ public class ProductService {
 
     public Page<ProductResponse> publicSearch(String keyword, Long categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return productRepository.searchPublic(normalize(keyword), categoryId, pageable)
+        return productRepository.searchPublic(buildKeywordPattern(keyword), categoryId, pageable)
                 .map(this::mapToResponse);
     }
 
     public Page<ProductResponse> adminSearch(String keyword, Long categoryId, ProductStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return productRepository.search(normalize(keyword), categoryId, status, pageable)
+        return productRepository.search(buildKeywordPattern(keyword), categoryId, status, pageable)
                 .map(this::mapToResponse);
     }
 
@@ -100,6 +100,7 @@ public class ProductService {
         return mapToResponse(productRepository.save(product));
     }
 
+    @Transactional
     public void deleteProduct(Long id) {
         Product product = getProduct(id);
         productRepository.delete(product);
@@ -122,7 +123,7 @@ public class ProductService {
                 .versionName(request.getVersionName())
                 .price(request.getPrice())
                 .salePrice(request.getSalePrice())
-                .stockQuantity(request.getStockQuantity())
+                .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0)
                 .imageUrl(request.getImageUrl())
                 .status(request.getStatus() != null ? request.getStatus() : VariantStatus.ACTIVE)
                 .build();
@@ -146,13 +147,14 @@ public class ProductService {
         variant.setVersionName(request.getVersionName());
         variant.setPrice(request.getPrice());
         variant.setSalePrice(request.getSalePrice());
-        variant.setStockQuantity(request.getStockQuantity());
+        variant.setStockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : variant.getStockQuantity());
         variant.setImageUrl(request.getImageUrl());
         variant.setStatus(request.getStatus() != null ? request.getStatus() : variant.getStatus());
 
         return mapVariant(variantRepository.save(variant));
     }
 
+    @Transactional
     public void deleteVariant(Long variantId) {
         ProductVariant variant = variantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
@@ -187,6 +189,7 @@ public class ProductService {
         return mapSpecification(specificationRepository.save(specification));
     }
 
+    @Transactional
     public void deleteSpecification(Long specificationId) {
         ProductSpecification specification = specificationRepository.findById(specificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy specification"));
@@ -234,6 +237,7 @@ public class ProductService {
         return mapImage(saved);
     }
 
+    @Transactional
     public void deleteImage(Long imageId) {
         ProductImage image = imageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy image"));
@@ -245,8 +249,11 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
     }
 
-    private String normalize(String keyword) {
-        return (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+    private String buildKeywordPattern(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return "%" + keyword.trim().toLowerCase() + "%";
     }
 
     private ProductResponse mapToResponse(Product product) {
