@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --color-brand-yellow: #ffd400;
+    --color-brand-dark: #1f2937;
+    --color-brand-red: #dc2626;
+    --color-brand-light: #f3f4f6;
+    --color-brand-gray: #6b7280;
+}
 
 body {
     margin: 0;

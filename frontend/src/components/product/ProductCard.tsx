@@ -21,7 +21,7 @@ export default function ProductCard({ product }: Props) {
             </Link>
 
             <div className="p-4">
-                <Link to={`/products/${product.id}`}>
+                <Link to={`/products/${product.slug}`}>
                     <h3 className="line-clamp-2 min-h-[48px] text-sm font-semibold text-brand-dark">
                         {product.name}
                     </h3>
