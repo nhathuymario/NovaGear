@@ -14,6 +14,9 @@ export default function AdminLayout() {
                         <Link to="/admin/products" className="block rounded-xl px-4 py-3 hover:bg-gray-50">
                             Sản phẩm
                         </Link>
+                        <Link to="/admin/categories" className="block rounded-xl px-4 py-3 hover:bg-gray-50">
+                            Danh mục
+                        </Link>
                         <Link to="/admin/orders" className="block rounded-xl px-4 py-3 hover:bg-gray-50">
                             Đơn hàng
                         </Link>

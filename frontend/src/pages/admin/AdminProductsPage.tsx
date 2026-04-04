@@ -9,6 +9,7 @@ import {
     type AdminProductItem,
     type AdminProductPayload,
 } from "../../api/adminProductApi"
+import { uploadProductImage } from "../../api/uploadApi"
 
 type CategoryOption = {
     id: number | string
@@ -29,6 +30,7 @@ const initialForm: AdminProductPayload = {
 
 export default function AdminProductsPage() {
     const [items, setItems] = useState<AdminProductItem[]>([])
+    const [uploadingImage, setUploadingImage] = useState(false) // State cho việc upload ảnh
     const [categories, setCategories] = useState<CategoryOption[]>([])
     const [loading, setLoading] = useState(true)
     const [keyword, setKeyword] = useState("")
@@ -59,6 +61,24 @@ export default function AdminProductsPage() {
     useEffect(() => {
         loadData()
     }, [])
+
+    // Logic xử lý Upload ảnh
+    const handleUploadThumbnail = async (file: File) => {
+        try {
+            setUploadingImage(true)
+            const imageUrl = await uploadProductImage(file)
+            if (!imageUrl) {
+                throw new Error("Không nhận được URL ảnh")
+            }
+            setForm((prev) => ({ ...prev, thumbnail: imageUrl }))
+            alert("Upload ảnh thành công")
+        } catch (error) {
+            console.error(error)
+            alert("Upload ảnh thất bại")
+        } finally {
+            setUploadingImage(false)
+        }
+    }
 
     const filteredItems = useMemo(() => {
         const q = keyword.trim().toLowerCase()
@@ -108,16 +128,13 @@ export default function AdminProductsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
         try {
             setSubmitting(true)
-
             if (editingId) {
                 await updateAdminProduct(editingId, form)
             } else {
                 await createAdminProduct(form)
             }
-
             await loadData()
             resetForm()
             alert(editingId ? "Cập nhật sản phẩm thành công" : "Tạo sản phẩm thành công")
@@ -132,7 +149,6 @@ export default function AdminProductsPage() {
     const handleDelete = async (id: number | string) => {
         const ok = window.confirm("Bạn có chắc muốn xóa sản phẩm này?")
         if (!ok) return
-
         try {
             await deleteAdminProduct(id)
             await loadData()
@@ -147,6 +163,7 @@ export default function AdminProductsPage() {
 
     return (
         <div className="space-y-6">
+            {/* Header Section */}
             <div className="rounded-2xl bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -155,25 +172,26 @@ export default function AdminProductsPage() {
                             Tạo, chỉnh sửa và xóa sản phẩm từ product-service.
                         </p>
                     </div>
-
                     <button
                         onClick={handleOpenCreate}
-                        className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                        className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white transition-opacity hover:opacity-90"
                     >
                         Thêm sản phẩm
                     </button>
                 </div>
             </div>
 
+            {/* Search Bar */}
             <div className="rounded-2xl bg-white p-4 shadow-sm">
                 <input
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     placeholder="Tìm theo tên / slug / thương hiệu"
-                    className="w-full rounded-xl border px-4 py-3 outline-none"
+                    className="w-full rounded-xl border px-4 py-3 outline-none focus:border-brand-dark"
                 />
             </div>
 
+            {/* Form Create/Edit */}
             {openForm && (
                 <form
                     onSubmit={handleSubmit}
@@ -185,6 +203,7 @@ export default function AdminProductsPage() {
                         className="rounded-xl border px-4 py-3 outline-none"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        required
                     />
 
                     <input
@@ -193,6 +212,7 @@ export default function AdminProductsPage() {
                         className="rounded-xl border px-4 py-3 outline-none"
                         value={form.slug}
                         onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                        required
                     />
 
                     <input
@@ -207,6 +227,7 @@ export default function AdminProductsPage() {
                         className="rounded-xl border px-4 py-3 outline-none"
                         value={String(form.categoryId)}
                         onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                        required
                     >
                         <option value="">Chọn danh mục</option>
                         {categories.map((item) => (
@@ -216,13 +237,48 @@ export default function AdminProductsPage() {
                         ))}
                     </select>
 
-                    <input
-                        type="text"
-                        placeholder="Thumbnail URL"
-                        className="rounded-xl border px-4 py-3 outline-none md:col-span-2"
-                        value={form.thumbnail}
-                        onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
-                    />
+                    {/* Thumbnail Section mới */}
+                    <div className="space-y-3 md:col-span-2">
+                        <input
+                            type="text"
+                            placeholder="Thumbnail URL (Dán link trực tiếp hoặc upload bên dưới)"
+                            className="w-full rounded-xl border px-4 py-3 outline-none"
+                            value={form.thumbnail}
+                            onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+                        />
+
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleUploadThumbnail(file)
+                                }}
+                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-dark file:text-white hover:file:bg-opacity-80"
+                            />
+                            {uploadingImage && (
+                                <span className="animate-pulse text-sm text-brand-gray">Đang upload...</span>
+                            )}
+                        </div>
+
+                        {form.thumbnail && (
+                            <div className="relative inline-block">
+                                <img
+                                    src={form.thumbnail}
+                                    alt="Thumbnail preview"
+                                    className="h-28 w-28 rounded-xl border object-cover shadow-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setForm({...form, thumbnail: ""})}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     <textarea
                         placeholder="Mô tả ngắn"
@@ -253,11 +309,12 @@ export default function AdminProductsPage() {
                         <option value="INACTIVE">INACTIVE</option>
                     </select>
 
-                    <label className="flex items-center gap-2 rounded-xl border px-4 py-3">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-3">
                         <input
                             type="checkbox"
                             checked={Boolean(form.featured)}
                             onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                            className="accent-brand-dark"
                         />
                         <span>Nổi bật</span>
                     </label>
@@ -265,7 +322,7 @@ export default function AdminProductsPage() {
                     <div className="flex gap-3 md:col-span-2">
                         <button
                             type="submit"
-                            disabled={submitting}
+                            disabled={submitting || uploadingImage}
                             className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
                         >
                             {submitting
@@ -274,11 +331,10 @@ export default function AdminProductsPage() {
                                     ? "Cập nhật sản phẩm"
                                     : "Tạo sản phẩm"}
                         </button>
-
                         <button
                             type="button"
                             onClick={resetForm}
-                            className="rounded-xl border px-5 py-3 font-semibold"
+                            className="rounded-xl border px-5 py-3 font-semibold hover:bg-gray-50"
                         >
                             Hủy
                         </button>
@@ -286,6 +342,7 @@ export default function AdminProductsPage() {
                 </form>
             )}
 
+            {/* Products Table Section */}
             <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
@@ -302,24 +359,30 @@ export default function AdminProductsPage() {
                         </thead>
                         <tbody>
                         {filteredItems.map((item) => (
-                            <tr key={item.id} className="border-t">
+                            <tr key={item.id} className="border-t hover:bg-gray-50/50">
                                 <td className="px-4 py-3 font-medium">{item.name}</td>
                                 <td className="px-4 py-3">{item.slug}</td>
                                 <td className="px-4 py-3">{item.brand}</td>
                                 <td className="px-4 py-3">{item.categoryName || "—"}</td>
-                                <td className="px-4 py-3">{item.status}</td>
-                                <td className="px-4 py-3">{item.featured ? "Có" : "Không"}</td>
+                                <td className="px-4 py-3">
+                                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
+                                            item.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                        }`}>
+                                            {item.status}
+                                        </span>
+                                </td>
+                                <td className="px-4 py-3">{item.featured ? "🌟" : "Không"}</td>
                                 <td className="px-4 py-3">
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleOpenEdit(item.id)}
-                                            className="rounded-lg border px-3 py-1 font-medium"
+                                            className="rounded-lg border px-3 py-1 font-medium hover:bg-gray-100"
                                         >
                                             Sửa
                                         </button>
                                         <button
                                             onClick={() => handleDelete(item.id)}
-                                            className="rounded-lg border border-red-500 px-3 py-1 font-medium text-red-500"
+                                            className="rounded-lg border border-red-500 px-3 py-1 font-medium text-red-500 hover:bg-red-50"
                                         >
                                             Xóa
                                         </button>
@@ -327,7 +390,6 @@ export default function AdminProductsPage() {
                                 </td>
                             </tr>
                         ))}
-
                         {filteredItems.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-brand-gray">
