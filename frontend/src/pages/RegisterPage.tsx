@@ -1,26 +1,64 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { registerApi } from "../api/authApi"
+import {useState} from "react"
+import {Link, useNavigate} from "react-router-dom"
+import {registerApi} from "../api/authApi"
 
 export default function RegisterPage() {
     const navigate = useNavigate()
     const [form, setForm] = useState({
+        username: "",
         fullName: "",
         email: "",
         password: "",
+        confirmPassword: "",
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (!form.username.trim()) {
+            setError("Vui lòng nhập username")
+            return
+        }
+
+        if (!form.fullName.trim()) {
+            setError("Vui lòng nhập họ và tên")
+            return
+        }
+
+        if (!form.email.trim()) {
+            setError("Vui lòng nhập email")
+            return
+        }
+
+        if (!form.password.trim()) {
+            setError("Vui lòng nhập mật khẩu")
+            return
+        }
+
+        if (form.password !== form.confirmPassword) {
+            setError("Mật khẩu nhập lại không khớp")
+            return
+        }
+
         try {
             setLoading(true)
             setError("")
-            await registerApi(form)
+
+            await registerApi({
+                username: form.username.trim(),
+                fullName: form.fullName.trim(),
+                email: form.email.trim(),
+                password: form.password,
+            })
+
+            alert("Đăng ký thành công")
             navigate("/login")
-        } catch {
-            setError("Đăng ký thất bại")
+        } catch (err: any) {
+            console.error(err)
+            const serverError = err.response?.data?.message || err.response?.data?.error
+            setError(serverError || "Đăng ký thất bại")
         } finally {
             setLoading(false)
         }
@@ -38,24 +76,42 @@ export default function RegisterPage() {
                 <div className="mt-6 space-y-4">
                     <input
                         type="text"
+                        placeholder="Username"
+                        className="w-full rounded-xl border px-4 py-3 outline-none"
+                        value={form.username}
+                        onChange={(e) => setForm({...form, username: e.target.value})}
+                    />
+
+                    <input
+                        type="text"
                         placeholder="Họ và tên"
                         className="w-full rounded-xl border px-4 py-3 outline-none"
                         value={form.fullName}
-                        onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                        onChange={(e) => setForm({...form, fullName: e.target.value})}
                     />
+
                     <input
                         type="email"
                         placeholder="Email"
                         className="w-full rounded-xl border px-4 py-3 outline-none"
                         value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        onChange={(e) => setForm({...form, email: e.target.value})}
                     />
+
                     <input
                         type="password"
                         placeholder="Mật khẩu"
                         className="w-full rounded-xl border px-4 py-3 outline-none"
                         value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        onChange={(e) => setForm({...form, password: e.target.value})}
+                    />
+
+                    <input
+                        type="password"
+                        placeholder="Nhập lại mật khẩu"
+                        className="w-full rounded-xl border px-4 py-3 outline-none"
+                        value={form.confirmPassword}
+                        onChange={(e) => setForm({...form, confirmPassword: e.target.value})}
                     />
                 </div>
 

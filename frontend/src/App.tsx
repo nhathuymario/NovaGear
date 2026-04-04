@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom"
+import {Route, Routes} from "react-router-dom"
 import MainLayout from "./components/layout/MainLayout"
 import ProtectedRoute from "./components/auth/ProtectedRoute"
 
@@ -27,33 +27,33 @@ import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
 export default function App() {
     return (
         <Routes>
-            <Route element={<MainLayout />}>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/products" element={<ProductListPage />} />
-                <Route path="/products/:slug" element={<ProductDetailPage />} />
+            <Route element={<MainLayout/>}>
+                <Route path="/" element={<HomePage/>}/>
+                <Route path="/products" element={<ProductListPage/>}/>
+                <Route path="/products/:slug" element={<ProductDetailPage/>}/>
 
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/login" element={<LoginPage/>}/>
+                <Route path="/register" element={<RegisterPage/>}/>
 
-                <Route element={<AdminRoute />}>
-                    <Route path="/admin" element={<AdminLayout />}>
-                        <Route index element={<AdminDashboardPage />} />
-                        <Route path="products" element={<AdminProductsPage />} />
-                        <Route path="categories" element={<AdminCategoriesPage />} />
-                        <Route path="orders" element={<AdminOrdersPage />} />
-                        <Route path="inventory" element={<AdminInventoryPage />} />
+                <Route element={<AdminRoute/>}>
+                    <Route path="/admin" element={<AdminLayout/>}>
+                        <Route index element={<AdminDashboardPage/>}/>
+                        <Route path="products" element={<AdminProductsPage/>}/>
+                        <Route path="categories" element={<AdminCategoriesPage/>}/>
+                        <Route path="orders" element={<AdminOrdersPage/>}/>
+                        <Route path="inventory" element={<AdminInventoryPage/>}/>
                     </Route>
                 </Route>
 
-                <Route path="*" element={<NotFoundPage />} />
-                <Route element={<ProtectedRoute />}>
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route path="/checkout" element={<CheckoutPage />} />
-                    <Route path="/orders" element={<OrdersPage />} />
-                    <Route path="/orders/:id" element={<OrderDetailPage />} />
-                    <Route path="/payment/:orderId" element={<PaymentPage />} />
-                    <Route path="/payment/result" element={<PaymentResultPage />} />
+                <Route path="*" element={<NotFoundPage/>}/>
+                <Route element={<ProtectedRoute/>}>
+                    <Route path="/profile" element={<ProfilePage/>}/>
+                    <Route path="/cart" element={<CartPage/>}/>
+                    <Route path="/checkout" element={<CheckoutPage/>}/>
+                    <Route path="/orders" element={<OrdersPage/>}/>
+                    <Route path="/orders/:id" element={<OrderDetailPage/>}/>
+                    <Route path="/payment/:orderId" element={<PaymentPage/>}/>
+                    <Route path="/payment/result" element={<PaymentResultPage/>}/>
                 </Route>
             </Route>
         </Routes>

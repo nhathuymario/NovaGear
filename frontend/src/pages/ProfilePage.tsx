@@ -1,9 +1,35 @@
+import {useEffect, useState} from "react"
 import {useNavigate} from "react-router-dom"
+import {getMyProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
+
+function isAdminRole(role?: string | null) {
+    if (!role) return false
+    return role === "ADMIN" || role === "ROLE_ADMIN" || role.includes("ADMIN")
+}
 
 export default function ProfilePage() {
     const navigate = useNavigate()
     const {user, loading, logout} = useAuth()
+    const [profile, setProfile] = useState<any>(null)
+    const [profileLoading, setProfileLoading] = useState(true)
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                setProfileLoading(true)
+                const data = await getMyProfile()
+                setProfile(data)
+            } catch (err) {
+                console.error(err)
+                setProfile(null)
+            } finally {
+                setProfileLoading(false)
+            }
+        }
+
+        loadProfile()
+    }, [])
 
     const handleLogout = () => {
         logout()
@@ -11,7 +37,7 @@ export default function ProfilePage() {
         window.location.reload()
     }
 
-    if (loading) {
+    if (loading || profileLoading) {
         return <div>Đang tải thông tin tài khoản...</div>
     }
 
@@ -30,16 +56,23 @@ export default function ProfilePage() {
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Họ và tên</p>
+                            <p className="text-sm text-brand-gray">Username</p>
                             <p className="mt-1 font-semibold">
-                                {user?.fullName || "Chưa cập nhật"}
+                                {profile?.username || user?.username || "Chưa cập nhật"}
                             </p>
                         </div>
 
                         <div className="rounded-2xl bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Email</p>
                             <p className="mt-1 font-semibold">
-                                {user?.username || "Chưa cập nhật"}
+                                {profile?.email || user?.email || "Chưa cập nhật"}
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-gray-50 p-4">
+                            <p className="text-sm text-brand-gray">Họ và tên</p>
+                            <p className="mt-1 font-semibold">
+                                {profile?.fullName || user?.fullName || "Chưa cập nhật"}
                             </p>
                         </div>
 
@@ -49,13 +82,6 @@ export default function ProfilePage() {
                                 {user?.role || "USER"}
                             </p>
                         </div>
-
-                        <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Trạng thái</p>
-                            <p className="mt-1 font-semibold text-green-600">
-                                Đang đăng nhập
-                            </p>
-                        </div>
                     </div>
                 </section>
 
@@ -63,6 +89,15 @@ export default function ProfilePage() {
                     <h2 className="text-xl font-bold">Thao tác nhanh</h2>
 
                     <div className="mt-4 space-y-3">
+                        {isAdminRole(user?.role) && (
+                            <button
+                                onClick={() => navigate("/admin")}
+                                className="w-full rounded-xl border px-4 py-3 text-left font-semibold"
+                            >
+                                Đi tới Admin Dashboard
+                            </button>
+                        )}
+
                         <button
                             onClick={() => navigate("/orders")}
                             className="w-full rounded-xl border px-4 py-3 text-left font-semibold"
