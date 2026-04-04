@@ -44,20 +44,31 @@ export default function Header() {
                     <Link to="/orders" className="font-medium">
                         Đơn hàng
                     </Link>
+                    {/* Kiểm tra trạng thái đăng nhập */}
                     {isAuthenticated ? (
                         <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-brand-dark">
-                {user?.fullName || user?.email || "Tài khoản"}
-              </span>
+                            {/* Click vào tên hoặc email để về trang cá nhân */}
+                            <button
+                                onClick={() => navigate("/profile")}
+                                className="text-sm font-medium text-brand-dark transition-colors hover:underline"
+                            >
+                                {user?.fullName || user?.email || "Tài khoản"}
+                            </button>
+
+                            {/* Nút Đăng xuất */}
                             <button
                                 onClick={handleLogout}
-                                className="rounded-lg bg-brand-dark px-3 py-2 text-sm font-semibold text-white"
+                                className="rounded-lg bg-brand-dark px-3 py-2 text-sm font-semibold text-white transition-all hover:bg-opacity-90 active:scale-95"
                             >
                                 Đăng xuất
                             </button>
                         </div>
                     ) : (
-                        <Link to="/login" className="font-medium">
+                        /* Nếu chưa đăng nhập thì hiện link Đăng nhập */
+                        <Link
+                            to="/login"
+                            className="text-sm font-medium text-brand-dark hover:text-brand-gray transition-colors"
+                        >
                             Đăng nhập
                         </Link>
                     )}
