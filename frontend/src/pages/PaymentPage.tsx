@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createPayment } from "../api/paymentApi"
+import {
+    createPayment,
+    getPaymentByOrderId,
+    mockPaymentFail,
+    mockPaymentSuccess,
+} from "../api/paymentApi"
 import { getOrderDetail } from "../api/orderApi"
 import type { Order } from "../types/order"
 import type { Payment } from "../types/payment"
@@ -16,6 +21,22 @@ export default function PaymentPage() {
     const [method, setMethod] = useState("COD")
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
+    const [mocking, setMocking] = useState(false)
+
+    const loadData = async () => {
+        if (!orderId) return
+
+        try {
+            const [orderData, paymentData] = await Promise.all([
+                getOrderDetail(orderId),
+                getPaymentByOrderId(orderId).catch(() => null),
+            ])
+            setOrder(orderData)
+            setPayment(paymentData)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
         if (!token || !orderId) {
@@ -23,9 +44,7 @@ export default function PaymentPage() {
             return
         }
 
-        getOrderDetail(orderId)
-            .then(setOrder)
-            .finally(() => setLoading(false))
+        loadData().catch(console.error)
     }, [orderId, token])
 
     const handleCreatePayment = async () => {
@@ -47,6 +66,27 @@ export default function PaymentPage() {
             alert("Tạo thanh toán thất bại")
         } finally {
             setCreating(false)
+        }
+    }
+
+    const handleMock = async (type: "success" | "failed") => {
+        if (!order) return
+
+        try {
+            setMocking(true)
+
+            if (type === "success") {
+                await mockPaymentSuccess(order.id)
+                navigate(`/payment/result?orderId=${order.id}&status=success`)
+            } else {
+                await mockPaymentFail(order.id)
+                navigate(`/payment/result?orderId=${order.id}&status=failed`)
+            }
+        } catch (err) {
+            console.error(err)
+            alert("Mock callback thất bại")
+        } finally {
+            setMocking(false)
         }
     }
 
@@ -101,7 +141,7 @@ export default function PaymentPage() {
                         />
                         <div>
                             <p className="font-semibold">Thanh toán online</p>
-                            <p className="text-sm text-brand-gray">Chuyển sang cổng thanh toán nếu backend hỗ trợ.</p>
+                            <p className="text-sm text-brand-gray">Dùng khi backend hỗ trợ cổng thanh toán hoặc mock callback.</p>
                         </div>
                     </label>
                 </div>
@@ -114,10 +154,35 @@ export default function PaymentPage() {
                     {creating ? "Đang tạo thanh toán..." : "Xác nhận thanh toán"}
                 </button>
 
+                <div className="mt-6 rounded-2xl border bg-gray-50 p-4">
+                    <h3 className="font-semibold">Test mock callback</h3>
+                    <p className="mt-1 text-sm text-brand-gray">
+                        Backend hiện có endpoint mock callback qua query params.
+                    </p>
+
+                    <div className="mt-4 flex gap-3">
+                        <button
+                            onClick={() => handleMock("success")}
+                            disabled={mocking}
+                            className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
+                        >
+                            Mock success
+                        </button>
+                        <button
+                            onClick={() => handleMock("failed")}
+                            disabled={mocking}
+                            className="rounded-xl border border-red-500 px-4 py-2 font-semibold text-red-500 disabled:opacity-60"
+                        >
+                            Mock failed
+                        </button>
+                    </div>
+                </div>
+
                 {payment && (
                     <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-sm text-brand-gray">
                         <p>Mã thanh toán: {payment.id}</p>
                         <p>Trạng thái: {payment.status}</p>
+                        <p>Phương thức: {payment.method}</p>
                     </div>
                 )}
             </section>
@@ -144,8 +209,8 @@ export default function PaymentPage() {
                     <div className="flex items-center justify-between">
                         <span className="font-semibold">Tổng cộng</span>
                         <span className="text-xl font-extrabold text-brand-red">
-              {order.totalAmount.toLocaleString("vi-VN")}đ
-            </span>
+                            {order.totalAmount.toLocaleString("vi-VN")}đ
+                        </span>
                     </div>
                 </div>
             </aside>

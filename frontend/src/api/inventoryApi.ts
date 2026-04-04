@@ -1,10 +1,52 @@
 import axiosClient from "./axiosClient"
-import type {
-    InventoryItem,
-    InventoryTransaction,
-    StockAdjustmentPayload,
-    StockImportPayload,
-} from "../types/inventory"
+
+export interface InventoryItem {
+    id: number | string
+    productId?: number | string
+    variantId?: number | string
+    productName?: string
+    sku?: string
+    color?: string
+    ram?: string
+    storage?: string
+    stockQuantity: number
+    reservedQuantity: number
+    availableQuantity: number
+    updatedAt?: string
+    status?: string
+}
+
+export interface InventoryTransaction {
+    id: number | string
+    inventoryId?: number | string
+    productId?: number | string
+    variantId?: number | string
+    type?: string
+    quantity: number
+    note?: string
+    createdAt?: string
+    createdBy?: string
+}
+
+export interface InventoryListResult {
+    items: InventoryItem[]
+    totalElements: number
+    totalPages: number
+    page: number
+    size: number
+}
+
+export interface StockImportPayload {
+    variantId: number | string
+    quantity: number
+    note?: string
+}
+
+export interface StockAdjustmentPayload {
+    variantId: number | string
+    quantity: number
+    note?: string
+}
 
 type RawInventoryItem = {
     id?: number | string
@@ -19,6 +61,7 @@ type RawInventoryItem = {
     reservedQuantity?: number
     availableQuantity?: number
     updatedAt?: string
+    status?: string
 }
 
 type RawInventoryTransaction = {
@@ -47,6 +90,7 @@ function mapInventoryItem(raw: RawInventoryItem): InventoryItem {
         reservedQuantity: Number(raw.reservedQuantity ?? 0),
         availableQuantity: Number(raw.availableQuantity ?? 0),
         updatedAt: raw.updatedAt ?? "",
+        status: raw.status ?? "",
     }
 }
 
@@ -64,36 +108,50 @@ function mapInventoryTransaction(raw: RawInventoryTransaction): InventoryTransac
     }
 }
 
-export async function getAllInventory(): Promise<InventoryItem[]> {
-    const res = await axiosClient.get("/inventory")
-    const items = Array.isArray(res.data) ? res.data : res.data?.content ?? []
-    return items.map(mapInventoryItem)
+export async function getAllInventory(params?: {
+    keyword?: string
+    status?: string
+    page?: number
+    size?: number
+}): Promise<InventoryListResult> {
+    const query = new URLSearchParams()
+
+    if (params?.keyword?.trim()) query.set("keyword", params.keyword.trim())
+    if (params?.status?.trim()) query.set("status", params.status.trim())
+    query.set("page", String(params?.page ?? 0))
+    query.set("size", String(params?.size ?? 20))
+
+    const res = await axiosClient.get(`/admin/inventory?${query.toString()}`)
+    const data = res.data ?? {}
+
+    return {
+        items: Array.isArray(data.content) ? data.content.map(mapInventoryItem) : [],
+        totalElements: Number(data.totalElements ?? 0),
+        totalPages: Number(data.totalPages ?? 0),
+        page: Number(data.number ?? params?.page ?? 0),
+        size: Number(data.size ?? params?.size ?? 20),
+    }
 }
 
-export async function getInventoryByProduct(productId: number | string): Promise<InventoryItem[]> {
-    const res = await axiosClient.get(`/inventory/product/${productId}`)
-    const items = Array.isArray(res.data) ? res.data : res.data?.content ?? []
-    return items.map(mapInventoryItem)
+export async function getInventoryByVariant(variantId: number | string): Promise<InventoryItem> {
+    const res = await axiosClient.get(`/admin/inventory/variant/${variantId}`)
+    return mapInventoryItem(res.data)
 }
 
 export async function importStock(payload: StockImportPayload) {
     const res = await axiosClient.post("/admin/inventory/import", payload)
-    return res.data
+    return res.data?.data ? mapInventoryItem(res.data.data) : res.data
 }
 
 export async function adjustStock(payload: StockAdjustmentPayload) {
-    const res = await axiosClient.post("/admin/inventory/adjust", payload)
-    return res.data
+    const res = await axiosClient.put("/admin/inventory/adjust", payload)
+    return res.data?.data ? mapInventoryItem(res.data.data) : res.data
 }
 
 export async function getInventoryTransactions(
-    productId?: number | string
+    variantId: number | string
 ): Promise<InventoryTransaction[]> {
-    const url = productId
-        ? `/admin/inventory/transactions?productId=${productId}`
-        : "/admin/inventory/transactions"
-
-    const res = await axiosClient.get(url)
+    const res = await axiosClient.get(`/admin/inventory/variant/${variantId}/transactions`)
     const items = Array.isArray(res.data) ? res.data : res.data?.content ?? []
     return items.map(mapInventoryTransaction)
 }

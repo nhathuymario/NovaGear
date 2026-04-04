@@ -22,7 +22,7 @@ import {
     type AdminSpecificationItem,
     type AdminSpecificationPayload,
 } from "../../api/adminProductDetailApi"
-import { getInventoryByProduct, importStock } from "../../api/inventoryApi"
+import { getInventoryByVariant, importStock } from "../../api/inventoryApi"
 import { uploadProductImage } from "../../api/uploadApi"
 import type { InventoryItem } from "../../types/inventory"
 
@@ -83,7 +83,7 @@ function slugify(text: string): string {
     return text
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
+        .replaceAll(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/[^a-z0-9\s-]/g, "")
         .trim()
@@ -174,21 +174,41 @@ export default function AdminProductsPage() {
         loadProducts()
     }, [loadProducts])
 
+    const loadInventorySnapshots = useCallback(async (variantList: AdminVariantItem[]) => {
+        try {
+            const results = await Promise.all(
+                variantList.map(async (variant) => {
+                    try {
+                        return await getInventoryByVariant(variant.id)
+                    } catch (error) {
+                        console.error(error)
+                        return null
+                    }
+                })
+            )
+
+            setInventoryItems(results.filter(Boolean) as InventoryItem[])
+        } catch (error) {
+            console.error(error)
+            setInventoryItems([])
+        }
+    }, [])
+
     const loadDetail = useCallback(async (productId: number | string) => {
         try {
             setDetailLoading(true)
 
-            const [v, s, inventory] = await Promise.all([
+            const [variantData, specificationData] = await Promise.all([
                 getProductVariants(productId),
                 getProductSpecifications(productId),
-                getInventoryByProduct(productId).catch(() => []),
             ])
 
-            setVariants(v)
-            setSpecs(s)
-            setInventoryItems(inventory)
+            setVariants(variantData)
+            setSpecs(specificationData)
             setInlineImportForms({})
             setInlineImportMessages({})
+
+            await loadInventorySnapshots(variantData)
         } catch (err) {
             console.error(err)
             setVariants([])
@@ -197,17 +217,12 @@ export default function AdminProductsPage() {
         } finally {
             setDetailLoading(false)
         }
-    }, [])
+    }, [loadInventorySnapshots])
 
-    const refreshInventory = useCallback(async (productId: number | string) => {
-        try {
-            const inventory = await getInventoryByProduct(productId)
-            setInventoryItems(inventory)
-        } catch (err) {
-            console.error(err)
-            setInventoryItems([])
-        }
-    }, [])
+    const refreshInventory = useCallback(async (variantList?: AdminVariantItem[]) => {
+        const targetVariants = variantList ?? variants
+        await loadInventorySnapshots(targetVariants)
+    }, [loadInventorySnapshots, variants])
 
     const filtered = useMemo(() => {
         const q = keyword.trim().toLowerCase()
@@ -477,8 +492,6 @@ export default function AdminProductsPage() {
     }
 
     const handleInlineImportStock = async (variant: AdminVariantItem) => {
-        if (!selectedProduct) return
-
         const key = String(variant.id)
         const currentForm = getInlineImportForm(variant.id)
         const quantity = Number(currentForm.quantity)
@@ -498,13 +511,12 @@ export default function AdminProductsPage() {
             setInlineImportLoadingId(variant.id)
 
             await importStock({
-                productId: selectedProduct.id,
                 variantId: variant.id,
                 quantity,
                 note: `Nhập kho nhanh cho ${variant.sku}`,
             })
 
-            await refreshInventory(selectedProduct.id)
+            await refreshInventory()
 
             setInlineImportForms((prev) => ({
                 ...prev,

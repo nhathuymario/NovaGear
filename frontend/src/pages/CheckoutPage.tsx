@@ -43,6 +43,10 @@ export default function CheckoutPage() {
                 note: form.note,
             })
 
+            if (!order.id) {
+                throw new Error("Không nhận được orderId từ checkout")
+            }
+
             navigate(`/payment/${order.id}`)
         } catch (err) {
             console.error(err)

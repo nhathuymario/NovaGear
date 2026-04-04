@@ -30,18 +30,40 @@ export async function createPayment(orderId: number | string, method = "COD"): P
     return mapPayment(res.data)
 }
 
+export async function getMyPayments(): Promise<Payment[]> {
+    const res = await axiosClient.get("/payments/me")
+    const items = Array.isArray(res.data) ? res.data : []
+    return items.map(mapPayment)
+}
+
 export async function getPaymentByOrderId(orderId: number | string): Promise<Payment | null> {
     const res = await axiosClient.get(`/payments/order/${orderId}`)
     if (!res.data) return null
     return mapPayment(res.data)
 }
 
+export async function mockPaymentCallback(
+    orderId: number | string,
+    status: "SUCCESS" | "FAILED" | "REFUNDED",
+    note?: string
+) {
+    const query = new URLSearchParams({
+        orderId: String(orderId),
+        status,
+    })
+
+    if (note?.trim()) {
+        query.set("note", note.trim())
+    }
+
+    const res = await axiosClient.get(`/payments/mock-callback?${query.toString()}`)
+    return mapPayment(res.data)
+}
+
 export async function mockPaymentSuccess(orderId: number | string) {
-    const res = await axiosClient.post(`/payments/mock-success`, { orderId })
-    return res.data
+    return mockPaymentCallback(orderId, "SUCCESS", "Mock success from FE")
 }
 
 export async function mockPaymentFail(orderId: number | string) {
-    const res = await axiosClient.post(`/payments/mock-fail`, { orderId })
-    return res.data
+    return mockPaymentCallback(orderId, "FAILED", "Mock failed from FE")
 }

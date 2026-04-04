@@ -101,7 +101,7 @@ export async function addToCart(
         payload.variantId = variantId
     }
 
-    const res = await axiosClient.post("/cart/add", payload)
+    const res = await axiosClient.post("/cart/items", payload)
     return res.data
 }
 
@@ -113,4 +113,8 @@ export async function updateCartItem(itemId: number | string, quantity: number) 
 export async function removeCartItem(itemId: number | string) {
     const res = await axiosClient.delete(`/cart/items/${itemId}`)
     return res.data
+}
+
+export async function clearCart() {
+    await axiosClient.delete("/cart/clear")
 }

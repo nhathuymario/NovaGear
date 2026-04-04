@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { addToCart } from "../api/cartApi"
-import { getInventoryByProduct } from "../api/inventoryApi"
+import { getInventoryByVariant, type InventoryItem } from "../api/inventoryApi"
 import {
     getProductDetailBySlug,
     type ProductDetailData,
@@ -23,10 +23,11 @@ export default function ProductDetailPage() {
     const navigate = useNavigate()
 
     const [product, setProduct] = useState<ProductDetailData | null>(null)
-    const [inventoryItems, setInventoryItems] = useState<any[]>([])
     const [selectedVariantId, setSelectedVariantId] = useState<number | string | null>(null)
+    const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null)
 
     const [loading, setLoading] = useState(true)
+    const [inventoryLoading, setInventoryLoading] = useState(false)
     const [adding, setAdding] = useState(false)
 
     useEffect(() => {
@@ -35,7 +36,7 @@ export default function ProductDetailPage() {
             return
         }
 
-        const loadData = async () => {
+        const loadProduct = async () => {
             try {
                 setLoading(true)
 
@@ -46,24 +47,19 @@ export default function ProductDetailPage() {
                     setSelectedVariantId(detail.variants[0].id)
                 } else {
                     setSelectedVariantId(null)
-                }
-
-                try {
-                    const inventory = await getInventoryByProduct(detail.id)
-                    setInventoryItems(inventory)
-                } catch (inventoryError) {
-                    console.error(inventoryError)
-                    setInventoryItems([])
+                    setSelectedInventory(null)
                 }
             } catch (error) {
                 console.error(error)
                 setProduct(null)
+                setSelectedVariantId(null)
+                setSelectedInventory(null)
             } finally {
                 setLoading(false)
             }
         }
 
-        loadData()
+        loadProduct()
     }, [slug])
 
     const selectedVariant = useMemo(() => {
@@ -76,22 +72,39 @@ export default function ProductDetailPage() {
         )
     }, [product, selectedVariantId])
 
-    const selectedInventory = useMemo(() => {
-        if (!selectedVariant) return null
+    useEffect(() => {
+        if (!selectedVariant?.id) {
+            setSelectedInventory(null)
+            return
+        }
 
-        return (
-            inventoryItems.find(
-                (item) => String(item.variantId ?? "") === String(selectedVariant.id)
-            ) ?? null
-        )
-    }, [inventoryItems, selectedVariant])
+        const loadInventory = async () => {
+            try {
+                setInventoryLoading(true)
+                const inventory = await getInventoryByVariant(selectedVariant.id)
+                setSelectedInventory(inventory)
+            } catch (error) {
+                console.error(error)
+                setSelectedInventory(null)
+            } finally {
+                setInventoryLoading(false)
+            }
+        }
+
+        loadInventory()
+    }, [selectedVariant?.id])
 
     const galleryImage = useMemo(() => {
         if (selectedVariant?.imageUrl) return selectedVariant.imageUrl
         if (product?.thumbnail) return product.thumbnail
+
         const thumbImage = product?.images.find((img) => img.thumbnail)?.imageUrl
         if (thumbImage) return thumbImage
-        return product?.images[0]?.imageUrl || "https://via.placeholder.com/600x600?text=NovaGear"
+
+        return (
+            product?.images[0]?.imageUrl ||
+            "https://via.placeholder.com/600x600?text=NovaGear"
+        )
     }, [product, selectedVariant])
 
     const finalPrice = selectedVariant
@@ -106,7 +119,10 @@ export default function ProductDetailPage() {
         0
 
     const reservedStock = selectedInventory?.reservedQuantity ?? 0
-    const totalStock = selectedInventory?.stockQuantity ?? selectedVariant?.stockQuantity ?? 0
+    const totalStock =
+        selectedInventory?.stockQuantity ??
+        selectedVariant?.stockQuantity ??
+        0
 
     const handleAddToCart = async () => {
         if (!product) return
@@ -215,7 +231,9 @@ export default function ProductDetailPage() {
                         <div className="mt-3 grid gap-3">
                             {product.variants.map((variant) => {
                                 const label =
-                                    buildVariantLabel(variant) || variant.sku || `Variant #${variant.id}`
+                                    buildVariantLabel(variant) ||
+                                    variant.sku ||
+                                    `Variant #${variant.id}`
 
                                 const isSelected =
                                     String(variant.id) === String(selectedVariant?.id)
@@ -264,40 +282,46 @@ export default function ProductDetailPage() {
                 <div className="mt-6 rounded-2xl bg-gray-50 p-4">
                     <h3 className="font-bold">Tình trạng kho</h3>
 
-                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        <div>
-                            <p className="text-sm text-brand-gray">Tổng tồn</p>
-                            <p className="mt-1 font-semibold">{totalStock}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-brand-gray">Khả dụng</p>
-                            <p
-                                className={`mt-1 font-semibold ${
-                                    availableStock > 0 ? "text-green-600" : "text-red-500"
-                                }`}
-                            >
-                                {availableStock}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-brand-gray">Đang giữ</p>
-                            <p className="mt-1 font-semibold text-amber-600">
-                                {reservedStock}
-                            </p>
-                        </div>
-                    </div>
+                    {inventoryLoading ? (
+                        <p className="mt-3 text-sm text-brand-gray">Đang tải tồn kho...</p>
+                    ) : (
+                        <>
+                            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                                <div>
+                                    <p className="text-sm text-brand-gray">Tổng tồn</p>
+                                    <p className="mt-1 font-semibold">{totalStock}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-brand-gray">Khả dụng</p>
+                                    <p
+                                        className={`mt-1 font-semibold ${
+                                            availableStock > 0 ? "text-green-600" : "text-red-500"
+                                        }`}
+                                    >
+                                        {availableStock}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-brand-gray">Đang giữ</p>
+                                    <p className="mt-1 font-semibold text-amber-600">
+                                        {reservedStock}
+                                    </p>
+                                </div>
+                            </div>
 
-                    {availableStock <= 0 && (
-                        <p className="mt-3 text-sm font-medium text-red-500">
-                            Phiên bản này hiện đang hết hàng.
-                        </p>
+                            {availableStock <= 0 && (
+                                <p className="mt-3 text-sm font-medium text-red-500">
+                                    Phiên bản này hiện đang hết hàng.
+                                </p>
+                            )}
+                        </>
                     )}
                 </div>
 
                 <div className="mt-6 flex gap-3">
                     <button
                         onClick={handleAddToCart}
-                        disabled={adding || availableStock <= 0}
+                        disabled={adding || inventoryLoading || availableStock <= 0}
                         className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
                     >
                         {adding ? "Đang thêm..." : "Thêm vào giỏ"}
@@ -305,7 +329,7 @@ export default function ProductDetailPage() {
 
                     <button
                         onClick={handleBuyNow}
-                        disabled={adding || availableStock <= 0}
+                        disabled={adding || inventoryLoading || availableStock <= 0}
                         className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
                     >
                         Mua ngay

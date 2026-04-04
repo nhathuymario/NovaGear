@@ -23,6 +23,10 @@ function getStatusText(status: Order["status"]) {
     }
 }
 
+function formatCurrency(value: number) {
+    return value.toLocaleString("vi-VN") + "đ"
+}
+
 export default function OrdersPage() {
     const navigate = useNavigate()
     const token = getToken()
@@ -82,6 +86,9 @@ export default function OrdersPage() {
                                 <h3 className="font-bold">
                                     {order.orderCode || `#${order.id}`}
                                 </h3>
+                                <p className="mt-1 text-xs text-brand-gray">
+                                    {order.createdAt || "—"}
+                                </p>
                             </div>
 
                             <div>
@@ -94,10 +101,41 @@ export default function OrdersPage() {
                             <div>
                                 <p className="text-sm text-brand-gray">Tổng tiền</p>
                                 <p className="font-bold text-brand-red">
-                                    {order.totalAmount.toLocaleString("vi-VN")}đ
+                                    {formatCurrency(order.totalAmount)}
                                 </p>
                             </div>
                         </div>
+
+                        {order.items.length > 0 && (
+                            <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                {order.items.slice(0, 2).map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="rounded-xl border p-3"
+                                    >
+                                        <p className="font-medium">
+                                            {item.productName || "Sản phẩm"}
+                                        </p>
+
+                                        {item.variantLabel && (
+                                            <p className="mt-1 text-sm text-brand-gray">
+                                                Phiên bản: {item.variantLabel}
+                                            </p>
+                                        )}
+
+                                        {item.variantSku && (
+                                            <p className="mt-1 text-xs text-brand-gray">
+                                                SKU: {item.variantSku}
+                                            </p>
+                                        )}
+
+                                        <p className="mt-2 text-sm text-brand-gray">
+                                            SL: {item.quantity}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </Link>
                 ))
             )}

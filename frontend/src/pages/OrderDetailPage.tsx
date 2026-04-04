@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
-import { cancelOrder, getOrderDetail } from "../api/orderApi"
+import { getOrderDetail } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
 
@@ -23,21 +23,19 @@ function getStatusText(status: Order["status"]) {
     }
 }
 
+function formatCurrency(value: number) {
+    return value.toLocaleString("vi-VN") + "đ"
+}
+
 export default function OrderDetailPage() {
     const { id = "" } = useParams()
     const navigate = useNavigate()
     const token = getToken()
     const [order, setOrder] = useState<Order | null>(null)
     const [loading, setLoading] = useState(true)
-    const [canceling, setCanceling] = useState(false)
 
     useEffect(() => {
-        if (!token) {
-            setLoading(false)
-            return
-        }
-
-        if (!id) {
+        if (!token || !id) {
             setLoading(false)
             return
         }
@@ -46,21 +44,6 @@ export default function OrderDetailPage() {
             .then(setOrder)
             .finally(() => setLoading(false))
     }, [id, token])
-
-    const handleCancel = async () => {
-        if (!order) return
-
-        try {
-            setCanceling(true)
-            await cancelOrder(order.id)
-            setOrder({ ...order, status: "CANCELLED" })
-        } catch (err) {
-            console.error(err)
-            alert("Hủy đơn thất bại")
-        } finally {
-            setCanceling(false)
-        }
-    }
 
     if (!token) {
         return (
@@ -118,11 +101,24 @@ export default function OrderDetailPage() {
 
                                     <div className="flex-1">
                                         <h3 className="font-semibold">{item.productName}</h3>
+
+                                        {item.variantLabel && (
+                                            <p className="mt-1 text-sm text-brand-gray">
+                                                Phiên bản: {item.variantLabel}
+                                            </p>
+                                        )}
+
+                                        {item.variantSku && (
+                                            <p className="mt-1 text-xs text-brand-gray">
+                                                SKU: {item.variantSku}
+                                            </p>
+                                        )}
+
                                         <p className="mt-1 text-sm text-brand-gray">
                                             Số lượng: {item.quantity}
                                         </p>
                                         <p className="mt-1 font-bold text-brand-red">
-                                            {(item.salePrice ?? item.price).toLocaleString("vi-VN")}đ
+                                            {formatCurrency(item.salePrice ?? item.price)}
                                         </p>
                                     </div>
                                 </div>
@@ -147,14 +143,12 @@ export default function OrderDetailPage() {
                     <div className="mt-4 flex items-center justify-between">
                         <span className="text-sm text-brand-gray">Tổng cộng</span>
                         <span className="text-xl font-extrabold text-brand-red">
-              {order.totalAmount.toLocaleString("vi-VN")}đ
-            </span>
+                            {formatCurrency(order.totalAmount)}
+                        </span>
                     </div>
 
-                    {/* Kiểm tra nếu đơn hàng đang ở trạng thái PENDING mới hiện các nút tương tác */}
                     {order.status === "PENDING" && (
                         <div className="mt-6 flex flex-col gap-3">
-                            {/* Nút Thanh toán ngay - Ưu tiên nổi bật nhất */}
                             <Link
                                 to={`/payment/${order.id}`}
                                 className="block w-full rounded-xl bg-brand-dark py-3 text-center font-semibold text-white transition-all hover:bg-opacity-90 active:scale-[0.98]"
@@ -162,21 +156,9 @@ export default function OrderDetailPage() {
                                 Thanh toán ngay
                             </Link>
 
-                            {/* Nút Hủy đơn - Viền đỏ, tinh tế hơn */}
-                            <button
-                                onClick={handleCancel}
-                                disabled={canceling}
-                                className="w-full rounded-xl border border-red-500 py-3 font-semibold text-red-500 transition-all hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {canceling ? (
-                                    <span className="flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent"></span>
-                    Đang hủy...
-                </span>
-                                ) : (
-                                    "Hủy đơn hàng"
-                                )}
-                            </button>
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                                Backend hiện chưa thấy endpoint hủy đơn của user, nên FE tạm ẩn nút hủy.
+                            </div>
                         </div>
                     )}
                 </aside>
