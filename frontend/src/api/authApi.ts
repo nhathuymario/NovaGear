@@ -20,3 +20,8 @@ export async function registerApi(payload: RegisterRequest) {
     const res = await axiosClient.post("/auth/register", payload)
     return res.data
 }
+
+export async function getMeApi() {
+    const res = await axiosClient.get("/auth/me")
+    return res.data
+}

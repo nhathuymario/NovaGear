@@ -1,41 +1,58 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import type { CartItem } from "../types/cart"
+import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
+import { getToken } from "../utils/auth"
 
 export default function CartPage() {
-    const [items, setItems] = useState<CartItem[]>([
-        {
-            id: 1,
-            productId: 101,
-            quantity: 1,
-            product: {
-                id: 101,
-                name: "Laptop Gaming Nova X15",
-                price: 24990000,
-                imageUrl: "https://via.placeholder.com/300x300?text=Laptop",
-            },
-        },
-        {
-            id: 2,
-            productId: 102,
-            quantity: 2,
-            product: {
-                id: 102,
-                name: "Chuột Gaming RGB",
-                price: 590000,
-                imageUrl: "https://via.placeholder.com/300x300?text=Mouse",
-            },
-        },
-    ])
+    const [items, setItems] = useState<CartItem[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const updateQuantity = (id: number | string, quantity: number) => {
-        if (quantity < 1) return
-        setItems((prev) =>
-            prev.map((item) => (item.id === id ? { ...item, quantity } : item))
-        )
+    const token = getToken()
+
+    const loadCart = async () => {
+        try {
+            setLoading(true)
+            const data = await getMyCart()
+            setItems(data)
+        } catch (error) {
+            console.error(error)
+            setItems([])
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const removeItem = (id: number | string) => {
-        setItems((prev) => prev.filter((item) => item.id !== id))
+    useEffect(() => {
+        if (!token) {
+            setLoading(false)
+            return
+        }
+        loadCart()
+    }, [token])
+
+    const updateQuantity = async (id: number | string, quantity: number) => {
+        if (quantity < 1) return
+
+        try {
+            await updateCartItem(id, quantity)
+            setItems((prev) =>
+                prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+            )
+        } catch (error) {
+            console.error(error)
+            alert("Cập nhật số lượng thất bại")
+        }
+    }
+
+    const removeItem = async (id: number | string) => {
+        try {
+            await removeCartItem(id)
+            setItems((prev) => prev.filter((item) => item.id !== id))
+        } catch (error) {
+            console.error(error)
+            alert("Xóa sản phẩm thất bại")
+        }
     }
 
     const total = useMemo(() => {
@@ -45,53 +62,80 @@ export default function CartPage() {
         }, 0)
     }, [items])
 
+    if (!token) {
+        return (
+            <div className="rounded-2xl bg-white p-8 shadow-sm">
+                <h1 className="text-2xl font-bold">Giỏ hàng</h1>
+                <p className="mt-3 text-brand-gray">
+                    Bạn cần đăng nhập để xem giỏ hàng.
+                </p>
+                <Link
+                    to="/login"
+                    className="mt-5 inline-block rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                >
+                    Đi tới đăng nhập
+                </Link>
+            </div>
+        )
+    }
+
+    if (loading) {
+        return <div>Đang tải giỏ hàng...</div>
+    }
+
     return (
         <div className="grid gap-6 md:grid-cols-[1fr_320px]">
             <section className="space-y-4">
                 <h1 className="text-2xl font-bold">Giỏ hàng</h1>
 
-                {items.map((item) => (
-                    <div
-                        key={item.id}
-                        className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
-                    >
-                        <img
-                            src={item.product?.imageUrl || "https://via.placeholder.com/120"}
-                            alt={item.product?.name}
-                            className="h-24 w-24 rounded-xl object-cover"
-                        />
-
-                        <div className="flex-1">
-                            <h3 className="font-semibold">{item.product?.name}</h3>
-                            <p className="mt-1 text-brand-red font-bold">
-                                {(item.product?.price ?? 0).toLocaleString("vi-VN")}đ
-                            </p>
-
-                            <div className="mt-3 flex items-center gap-2">
-                                <button
-                                    className="rounded-lg border px-3 py-1"
-                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                >
-                                    -
-                                </button>
-                                <span className="min-w-[32px] text-center">{item.quantity}</span>
-                                <button
-                                    className="rounded-lg border px-3 py-1"
-                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </div>
-
-                        <button
-                            className="text-sm font-semibold text-red-500"
-                            onClick={() => removeItem(item.id)}
-                        >
-                            Xóa
-                        </button>
+                {items.length === 0 ? (
+                    <div className="rounded-2xl bg-white p-6 shadow-sm">
+                        Giỏ hàng của bạn đang trống
                     </div>
-                ))}
+                ) : (
+                    items.map((item) => (
+                        <div
+                            key={item.id}
+                            className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
+                        >
+                            <img
+                                src={item.product?.imageUrl || "https://via.placeholder.com/120"}
+                                alt={item.product?.name}
+                                className="h-24 w-24 rounded-xl object-cover"
+                            />
+
+                            <div className="flex-1">
+                                <h3 className="font-semibold">{item.product?.name}</h3>
+                                <p className="mt-1 font-bold text-brand-red">
+                                    {(item.product?.salePrice ?? item.product?.price ?? 0).toLocaleString("vi-VN")}đ
+                                </p>
+
+                                <div className="mt-3 flex items-center gap-2">
+                                    <button
+                                        className="rounded-lg border px-3 py-1"
+                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    >
+                                        -
+                                    </button>
+                                    <span className="min-w-[32px] text-center">{item.quantity}</span>
+                                    <button
+                                        className="rounded-lg border px-3 py-1"
+                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                className="text-sm font-semibold text-red-500"
+                                onClick={() => removeItem(item.id)}
+                            >
+                                Xóa
+                            </button>
+                        </div>
+                    ))
+                )}
             </section>
 
             <aside className="h-fit rounded-2xl bg-white p-5 shadow-sm">
@@ -113,7 +157,10 @@ export default function CartPage() {
                     </div>
                 </div>
 
-                <button className="mt-5 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white">
+                <button
+                    disabled={items.length === 0}
+                    className="mt-5 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white disabled:opacity-60"
+                >
                     Tiến hành thanh toán
                 </button>
             </aside>

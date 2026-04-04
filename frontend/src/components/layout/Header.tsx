@@ -1,13 +1,21 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { useAuth } from "../../hooks/useAuth"
 
 export default function Header() {
     const [keyword, setKeyword] = useState("")
     const navigate = useNavigate()
+    const { isAuthenticated, user, logout } = useAuth()
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         navigate(`/products?keyword=${encodeURIComponent(keyword)}`)
+    }
+
+    const handleLogout = () => {
+        logout()
+        navigate("/")
+        window.location.reload()
     }
 
     return (
@@ -33,9 +41,24 @@ export default function Header() {
                     <Link to="/cart" className="font-medium">
                         Giỏ hàng
                     </Link>
-                    <Link to="/login" className="font-medium">
-                        Đăng nhập
-                    </Link>
+
+                    {isAuthenticated ? (
+                        <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-brand-dark">
+                {user?.fullName || user?.email || "Tài khoản"}
+              </span>
+                            <button
+                                onClick={handleLogout}
+                                className="rounded-lg bg-brand-dark px-3 py-2 text-sm font-semibold text-white"
+                            >
+                                Đăng xuất
+                            </button>
+                        </div>
+                    ) : (
+                        <Link to="/login" className="font-medium">
+                            Đăng nhập
+                        </Link>
+                    )}
                 </nav>
             </div>
         </header>

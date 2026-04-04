@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { getProductBySlug } from "../api/productApi"
+import { addToCart } from "../api/cartApi"
 import type { Product } from "../types/product"
 
 export default function ProductDetailPage() {
     const { slug = "" } = useParams()
+    const navigate = useNavigate()
     const [product, setProduct] = useState<Product | null>(null)
     const [loading, setLoading] = useState(true)
+    const [adding, setAdding] = useState(false)
 
     useEffect(() => {
         if (!slug) {
@@ -19,8 +22,34 @@ export default function ProductDetailPage() {
             .finally(() => setLoading(false))
     }, [slug])
 
-    const handleAddToCart = () => {
-        alert("Nối API cart ở đây")
+    const handleAddToCart = async () => {
+        if (!product) return
+
+        try {
+            setAdding(true)
+            await addToCart(product.id, 1)
+            alert("Đã thêm vào giỏ hàng")
+        } catch (error) {
+            console.error(error)
+            alert("Thêm vào giỏ thất bại")
+        } finally {
+            setAdding(false)
+        }
+    }
+
+    const handleBuyNow = async () => {
+        if (!product) return
+
+        try {
+            setAdding(true)
+            await addToCart(product.id, 1)
+            navigate("/cart")
+        } catch (error) {
+            console.error(error)
+            alert("Không thể thêm vào giỏ hàng")
+        } finally {
+            setAdding(false)
+        }
     }
 
     if (loading) return <div>Đang tải...</div>
@@ -60,12 +89,17 @@ export default function ProductDetailPage() {
                 <div className="mt-6 flex gap-3">
                     <button
                         onClick={handleAddToCart}
-                        className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                        disabled={adding}
+                        className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
                     >
-                        Thêm vào giỏ
+                        {adding ? "Đang thêm..." : "Thêm vào giỏ"}
                     </button>
 
-                    <button className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark">
+                    <button
+                        onClick={handleBuyNow}
+                        disabled={adding}
+                        className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
+                    >
                         Mua ngay
                     </button>
                 </div>

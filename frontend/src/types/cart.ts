@@ -6,3 +6,12 @@ export interface CartItem {
     quantity: number
     product?: Product
 }
+
+export interface AddToCartPayload {
+    productId: number | string
+    quantity: number
+}
+
+export interface UpdateCartItemPayload {
+    quantity: number
+}

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { loginApi } from "../api/authApi"
+import { getMeApi, loginApi } from "../api/authApi"
+import { setStoredUser, setToken } from "../utils/auth"
 
 export default function LoginPage() {
     const navigate = useNavigate()
@@ -13,13 +14,36 @@ export default function LoginPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
         try {
             setLoading(true)
             setError("")
+
             const data = await loginApi(form)
             const token = data.token || data.accessToken
-            if (token) localStorage.setItem("token", token)
+
+            if (!token) {
+                throw new Error("Không nhận được token")
+            }
+
+            setToken(token)
+
+            try {
+                const me = await getMeApi()
+                setStoredUser({
+                    id: me?.id,
+                    email: me?.email,
+                    fullName: me?.fullName ?? me?.name ?? me?.username,
+                    role: Array.isArray(me?.roles) ? me.roles[0] : me?.role,
+                })
+            } catch {
+                setStoredUser({
+                    email: form.email,
+                })
+            }
+
             navigate("/")
+            window.location.reload()
         } catch {
             setError("Đăng nhập thất bại")
         } finally {
