@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "../hooks/useAuth"
+import {useNavigate} from "react-router-dom"
+import {useAuth} from "../hooks/useAuth"
 
 export default function ProfilePage() {
     const navigate = useNavigate()
-    const { user, loading, logout } = useAuth()
+    const {user, loading, logout} = useAuth()
 
     const handleLogout = () => {
         logout()
@@ -39,7 +39,7 @@ export default function ProfilePage() {
                         <div className="rounded-2xl bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Email</p>
                             <p className="mt-1 font-semibold">
-                                {user?.email || "Chưa cập nhật"}
+                                {user?.username || "Chưa cập nhật"}
                             </p>
                         </div>
 

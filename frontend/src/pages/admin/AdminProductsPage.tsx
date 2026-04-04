@@ -1,30 +1,30 @@
-import { useEffect, useMemo, useState, useCallback } from "react"
+import {useCallback, useEffect, useMemo, useState} from "react"
 import {
-    getAdminProducts,
-    createAdminProduct,
-    updateAdminProduct,
-    deleteAdminProduct,
-    getAdminCategories,
     type AdminProductItem,
     type AdminProductPayload,
+    createAdminProduct,
+    deleteAdminProduct,
+    getAdminCategories,
+    getAdminProducts,
+    updateAdminProduct,
 } from "../../api/adminProductApi"
 import {
-    getProductVariants,
-    getProductSpecifications,
-    addProductVariant,
-    updateProductVariant,
-    deleteProductVariant,
     addProductSpecification,
-    updateProductSpecification,
-    deleteProductSpecification,
-    type AdminVariantItem,
-    type AdminVariantPayload,
+    addProductVariant,
     type AdminSpecificationItem,
     type AdminSpecificationPayload,
+    type AdminVariantItem,
+    type AdminVariantPayload,
+    deleteProductSpecification,
+    deleteProductVariant,
+    getProductSpecifications,
+    getProductVariants,
+    updateProductSpecification,
+    updateProductVariant,
 } from "../../api/adminProductDetailApi"
-import { getInventoryByVariant, importStock } from "../../api/inventoryApi"
-import { uploadProductImage } from "../../api/uploadApi"
-import type { InventoryItem } from "../../types/inventory"
+import {getInventoryByVariant, importStock} from "../../api/inventoryApi"
+import {uploadProductImage} from "../../api/uploadApi"
+import type {InventoryItem} from "../../types/inventory"
 
 interface CategoryOption {
     id: number | string
@@ -83,19 +83,19 @@ function slugify(text: string): string {
     return text
         .toLowerCase()
         .normalize("NFD")
-        .replaceAll(/[\u0300-\u036f]/g, "")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/[^a-z0-9\s-]/g, "")
         .trim()
         .replace(/\s+/g, "-")
 }
 
-function StatusBadge({ status }: { status?: string }) {
+function StatusBadge({status}: { status?: string }) {
     const map: Record<string, { label: string; cls: string }> = {
-        ACTIVE: { label: "Hoạt động", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-        DRAFT: { label: "Nháp", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-        INACTIVE: { label: "Ẩn", cls: "bg-gray-100 text-gray-500 border-gray-200" },
-        OUT_OF_STOCK: { label: "Hết hàng", cls: "bg-red-50 text-red-600 border-red-200" },
+        ACTIVE: {label: "Hoạt động", cls: "bg-emerald-50 text-emerald-700 border-emerald-200"},
+        DRAFT: {label: "Nháp", cls: "bg-amber-50 text-amber-700 border-amber-200"},
+        INACTIVE: {label: "Ẩn", cls: "bg-gray-100 text-gray-500 border-gray-200"},
+        OUT_OF_STOCK: {label: "Hết hàng", cls: "bg-red-50 text-red-600 border-red-200"},
     }
 
     const s =
@@ -158,7 +158,7 @@ export default function AdminProductsPage() {
             setProducts(prods)
             setCategories(
                 Array.isArray(cats)
-                    ? cats.map((c: any) => ({ id: c.id ?? "", name: c.name ?? "" }))
+                    ? cats.map((c: any) => ({id: c.id ?? "", name: c.name ?? ""}))
                     : []
             )
         } catch (err) {
@@ -282,7 +282,7 @@ export default function AdminProductsPage() {
         try {
             setThumbnailUploading(true)
             const url = await uploadProductImage(file)
-            setProductForm((prev) => ({ ...prev, thumbnail: url }))
+            setProductForm((prev) => ({...prev, thumbnail: url}))
         } catch (err) {
             console.error(err)
             alert("Upload ảnh thất bại")
@@ -358,7 +358,7 @@ export default function AdminProductsPage() {
         try {
             setVariantImgUploading(true)
             const url = await uploadProductImage(file)
-            setVariantForm((prev) => ({ ...prev, imageUrl: url }))
+            setVariantForm((prev) => ({...prev, imageUrl: url}))
         } catch (err) {
             console.error(err)
             alert("Upload ảnh thất bại")
@@ -547,7 +547,8 @@ export default function AdminProductsPage() {
     if (tab === "list") {
         return (
             <div className="space-y-5">
-                <div className="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+                <div
+                    className="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h1>
                         <p className="mt-1 text-sm text-gray-500">
@@ -559,7 +560,7 @@ export default function AdminProductsPage() {
                         className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700"
                     >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
                         </svg>
                         Thêm sản phẩm
                     </button>
@@ -567,8 +568,10 @@ export default function AdminProductsPage() {
 
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
                     <div className="relative">
-                        <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                        <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round"
+                                  d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                         </svg>
                         <input
                             value={keyword}
@@ -583,8 +586,9 @@ export default function AdminProductsPage() {
                     <div className="flex items-center justify-center rounded-2xl bg-white py-16 shadow-sm">
                         <div className="flex flex-col items-center gap-3 text-gray-400">
                             <svg className="h-8 w-8 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                             </svg>
                             <span className="text-sm">Đang tải...</span>
                         </div>
@@ -607,13 +611,19 @@ export default function AdminProductsPage() {
                                     <tr key={item.id} className="group transition hover:bg-gray-50">
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                                <div
+                                                    className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                                                     {item.thumbnail ? (
-                                                        <img src={item.thumbnail} alt={item.name} className="h-full w-full object-cover" />
+                                                        <img src={item.thumbnail} alt={item.name}
+                                                             className="h-full w-full object-cover"/>
                                                     ) : (
-                                                        <div className="flex h-full w-full items-center justify-center text-gray-300">
-                                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        <div
+                                                            className="flex h-full w-full items-center justify-center text-gray-300">
+                                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                                 stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round"
+                                                                      strokeWidth={1.5}
+                                                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                                             </svg>
                                                         </div>
                                                     )}
@@ -627,9 +637,10 @@ export default function AdminProductsPage() {
                                         <td className="px-5 py-4 text-gray-600">{item.brand || "—"}</td>
                                         <td className="px-5 py-4 text-gray-600">{item.categoryName || "—"}</td>
                                         <td className="px-5 py-4">
-                                            <StatusBadge status={item.status} />
+                                            <StatusBadge status={item.status}/>
                                             {item.featured && (
-                                                <span className="ml-2 inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                                                <span
+                                                    className="ml-2 inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
                                                     ★ Nổi bật
                                                 </span>
                                             )}
@@ -661,8 +672,10 @@ export default function AdminProductsPage() {
                                 {filtered.length === 0 && (
                                     <tr>
                                         <td colSpan={5} className="px-5 py-16 text-center text-gray-400">
-                                            <svg className="mx-auto h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                            <svg className="mx-auto h-10 w-10 text-gray-200" fill="none"
+                                                 viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                             </svg>
                                             <p className="mt-3 text-sm">Không có sản phẩm nào</p>
                                         </td>
@@ -685,8 +698,9 @@ export default function AdminProductsPage() {
                         onClick={() => setTab("list")}
                         className="rounded-xl border border-gray-200 p-2 transition hover:bg-gray-50"
                     >
-                        <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                             strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
                         </svg>
                     </button>
                     <div>
@@ -704,7 +718,8 @@ export default function AdminProductsPage() {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="sm:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Tên sản phẩm *</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Tên sản phẩm
+                                        *</label>
                                     <input
                                         required
                                         type="text"
@@ -721,19 +736,20 @@ export default function AdminProductsPage() {
                                         required
                                         type="text"
                                         value={productForm.slug}
-                                        onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })}
+                                        onChange={(e) => setProductForm({...productForm, slug: e.target.value})}
                                         placeholder="macbook-air-m3-2024"
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Thương hiệu *</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Thương hiệu
+                                        *</label>
                                     <input
                                         required
                                         type="text"
                                         value={productForm.brand}
-                                        onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                                        onChange={(e) => setProductForm({...productForm, brand: e.target.value})}
                                         placeholder="Apple, Samsung, Dell..."
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     />
@@ -744,7 +760,7 @@ export default function AdminProductsPage() {
                                     <select
                                         required
                                         value={productForm.categoryId}
-                                        onChange={(e) => setProductForm({ ...productForm, categoryId: e.target.value })}
+                                        onChange={(e) => setProductForm({...productForm, categoryId: e.target.value})}
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     >
                                         <option value="">-- Chọn danh mục --</option>
@@ -759,18 +775,22 @@ export default function AdminProductsPage() {
                                     <input
                                         type="text"
                                         value={productForm.shortDescription}
-                                        onChange={(e) => setProductForm({ ...productForm, shortDescription: e.target.value })}
+                                        onChange={(e) => setProductForm({
+                                            ...productForm,
+                                            shortDescription: e.target.value
+                                        })}
                                         placeholder="Mô tả tóm tắt hiển thị trong danh sách"
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     />
                                 </div>
 
                                 <div className="sm:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Mô tả chi tiết</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Mô tả chi
+                                        tiết</label>
                                     <textarea
                                         rows={4}
                                         value={productForm.description}
-                                        onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                                        onChange={(e) => setProductForm({...productForm, description: e.target.value})}
                                         placeholder="Mô tả đầy đủ hiển thị trang chi tiết"
                                         className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     />
@@ -783,26 +803,32 @@ export default function AdminProductsPage() {
                                 <h2 className="font-semibold text-gray-800">Ảnh đại diện</h2>
                                 <div className="mt-3">
                                     {productForm.thumbnail ? (
-                                        <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
-                                            <img src={productForm.thumbnail} alt="thumbnail" className="h-full w-full object-cover" />
+                                        <div
+                                            className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
+                                            <img src={productForm.thumbnail} alt="thumbnail"
+                                                 className="h-full w-full object-cover"/>
                                             <button
                                                 type="button"
-                                                onClick={() => setProductForm({ ...productForm, thumbnail: "" })}
+                                                onClick={() => setProductForm({...productForm, thumbnail: ""})}
                                                 className="absolute right-2 top-2 rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-red-500 shadow"
                                             >
                                                 Xóa
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="mb-3 flex aspect-square w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-300">
-                                            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        <div
+                                            className="mb-3 flex aspect-square w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-300">
+                                            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                             </svg>
                                         </div>
                                     )}
 
                                     <label className="block cursor-pointer">
-                                        <span className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-xs font-medium text-gray-700 transition hover:border-gray-900 hover:text-gray-900">
+                                        <span
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-xs font-medium text-gray-700 transition hover:border-gray-900 hover:text-gray-900">
                                             {thumbnailUploading ? "Đang upload..." : "Upload ảnh"}
                                         </span>
                                         <input
@@ -818,7 +844,7 @@ export default function AdminProductsPage() {
                                     <input
                                         type="text"
                                         value={productForm.thumbnail}
-                                        onChange={(e) => setProductForm({ ...productForm, thumbnail: e.target.value })}
+                                        onChange={(e) => setProductForm({...productForm, thumbnail: e.target.value})}
                                         placeholder="https://..."
                                         className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-xs outline-none transition focus:border-gray-900"
                                     />
@@ -830,7 +856,10 @@ export default function AdminProductsPage() {
                                 <div className="mt-3 space-y-3">
                                     <select
                                         value={productForm.status}
-                                        onChange={(e) => setProductForm({ ...productForm, status: e.target.value as AdminProductPayload["status"] })}
+                                        onChange={(e) => setProductForm({
+                                            ...productForm,
+                                            status: e.target.value as AdminProductPayload["status"]
+                                        })}
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     >
                                         <option value="ACTIVE">Hoạt động</option>
@@ -838,11 +867,15 @@ export default function AdminProductsPage() {
                                         <option value="INACTIVE">Ẩn</option>
                                     </select>
 
-                                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 transition hover:bg-gray-50">
+                                    <label
+                                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 transition hover:bg-gray-50">
                                         <input
                                             type="checkbox"
                                             checked={Boolean(productForm.featured)}
-                                            onChange={(e) => setProductForm({ ...productForm, featured: e.target.checked })}
+                                            onChange={(e) => setProductForm({
+                                                ...productForm,
+                                                featured: e.target.checked
+                                            })}
                                             className="h-4 w-4 rounded accent-gray-900"
                                         />
                                         <div>
@@ -884,8 +917,9 @@ export default function AdminProductsPage() {
                         onClick={() => setTab("list")}
                         className="rounded-xl border border-gray-200 p-2 transition hover:bg-gray-50"
                     >
-                        <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                             strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
                         </svg>
                     </button>
                     <div className="flex-1">
@@ -931,8 +965,9 @@ export default function AdminProductsPage() {
                     <div className="flex items-center justify-center rounded-2xl bg-white py-16 shadow-sm">
                         <div className="flex flex-col items-center gap-3 text-gray-400">
                             <svg className="h-8 w-8 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                             </svg>
                             <span className="text-sm">Đang tải...</span>
                         </div>
@@ -945,8 +980,9 @@ export default function AdminProductsPage() {
                                 onClick={openCreateVariant}
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700"
                             >
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                     strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
                                 Thêm variant
                             </button>
@@ -968,7 +1004,7 @@ export default function AdminProductsPage() {
                                             required
                                             type="text"
                                             value={variantForm.sku}
-                                            onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                                            onChange={(e) => setVariantForm({...variantForm, sku: e.target.value})}
                                             placeholder="APPLE-MBA-M3-8-256"
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
@@ -979,7 +1015,7 @@ export default function AdminProductsPage() {
                                         <input
                                             type="text"
                                             value={variantForm.color}
-                                            onChange={(e) => setVariantForm({ ...variantForm, color: e.target.value })}
+                                            onChange={(e) => setVariantForm({...variantForm, color: e.target.value})}
                                             placeholder="Midnight, Silver..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
@@ -990,7 +1026,7 @@ export default function AdminProductsPage() {
                                         <input
                                             type="text"
                                             value={variantForm.ram}
-                                            onChange={(e) => setVariantForm({ ...variantForm, ram: e.target.value })}
+                                            onChange={(e) => setVariantForm({...variantForm, ram: e.target.value})}
                                             placeholder="8GB, 16GB..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
@@ -1001,28 +1037,36 @@ export default function AdminProductsPage() {
                                         <input
                                             type="text"
                                             value={variantForm.storage}
-                                            onChange={(e) => setVariantForm({ ...variantForm, storage: e.target.value })}
+                                            onChange={(e) => setVariantForm({...variantForm, storage: e.target.value})}
                                             placeholder="256GB, 512GB..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tên phiên bản</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tên phiên
+                                            bản</label>
                                         <input
                                             type="text"
                                             value={variantForm.versionName}
-                                            onChange={(e) => setVariantForm({ ...variantForm, versionName: e.target.value })}
+                                            onChange={(e) => setVariantForm({
+                                                ...variantForm,
+                                                versionName: e.target.value
+                                            })}
                                             placeholder="Pro, Ultra..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Trạng thái</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Trạng
+                                            thái</label>
                                         <select
                                             value={variantForm.status}
-                                            onChange={(e) => setVariantForm({ ...variantForm, status: e.target.value as AdminVariantPayload["status"] })}
+                                            onChange={(e) => setVariantForm({
+                                                ...variantForm,
+                                                status: e.target.value as AdminVariantPayload["status"]
+                                            })}
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         >
                                             <option value="ACTIVE">Hoạt động</option>
@@ -1032,19 +1076,24 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá gốc (₫) *</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá gốc (₫)
+                                            *</label>
                                         <input
                                             required
                                             type="number"
                                             min={0}
                                             value={variantForm.price}
-                                            onChange={(e) => setVariantForm({ ...variantForm, price: Number(e.target.value) })}
+                                            onChange={(e) => setVariantForm({
+                                                ...variantForm,
+                                                price: Number(e.target.value)
+                                            })}
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá sale (₫)</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá sale
+                                            (₫)</label>
                                         <input
                                             type="number"
                                             min={0}
@@ -1061,28 +1110,37 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tồn kho ban đầu</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tồn kho ban
+                                            đầu</label>
                                         <input
                                             type="number"
                                             min={0}
                                             value={variantForm.stockQuantity}
-                                            onChange={(e) => setVariantForm({ ...variantForm, stockQuantity: Number(e.target.value) })}
+                                            onChange={(e) => setVariantForm({
+                                                ...variantForm,
+                                                stockQuantity: Number(e.target.value)
+                                            })}
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div className="sm:col-span-2 lg:col-span-3">
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Ảnh variant</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Ảnh
+                                            variant</label>
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="text"
                                                 value={variantForm.imageUrl}
-                                                onChange={(e) => setVariantForm({ ...variantForm, imageUrl: e.target.value })}
+                                                onChange={(e) => setVariantForm({
+                                                    ...variantForm,
+                                                    imageUrl: e.target.value
+                                                })}
                                                 placeholder="URL ảnh hoặc upload"
                                                 className="flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                             />
                                             <label className="cursor-pointer">
-                                                <span className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-medium text-gray-700 transition hover:border-gray-900">
+                                                <span
+                                                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-medium text-gray-700 transition hover:border-gray-900">
                                                     {variantImgUploading ? "..." : "Upload"}
                                                 </span>
                                                 <input
@@ -1105,8 +1163,10 @@ export default function AdminProductsPage() {
                                     </div>
                                 </div>
 
-                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                    Tồn kho thực tế nên nhập ở bảng variant bên dưới. Ô tồn kho trong form này đang giữ lại để tương thích payload hiện tại của product-service.
+                                <div
+                                    className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    Tồn kho thực tế nên nhập ở bảng variant bên dưới. Ô tồn kho trong form này đang giữ
+                                    lại để tương thích payload hiện tại của product-service.
                                 </div>
 
                                 <div className="mt-4 flex gap-2">
@@ -1166,11 +1226,13 @@ export default function AdminProductsPage() {
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
                                                             {v.imageUrl ? (
-                                                                <img src={v.imageUrl} alt={v.sku} className="h-10 w-10 rounded-lg object-cover" />
+                                                                <img src={v.imageUrl} alt={v.sku}
+                                                                     className="h-10 w-10 rounded-lg object-cover"/>
                                                             ) : (
-                                                                <div className="h-10 w-10 rounded-lg bg-gray-100" />
+                                                                <div className="h-10 w-10 rounded-lg bg-gray-100"/>
                                                             )}
-                                                            <span className="font-mono text-xs font-medium text-gray-700">{v.sku}</span>
+                                                            <span
+                                                                className="font-mono text-xs font-medium text-gray-700">{v.sku}</span>
                                                         </div>
                                                     </td>
 
@@ -1238,7 +1300,7 @@ export default function AdminProductsPage() {
                                                     </td>
 
                                                     <td className="px-5 py-4">
-                                                        <StatusBadge status={v.status} />
+                                                        <StatusBadge status={v.status}/>
                                                     </td>
 
                                                     <td className="px-5 py-4">
@@ -1274,8 +1336,9 @@ export default function AdminProductsPage() {
                                 onClick={openCreateSpec}
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700"
                             >
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                     strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
                                 Thêm thông số
                             </button>
@@ -1297,43 +1360,49 @@ export default function AdminProductsPage() {
                                             required
                                             type="text"
                                             value={specForm.groupName}
-                                            onChange={(e) => setSpecForm({ ...specForm, groupName: e.target.value })}
+                                            onChange={(e) => setSpecForm({...specForm, groupName: e.target.value})}
                                             placeholder="Hiệu năng, Màn hình, Pin..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tên thông số *</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tên thông số
+                                            *</label>
                                         <input
                                             required
                                             type="text"
                                             value={specForm.specKey}
-                                            onChange={(e) => setSpecForm({ ...specForm, specKey: e.target.value })}
+                                            onChange={(e) => setSpecForm({...specForm, specKey: e.target.value})}
                                             placeholder="CPU, RAM, Kích thước màn hình..."
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá trị *</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Giá trị
+                                            *</label>
                                         <input
                                             required
                                             type="text"
                                             value={specForm.specValue}
-                                            onChange={(e) => setSpecForm({ ...specForm, specValue: e.target.value })}
+                                            onChange={(e) => setSpecForm({...specForm, specValue: e.target.value})}
                                             placeholder='Apple M3, 8GB, 13.6"...'
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Thứ tự sắp xếp</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Thứ tự sắp
+                                            xếp</label>
                                         <input
                                             type="number"
                                             min={0}
                                             value={specForm.sortOrder}
-                                            onChange={(e) => setSpecForm({ ...specForm, sortOrder: Number(e.target.value) })}
+                                            onChange={(e) => setSpecForm({
+                                                ...specForm,
+                                                sortOrder: Number(e.target.value)
+                                            })}
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
                                     </div>
