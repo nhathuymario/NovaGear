@@ -41,7 +41,9 @@ export default function Header() {
                     <Link to="/cart" className="font-medium">
                         Giỏ hàng
                     </Link>
-
+                    <Link to="/orders" className="font-medium">
+                        Đơn hàng
+                    </Link>
                     {isAuthenticated ? (
                         <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-brand-dark">

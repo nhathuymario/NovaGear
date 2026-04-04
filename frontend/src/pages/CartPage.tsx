@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import type { CartItem } from "../types/cart"
 import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
 import { getToken } from "../utils/auth"
@@ -7,6 +7,7 @@ import { getToken } from "../utils/auth"
 export default function CartPage() {
     const [items, setItems] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
     const token = getToken()
 
@@ -159,6 +160,7 @@ export default function CartPage() {
 
                 <button
                     disabled={items.length === 0}
+                    onClick={() => navigate("/checkout")}
                     className="mt-5 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white disabled:opacity-60"
                 >
                     Tiến hành thanh toán
