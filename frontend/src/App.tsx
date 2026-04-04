@@ -19,7 +19,8 @@ import AdminRoute from "./components/admin/AdminRoute"
 import AdminLayout from "./components/admin/AdminLayout"
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage"
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage"
-
+import AdminProductsPage from "./pages/admin/AdminProductsPage"
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage"
 
 export default function App() {
     return (
@@ -35,6 +36,8 @@ export default function App() {
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboardPage />} />
+                        <Route path="products" element={<AdminProductsPage />} />
+                        <Route path="orders" element={<AdminOrdersPage />} />
                         <Route path="inventory" element={<AdminInventoryPage />} />
                     </Route>
                 </Route>
