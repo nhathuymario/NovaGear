@@ -23,6 +23,7 @@ export async function registerApi(payload: RegisterRequest) {
 }
 
 export async function getMeApi() {
+    // Thông thường Gateway/Auth trả về data bọc trong object
     const res = await axiosClient.get("/auth/me")
-    return res.data
+    return res.data?.data || res.data
 }
