@@ -1,6 +1,6 @@
 export interface AuthUser {
     id?: number | string
-    email?: string
+    username?: string
     fullName?: string
     role?: string
 }

@@ -4,6 +4,10 @@ import type { CartItem } from "../types/cart"
 import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
 import { getToken } from "../utils/auth"
 
+function formatCurrency(value: number) {
+    return value.toLocaleString("vi-VN") + "đ"
+}
+
 export default function CartPage() {
     const [items, setItems] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
@@ -94,48 +98,68 @@ export default function CartPage() {
                         Giỏ hàng của bạn đang trống
                     </div>
                 ) : (
-                    items.map((item) => (
-                        <div
-                            key={item.id}
-                            className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
-                        >
-                            <img
-                                src={item.product?.imageUrl || "https://via.placeholder.com/120"}
-                                alt={item.product?.name}
-                                className="h-24 w-24 rounded-xl object-cover"
-                            />
+                    items.map((item) => {
+                        const price = item.product?.salePrice ?? item.product?.price ?? 0
 
-                            <div className="flex-1">
-                                <h3 className="font-semibold">{item.product?.name}</h3>
-                                <p className="mt-1 font-bold text-brand-red">
-                                    {(item.product?.salePrice ?? item.product?.price ?? 0).toLocaleString("vi-VN")}đ
-                                </p>
-
-                                <div className="mt-3 flex items-center gap-2">
-                                    <button
-                                        className="rounded-lg border px-3 py-1"
-                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                    >
-                                        -
-                                    </button>
-                                    <span className="min-w-[32px] text-center">{item.quantity}</span>
-                                    <button
-                                        className="rounded-lg border px-3 py-1"
-                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button
-                                className="text-sm font-semibold text-red-500"
-                                onClick={() => removeItem(item.id)}
+                        return (
+                            <div
+                                key={item.id}
+                                className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
                             >
-                                Xóa
-                            </button>
-                        </div>
-                    ))
+                                <img
+                                    src={item.product?.imageUrl || "https://via.placeholder.com/120"}
+                                    alt={item.product?.name}
+                                    className="h-24 w-24 rounded-xl object-cover"
+                                />
+
+                                <div className="flex-1">
+                                    <h3 className="font-semibold">{item.product?.name}</h3>
+
+                                    {(item.variantLabel || item.variantSku) && (
+                                        <div className="mt-1 space-y-1">
+                                            {item.variantLabel && (
+                                                <p className="text-sm text-brand-gray">
+                                                    Phiên bản: {item.variantLabel}
+                                                </p>
+                                            )}
+                                            {item.variantSku && (
+                                                <p className="text-xs text-brand-gray">
+                                                    SKU: {item.variantSku}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <p className="mt-2 font-bold text-brand-red">
+                                        {formatCurrency(price)}
+                                    </p>
+
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <button
+                                            className="rounded-lg border px-3 py-1"
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        >
+                                            -
+                                        </button>
+                                        <span className="min-w-[32px] text-center">{item.quantity}</span>
+                                        <button
+                                            className="rounded-lg border px-3 py-1"
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    className="text-sm font-semibold text-red-500"
+                                    onClick={() => removeItem(item.id)}
+                                >
+                                    Xóa
+                                </button>
+                            </div>
+                        )
+                    })
                 )}
             </section>
 
@@ -143,7 +167,7 @@ export default function CartPage() {
                 <h2 className="text-xl font-bold">Tóm tắt đơn hàng</h2>
                 <div className="mt-4 flex items-center justify-between text-sm">
                     <span>Tạm tính</span>
-                    <span>{total.toLocaleString("vi-VN")}đ</span>
+                    <span>{formatCurrency(total)}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
                     <span>Phí vận chuyển</span>
@@ -153,8 +177,8 @@ export default function CartPage() {
                     <div className="flex items-center justify-between">
                         <span className="font-semibold">Tổng cộng</span>
                         <span className="text-xl font-extrabold text-brand-red">
-              {total.toLocaleString("vi-VN")}đ
-            </span>
+                            {formatCurrency(total)}
+                        </span>
                     </div>
                 </div>
 
