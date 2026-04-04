@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { getProductBySlug  } from "../api/productApi"
+import { getProductBySlug } from "../api/productApi"
 import type { Product } from "../types/product"
 
 export default function ProductDetailPage() {
-    const { id = "" } = useParams()
+    const { slug = "" } = useParams()
     const [product, setProduct] = useState<Product | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        getProductBySlug (id)
+        if (!slug) {
+            setLoading(false)
+            return
+        }
+
+        getProductBySlug(slug)
             .then(setProduct)
             .finally(() => setLoading(false))
-    }, [id])
+    }, [slug])
 
     const handleAddToCart = () => {
         alert("Nối API cart ở đây")
@@ -41,7 +46,7 @@ export default function ProductDetailPage() {
                     <p className="text-3xl font-extrabold text-brand-red">
                         {finalPrice.toLocaleString("vi-VN")}đ
                     </p>
-                    {product.salePrice && (
+                    {product.salePrice != null && (
                         <p className="mt-1 text-sm text-gray-400 line-through">
                             {product.price.toLocaleString("vi-VN")}đ
                         </p>

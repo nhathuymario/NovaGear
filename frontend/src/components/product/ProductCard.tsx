@@ -10,7 +10,7 @@ export default function ProductCard({ product }: Props) {
 
     return (
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-            <Link to={`/products/${product.id}`}>
+            <Link to={`/products/${product.slug}`}>
                 <div className="aspect-square bg-gray-100">
                     <img
                         src={product.imageUrl || "https://via.placeholder.com/400x400?text=NovaGear"}
@@ -32,7 +32,7 @@ export default function ProductCard({ product }: Props) {
                         {finalPrice.toLocaleString("vi-VN")}đ
                     </p>
 
-                    {product.salePrice && (
+                    {product.salePrice != null && (
                         <p className="text-sm text-gray-400 line-through">
                             {product.price.toLocaleString("vi-VN")}đ
                         </p>
@@ -41,11 +41,11 @@ export default function ProductCard({ product }: Props) {
 
                 <div className="mt-3 flex items-center justify-between">
           <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
-            {product.stock && product.stock > 0 ? "Còn hàng" : "Hết hàng"}
+            {(product.stock ?? 0) > 0 ? "Còn hàng" : "Hết hàng"}
           </span>
 
                     <Link
-                        to={`/products/${product.id}`}
+                        to={`/products/${product.slug}`}
                         className="rounded-lg bg-brand-dark px-3 py-2 text-xs font-semibold text-white"
                     >
                         Xem chi tiết
