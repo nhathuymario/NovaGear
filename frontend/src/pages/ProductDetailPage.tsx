@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { addToCart } from "../api/cartApi"
-import { getInventoryByVariant, type InventoryItem } from "../api/inventoryApi"
+import {useEffect, useMemo, useState} from "react"
+import {useNavigate, useParams} from "react-router-dom"
+import {addToCart} from "../api/cartApi"
 import {
-    getProductDetailBySlug,
-    type ProductDetailData,
-    type PublicProductVariant,
-} from "../api/productApi"
+    getPublicInventoryByVariant,
+    type InventoryItem,
+} from "../api/inventoryApi"
+import {getProductDetailBySlug, type ProductDetailData, type PublicProductVariant,} from "../api/productApi"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -19,7 +18,7 @@ function buildVariantLabel(variant: PublicProductVariant) {
 }
 
 export default function ProductDetailPage() {
-    const { slug = "" } = useParams()
+    const {slug = ""} = useParams()
     const navigate = useNavigate()
 
     const [product, setProduct] = useState<ProductDetailData | null>(null)
@@ -78,10 +77,17 @@ export default function ProductDetailPage() {
             return
         }
 
+        const token = localStorage.getItem("token")
+        if (!token) {
+            setSelectedInventory(null)
+            setInventoryLoading(false)
+            return
+        }
+
         const loadInventory = async () => {
             try {
                 setInventoryLoading(true)
-                const inventory = await getInventoryByVariant(selectedVariant.id)
+                const inventory = await getPublicInventoryByVariant(selectedVariant.id)
                 setSelectedInventory(inventory)
             } catch (error) {
                 console.error(error)
@@ -139,7 +145,15 @@ export default function ProductDetailPage() {
 
         try {
             setAdding(true)
-            await addToCart(product.id, 1, selectedVariant?.id)
+            await addToCart({
+                productId: product.id,
+                variantId: selectedVariant?.id,
+                quantity: 1,
+                productName: product.name,
+                variantName: selectedVariant ? buildVariantLabel(selectedVariant) : undefined,
+                thumbnail: galleryImage,
+                price: finalPrice,
+            })
             alert("Đã thêm vào giỏ hàng")
         } catch (error) {
             console.error(error)
@@ -164,7 +178,15 @@ export default function ProductDetailPage() {
 
         try {
             setAdding(true)
-            await addToCart(product.id, 1, selectedVariant?.id)
+            await addToCart({
+                productId: product.id,
+                variantId: selectedVariant?.id,
+                quantity: 1,
+                productName: product.name,
+                variantName: selectedVariant ? buildVariantLabel(selectedVariant) : undefined,
+                thumbnail: galleryImage,
+                price: finalPrice,
+            })
             navigate("/cart")
         } catch (error) {
             console.error(error)

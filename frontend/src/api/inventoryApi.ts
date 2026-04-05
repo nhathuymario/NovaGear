@@ -144,6 +144,13 @@ export async function getInventoryByVariant(variantId: number | string): Promise
     return mapInventoryItem(res.data)
 }
 
+export async function getPublicInventoryByVariant(
+    variantId: number | string
+): Promise<InventoryItem> {
+    const res = await axiosClient.get(`/inventory/internal/variant/${variantId}`)
+    return mapInventoryItem(res.data)
+}
+
 export async function importStock(payload: StockImportPayload) {
     const res = await axiosClient.post("/admin/inventory/import", payload)
     return res.data?.data ? mapInventoryItem(res.data.data) : res.data

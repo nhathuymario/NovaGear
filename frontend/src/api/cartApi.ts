@@ -130,17 +130,36 @@ export async function getMyCart(): Promise<CartItem[]> {
 }
 
 export async function addToCart(
-    productId: number | string,
-    quantity = 1,
-    variantId?: number | string
+    payload: {
+        productId: number | string
+        quantity?: number
+        variantId?: number | string
+        productName: string
+        variantName?: string
+        thumbnail?: string
+        price: number | string
+    }
 ) {
-    const payload: Record<string, number | string> = {productId, quantity}
-
-    if (variantId !== undefined && variantId !== null && variantId !== "") {
-        payload.variantId = variantId
+    const requestBody: Record<string, number | string> = {
+        productId: payload.productId,
+        quantity: payload.quantity ?? 1,
+        productName: payload.productName,
+        price: payload.price,
     }
 
-    const res = await axiosClient.post("/cart/items", payload)
+    if (payload.variantId !== undefined && payload.variantId !== null && payload.variantId !== "") {
+        requestBody.variantId = payload.variantId
+    }
+
+    if (payload.variantName?.trim()) {
+        requestBody.variantName = payload.variantName.trim()
+    }
+
+    if (payload.thumbnail?.trim()) {
+        requestBody.thumbnail = payload.thumbnail.trim()
+    }
+
+    const res = await axiosClient.post("/cart/items", requestBody)
     return res.data
 }
 
