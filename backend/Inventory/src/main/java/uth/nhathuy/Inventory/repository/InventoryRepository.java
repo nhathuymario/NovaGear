@@ -1,10 +1,12 @@
 package uth.nhathuy.Inventory.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import uth.nhathuy.Inventory.entity.Inventory;
 import uth.nhathuy.Inventory.entity.InventoryStatus;
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -13,14 +15,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByVariantId(Long variantId);
 
     @Query("""
-        select i from Inventory i
-        where (:keyword is null
-               or cast(i.productId as string) like concat('%', :keyword, '%')
-               or cast(i.variantId as string) like concat('%', :keyword, '%'))
-          and (:status is null or i.status = :status)
-    """)
+                select i from Inventory i
+                where (:status is null or i.status = :status)
+                  and (:keywordId is null or i.productId = :keywordId or i.variantId = :keywordId)
+            """)
     Page<Inventory> search(
-            @Param("keyword") String keyword,
+            @Param("keywordId") Long keywordId,
             @Param("status") InventoryStatus status,
             Pageable pageable
     );

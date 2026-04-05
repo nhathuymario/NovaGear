@@ -61,6 +61,7 @@ export default function AdminInventoryPage() {
         }
         try {
             await importStock({
+                productId: form.productId,
                 variantId: form.variantId,
                 quantity: Number(form.quantity),
                 note: form.note,
@@ -82,7 +83,8 @@ export default function AdminInventoryPage() {
         try {
             await adjustStock({
                 variantId: form.variantId,
-                quantity: Number(form.quantity),
+                availableQuantity: Number(form.quantity),
+                reservedQuantity: 0,
                 note: form.note,
             })
             await loadData()

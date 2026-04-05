@@ -23,7 +23,14 @@ public class InventoryService {
 
     public Page<InventoryResponse> search(String keyword, InventoryStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return inventoryRepository.search(normalize(keyword), status, pageable)
+        String normalizedKeyword = normalize(keyword);
+        Long keywordId = parseKeywordId(normalizedKeyword);
+
+        if (normalizedKeyword != null && keywordId == null) {
+            return Page.empty(pageable);
+        }
+
+        return inventoryRepository.search(keywordId, status, pageable)
                 .map(this::mapInventory);
     }
 
@@ -233,6 +240,18 @@ public class InventoryService {
 
     private String normalize(String keyword) {
         return (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+    }
+
+    private Long parseKeywordId(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+
+        try {
+            return Long.parseLong(keyword);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private InventoryResponse mapInventory(Inventory inventory) {

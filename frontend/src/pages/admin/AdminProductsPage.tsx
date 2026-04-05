@@ -511,7 +511,12 @@ export default function AdminProductsPage() {
         try {
             setInlineImportLoadingId(variant.id)
 
+            if (!selectedProduct?.id) {
+                throw new Error("Missing selected product id")
+            }
+
             await importStock({
+                productId: selectedProduct.id,
                 variantId: variant.id,
                 quantity,
                 note: `Nhập kho nhanh cho ${variant.sku}`,

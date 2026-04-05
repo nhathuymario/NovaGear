@@ -37,14 +37,18 @@ export interface InventoryListResult {
 }
 
 export interface StockImportPayload {
+    productId: number | string
     variantId: number | string
     quantity: number
+    lowStockThreshold?: number
     note?: string
 }
 
 export interface StockAdjustmentPayload {
     variantId: number | string
-    quantity: number
+    availableQuantity: number
+    reservedQuantity: number
+    lowStockThreshold?: number
     note?: string
 }
 
@@ -58,8 +62,10 @@ type RawInventoryItem = {
     ram?: string
     storage?: string
     stockQuantity?: number
+    sellableQuantity?: number
     reservedQuantity?: number
     availableQuantity?: number
+    lowStockThreshold?: number
     updatedAt?: string
     status?: string
 }
@@ -86,7 +92,7 @@ function mapInventoryItem(raw: RawInventoryItem): InventoryItem {
         color: raw.color ?? "",
         ram: raw.ram ?? "",
         storage: raw.storage ?? "",
-        stockQuantity: Number(raw.stockQuantity ?? 0),
+        stockQuantity: Number(raw.stockQuantity ?? raw.sellableQuantity ?? raw.availableQuantity ?? 0),
         reservedQuantity: Number(raw.reservedQuantity ?? 0),
         availableQuantity: Number(raw.availableQuantity ?? 0),
         updatedAt: raw.updatedAt ?? "",

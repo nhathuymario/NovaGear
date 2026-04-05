@@ -17,8 +17,11 @@ export default function AdminInventoryPage() {
     const [selectedVariantId, setSelectedVariantId] = useState<number | string | null>(null)
 
     const [form, setForm] = useState({
+        productId: "",
         variantId: "",
         quantity: 1,
+        availableQuantity: 0,
+        reservedQuantity: 0,
         note: "",
     })
 
@@ -48,10 +51,10 @@ export default function AdminInventoryPage() {
         if (!q) return items
 
         return items.filter((item) => {
-            const name = item.productName?.toLowerCase() ?? ""
-            const sku = item.sku?.toLowerCase() ?? ""
-            const color = item.color?.toLowerCase() ?? ""
-            return name.includes(q) || sku.includes(q) || color.includes(q)
+            const productId = String(item.productId ?? "").toLowerCase()
+            const variantId = String(item.variantId ?? "").toLowerCase()
+            const status = item.status?.toLowerCase() ?? ""
+            return productId.includes(q) || variantId.includes(q) || status.includes(q)
         })
     }, [items, keyword])
 
@@ -74,6 +77,7 @@ export default function AdminInventoryPage() {
 
         try {
             await importStock({
+                productId: form.productId,
                 variantId: form.variantId,
                 quantity: Number(form.quantity),
                 note: form.note,
@@ -97,7 +101,8 @@ export default function AdminInventoryPage() {
         try {
             await adjustStock({
                 variantId: form.variantId,
-                quantity: Number(form.quantity),
+                availableQuantity: Number(form.availableQuantity),
+                reservedQuantity: Number(form.reservedQuantity),
                 note: form.note,
             })
 
@@ -131,7 +136,7 @@ export default function AdminInventoryPage() {
                             <input
                                 value={keyword}
                                 onChange={(e) => setKeyword(e.target.value)}
-                                placeholder="Tìm theo tên sản phẩm / SKU / màu sắc"
+                                placeholder="Tìm theo Product ID / Variant ID / trạng thái"
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
                             />
                             <button
@@ -239,6 +244,13 @@ export default function AdminInventoryPage() {
                         <div className="mt-4 space-y-3">
                             <input
                                 type="text"
+                                placeholder="Product ID"
+                                className="w-full rounded-xl border px-4 py-3 outline-none"
+                                value={form.productId}
+                                onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                            />
+                            <input
+                                type="text"
                                 placeholder="Variant ID"
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
                                 value={form.variantId}
@@ -273,6 +285,32 @@ export default function AdminInventoryPage() {
                         <p className="mt-1 text-sm text-brand-gray">
                             Dùng Variant ID và số lượng điều chỉnh theo backend inventory hiện tại.
                         </p>
+
+                        <div className="mt-4 space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Variant ID"
+                                className="w-full rounded-xl border px-4 py-3 outline-none"
+                                value={form.variantId}
+                                onChange={(e) => setForm({ ...form, variantId: e.target.value })}
+                            />
+                            <input
+                                type="number"
+                                min={0}
+                                placeholder="Available quantity"
+                                className="w-full rounded-xl border px-4 py-3 outline-none"
+                                value={form.availableQuantity}
+                                onChange={(e) => setForm({ ...form, availableQuantity: Number(e.target.value) })}
+                            />
+                            <input
+                                type="number"
+                                min={0}
+                                placeholder="Reserved quantity"
+                                className="w-full rounded-xl border px-4 py-3 outline-none"
+                                value={form.reservedQuantity}
+                                onChange={(e) => setForm({ ...form, reservedQuantity: Number(e.target.value) })}
+                            />
+                        </div>
 
                         <button className="mt-4 w-full rounded-xl border border-brand-dark py-3 font-semibold text-brand-dark">
                             Xác nhận điều chỉnh
