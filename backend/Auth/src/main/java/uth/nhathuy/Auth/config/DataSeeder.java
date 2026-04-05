@@ -4,12 +4,14 @@ import uth.nhathuy.Auth.entity.*;
 import uth.nhathuy.Auth.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
 @Component
+@Profile("seed")
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
