@@ -22,36 +22,55 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (cartRepository.count() > 0) {
-            return;
-        }
+        Cart userCart = cartRepository.findByUserId(3L)
+                .orElseGet(() -> cartRepository.save(Cart.builder().userId(3L).build()));
 
-        Cart userCart = cartRepository.save(Cart.builder().userId(3L).build());
-
-        List<CartItem> items = List.of(
-                CartItem.builder()
-                        .cart(userCart)
-                        .productId(1L)
-                        .variantId(1L)
-                        .productName("MacBook Air M3 13 inch")
-                        .variantName("Midnight / 8GB / 256GB")
-                        .thumbnail("https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=600")
-                        .price(new BigDecimal("25990000"))
-                        .quantity(1)
-                        .build(),
-                CartItem.builder()
-                        .cart(userCart)
-                        .productId(5L)
-                        .variantId(9L)
-                        .productName("Keychron K2 Wireless")
-                        .variantName("Brown Switch")
-                        .thumbnail("https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600")
-                        .price(new BigDecimal("1990000"))
-                        .quantity(1)
-                        .build()
+        upsertCartItem(
+                userCart,
+                1L,
+                1L,
+                "MacBook Air M3 13 inch",
+                "Midnight / 8GB / 256GB",
+                "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=600",
+                "25990000",
+                1
         );
+        upsertCartItem(
+                userCart,
+                5L,
+                9L,
+                "Keychron K2 Wireless",
+                "Brown Switch",
+                "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600",
+                "1990000",
+                1
+        );
+    }
 
-        cartItemRepository.saveAll(items);
+    private void upsertCartItem(
+            Cart cart,
+            Long productId,
+            Long variantId,
+            String productName,
+            String variantName,
+            String thumbnail,
+            String price,
+            int quantity
+    ) {
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductIdAndVariantId(cart.getId(), productId, variantId)
+                .orElseGet(() -> CartItem.builder()
+                        .cart(cart)
+                        .productId(productId)
+                        .variantId(variantId)
+                        .build());
+
+        cartItem.setProductName(productName);
+        cartItem.setVariantName(variantName);
+        cartItem.setThumbnail(thumbnail);
+        cartItem.setPrice(new BigDecimal(price));
+        cartItem.setQuantity(quantity);
+
+        cartItemRepository.save(cartItem);
     }
 }
 

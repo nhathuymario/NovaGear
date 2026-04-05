@@ -10,6 +10,7 @@ import uth.nhathuy.Order.entity.OrderStatus;
 import uth.nhathuy.Order.repository.OrderRepository;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -21,11 +22,8 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (orderRepository.count() > 0) {
-            return;
-        }
-
         seedOrder(
+                "SEED-ORDER-001",
                 3L,
                 "user",
                 "Normal User",
@@ -41,6 +39,7 @@ public class DataSeeder implements CommandLineRunner {
         );
 
         seedOrder(
+                "SEED-ORDER-002",
                 3L,
                 "user",
                 "Normal User",
@@ -56,6 +55,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedOrder(
+            String seedCode,
             Long userId,
             String username,
             String customerName,
@@ -66,16 +66,27 @@ public class DataSeeder implements CommandLineRunner {
             String paymentStatus,
             List<ItemSeed> itemSeeds
     ) {
-        Order order = Order.builder()
-                .userId(userId)
-                .username(username)
-                .customerName(customerName)
-                .phone(phone)
-                .address(address)
-                .note(note)
-                .status(status)
-                .paymentStatus(paymentStatus)
-                .build();
+        String finalNote = "[" + seedCode + "] " + note;
+
+        Order order = orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(existing -> existing.getNote() != null)
+                .filter(existing -> existing.getNote().contains(seedCode) || existing.getNote().equals(note))
+                .findFirst()
+                .orElseGet(Order::new);
+
+        order.setUserId(userId);
+        order.setUsername(username);
+        order.setCustomerName(customerName);
+        order.setPhone(phone);
+        order.setAddress(address);
+        order.setNote(finalNote);
+        order.setStatus(status);
+        order.setPaymentStatus(paymentStatus);
+
+        if (order.getItems() == null) {
+            order.setItems(new ArrayList<>());
+        }
+        order.getItems().clear();
 
         BigDecimal total = BigDecimal.ZERO;
         for (ItemSeed seed : itemSeeds) {

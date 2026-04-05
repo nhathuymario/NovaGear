@@ -24,46 +24,55 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (inventoryRepository.count() > 0) {
-            return;
-        }
+        List<Inventory> seeded = new ArrayList<>();
+        seeded.add(upsertInventory(1L, 1L, 40, 2, 5));
+        seeded.add(upsertInventory(1L, 2L, 24, 1, 5));
+        seeded.add(upsertInventory(2L, 3L, 18, 1, 5));
+        seeded.add(upsertInventory(2L, 4L, 8, 0, 5));
+        seeded.add(upsertInventory(3L, 5L, 36, 3, 5));
+        seeded.add(upsertInventory(3L, 6L, 16, 1, 5));
+        seeded.add(upsertInventory(4L, 7L, 20, 0, 5));
+        seeded.add(upsertInventory(4L, 8L, 10, 0, 5));
+        seeded.add(upsertInventory(5L, 9L, 55, 4, 5));
 
-        List<Inventory> inventories = new ArrayList<>();
-        inventories.add(buildInventory(1L, 1L, 40, 2, 5));
-        inventories.add(buildInventory(1L, 2L, 24, 1, 5));
-        inventories.add(buildInventory(2L, 3L, 18, 1, 5));
-        inventories.add(buildInventory(2L, 4L, 8, 0, 5));
-        inventories.add(buildInventory(3L, 5L, 36, 3, 5));
-        inventories.add(buildInventory(3L, 6L, 16, 1, 5));
-        inventories.add(buildInventory(4L, 7L, 20, 0, 5));
-        inventories.add(buildInventory(4L, 8L, 10, 0, 5));
-        inventories.add(buildInventory(5L, 9L, 55, 4, 5));
-
-        List<Inventory> saved = inventoryRepository.saveAll(inventories);
-
-        List<InventoryTransaction> transactions = saved.stream()
-                .map(item -> InventoryTransaction.builder()
-                        .inventoryId(item.getId())
-                        .productId(item.getProductId())
-                        .variantId(item.getVariantId())
-                        .type(InventoryTransactionType.IMPORT)
-                        .quantity(item.getAvailableQuantity())
-                        .note("Seed initial stock")
-                        .build())
-                .toList();
-
-        transactionRepository.saveAll(transactions);
+        seedInitialImportTransactionsIfMissing(seeded);
     }
 
-    private Inventory buildInventory(Long productId, Long variantId, int available, int reserved, int threshold) {
-        return Inventory.builder()
-                .productId(productId)
-                .variantId(variantId)
-                .availableQuantity(available)
-                .reservedQuantity(reserved)
-                .lowStockThreshold(threshold)
-                .status(resolveStatus(available, threshold))
-                .build();
+    private Inventory upsertInventory(Long productId, Long variantId, int available, int reserved, int threshold) {
+        return inventoryRepository.findByVariantId(variantId)
+                .map(existing -> {
+                    existing.setProductId(productId);
+                    existing.setAvailableQuantity(available);
+                    existing.setReservedQuantity(reserved);
+                    existing.setLowStockThreshold(threshold);
+                    existing.setStatus(resolveStatus(available, threshold));
+                    return inventoryRepository.save(existing);
+                })
+                .orElseGet(() -> inventoryRepository.save(Inventory.builder()
+                        .productId(productId)
+                        .variantId(variantId)
+                        .availableQuantity(available)
+                        .reservedQuantity(reserved)
+                        .lowStockThreshold(threshold)
+                        .status(resolveStatus(available, threshold))
+                        .build()));
+    }
+
+    private void seedInitialImportTransactionsIfMissing(List<Inventory> inventories) {
+        for (Inventory item : inventories) {
+            if (!transactionRepository.findByInventoryIdOrderByIdDesc(item.getId()).isEmpty()) {
+                continue;
+            }
+
+            transactionRepository.save(InventoryTransaction.builder()
+                    .inventoryId(item.getId())
+                    .productId(item.getProductId())
+                    .variantId(item.getVariantId())
+                    .type(InventoryTransactionType.IMPORT)
+                    .quantity(item.getAvailableQuantity())
+                    .note("Seed initial stock")
+                    .build());
+        }
     }
 
     private InventoryStatus resolveStatus(int availableQuantity, int threshold) {

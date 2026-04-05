@@ -78,7 +78,28 @@ From User seeder:
 
 ## 5) Run with seed profile
 
-Start each service with profile `seed`.
+### Option A: one command (recommended)
+
+```powershell
+Set-Location "E:\NovaGear"
+.\scripts\run-seeded.ps1
+```
+
+Preview commands without starting services:
+
+```powershell
+Set-Location "E:\NovaGear"
+.\scripts\run-seeded.ps1 -DryRun
+```
+
+Include notification service too:
+
+```powershell
+Set-Location "E:\NovaGear"
+.\scripts\run-seeded.ps1 -IncludeNotification
+```
+
+### Option B: start each service manually
 
 ```powershell
 Set-Location "E:\NovaGear\backend\Auth"
@@ -156,4 +177,3 @@ Invoke-RestMethod -Method Get -Uri "http://localhost:8089/api/admin/payments" -H
 - Seeders are idempotent in practical terms (most check existing data before insert).
 - If you need a clean reseed, truncate related tables and rerun services with `seed` profile.
 - Avoid enabling profile `seed` in production environments.
-
