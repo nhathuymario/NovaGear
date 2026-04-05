@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
     adjustStock,
     getAllInventory,
@@ -22,7 +22,7 @@ export default function AdminInventoryPage() {
         note: "",
     })
 
-    const loadData = async (nextKeyword = keyword) => {
+    const loadData = useCallback(async (nextKeyword = keyword) => {
         try {
             setLoading(true)
             const result = await getAllInventory({
@@ -37,11 +37,11 @@ export default function AdminInventoryPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [keyword])
 
     useEffect(() => {
         loadData("")
-    }, [])
+    }, [loadData])
 
     const filteredItems = useMemo(() => {
         const q = keyword.trim().toLowerCase()

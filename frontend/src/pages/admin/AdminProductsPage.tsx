@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react"
 import {
+    type AdminCategorySummary,
     type AdminProductItem,
     type AdminProductPayload,
     createAdminProduct,
@@ -158,7 +159,7 @@ export default function AdminProductsPage() {
             setProducts(prods)
             setCategories(
                 Array.isArray(cats)
-                    ? cats.map((c: any) => ({id: c.id ?? "", name: c.name ?? ""}))
+                    ? cats.map((c: AdminCategorySummary) => ({id: c.id ?? "", name: c.name ?? ""}))
                     : []
             )
         } catch (err) {

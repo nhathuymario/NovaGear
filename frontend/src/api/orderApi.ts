@@ -1,6 +1,15 @@
 import axiosClient from "./axiosClient"
 import type { CreateOrderPayload, Order } from "../types/order"
 
+type RawVariantSummary = {
+    id?: number | string
+    sku?: string
+    color?: string
+    ram?: string
+    storage?: string
+    versionName?: string
+}
+
 type RawOrderItem = {
     id?: number | string
     productId?: number | string
@@ -15,8 +24,8 @@ type RawOrderItem = {
     ram?: string
     storage?: string
     versionName?: string
-    variant?: any
-    productVariant?: any
+    variant?: RawVariantSummary
+    productVariant?: RawVariantSummary
     variantLabel?: string
     variantSku?: string
 }
@@ -42,10 +51,17 @@ type RawCheckoutResponse = {
     totalAmount?: number
     paymentUrl?: string
     order?: RawOrder
-    data?: any
+    data?: {
+        order?: RawOrder
+        orderId?: number | string
+        id?: number | string
+        orderCode?: string
+        status?: string
+        totalAmount?: number
+    }
 }
 
-function buildVariantLabel(source: any): string {
+function buildVariantLabel(source?: RawVariantSummary | RawOrderItem): string {
     return [
         source?.color,
         source?.ram,

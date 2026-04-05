@@ -31,17 +31,28 @@ export default function OrdersPage() {
     const navigate = useNavigate()
     const token = getToken()
     const [items, setItems] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(Boolean(token))
 
     useEffect(() => {
-        if (!token) {
-            setLoading(false)
-            return
-        }
+        if (!token) return
+
+        let mounted = true
 
         getMyOrders()
-            .then(setItems)
-            .finally(() => setLoading(false))
+            .then((data) => {
+                if (mounted) {
+                    setItems(data)
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoading(false)
+                }
+            })
+
+        return () => {
+            mounted = false
+        }
     }, [token])
 
     if (!token) {

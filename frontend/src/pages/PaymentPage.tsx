@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import {
     createPayment,
@@ -23,7 +23,7 @@ export default function PaymentPage() {
     const [creating, setCreating] = useState(false)
     const [mocking, setMocking] = useState(false)
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         if (!orderId) return
 
         try {
@@ -36,7 +36,7 @@ export default function PaymentPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [orderId])
 
     useEffect(() => {
         if (!token || !orderId) {
@@ -45,7 +45,7 @@ export default function PaymentPage() {
         }
 
         loadData().catch(console.error)
-    }, [orderId, token])
+    }, [loadData, orderId, token])
 
     const handleCreatePayment = async () => {
         if (!order) return

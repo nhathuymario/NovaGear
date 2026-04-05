@@ -2,6 +2,15 @@ import {useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {registerApi} from "../api/authApi"
 
+type ApiErrorLike = {
+    response?: {
+        data?: {
+            message?: string
+            error?: string
+        }
+    }
+}
+
 export default function RegisterPage() {
     const navigate = useNavigate()
     const [form, setForm] = useState({
@@ -55,9 +64,9 @@ export default function RegisterPage() {
 
             alert("Đăng ký thành công")
             navigate("/login")
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err)
-            const serverError = err.response?.data?.message || err.response?.data?.error
+            const serverError = (err as ApiErrorLike).response?.data?.message || (err as ApiErrorLike).response?.data?.error
             setError(serverError || "Đăng ký thất bại")
         } finally {
             setLoading(false)

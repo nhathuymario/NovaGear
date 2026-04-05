@@ -24,6 +24,11 @@ export interface AdminProductItem {
     featured?: boolean
 }
 
+export interface AdminCategorySummary {
+    id: number | string
+    name: string
+}
+
 type RawAdminProduct = {
     id?: number | string
     slug?: string
@@ -37,6 +42,11 @@ type RawAdminProduct = {
         id?: number | string
         name?: string
     }
+}
+
+type RawAdminCategory = {
+    id?: number | string
+    name?: string
 }
 
 function mapAdminProduct(raw: RawAdminProduct): AdminProductItem {
@@ -84,5 +94,9 @@ export async function deleteAdminProduct(id: number | string) {
 
 export async function getAdminCategories() {
     const res = await axiosClient.get("/admin/categories")
-    return Array.isArray(res.data) ? res.data : res.data?.content ?? []
+    const items = Array.isArray(res.data) ? res.data : res.data?.content ?? []
+    return items.map((item: RawAdminCategory) => ({
+        id: item.id ?? "",
+        name: item.name ?? "",
+    })) as AdminCategorySummary[]
 }

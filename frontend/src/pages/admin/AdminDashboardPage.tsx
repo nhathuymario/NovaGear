@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useState} from "react"
 import {Link} from "react-router-dom"
-import {getAdminProducts} from "../../api/adminProductApi"
-import {getAdminCategories} from "../../api/adminCategoryApi"
+import {getAdminProducts, type AdminProductItem} from "../../api/adminProductApi"
+import {getAdminCategories, type AdminCategoryItem} from "../../api/adminCategoryApi"
 import {getAdminOrders} from "../../api/adminOrderApi"
 import {getAllInventory, type InventoryItem} from "../../api/inventoryApi"
 import type {Order} from "../../types/order"
@@ -34,8 +34,8 @@ function isLowStock(item: InventoryItem) {
 }
 
 export default function AdminDashboardPage() {
-    const [products, setProducts] = useState<any[]>([])
-    const [categories, setCategories] = useState<any[]>([])
+    const [products, setProducts] = useState<AdminProductItem[]>([])
+    const [categories, setCategories] = useState<AdminCategoryItem[]>([])
     const [orders, setOrders] = useState<Order[]>([])
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
     const [loading, setLoading] = useState(true)

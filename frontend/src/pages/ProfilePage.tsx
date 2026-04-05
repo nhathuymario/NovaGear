@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react"
 import {useNavigate} from "react-router-dom"
-import {getMyProfile} from "../api/userApi"
+import {getMyProfile, type UserProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
 
 function isAdminRole(role?: string | null) {
@@ -11,7 +11,7 @@ function isAdminRole(role?: string | null) {
 export default function ProfilePage() {
     const navigate = useNavigate()
     const {user, loading, logout} = useAuth()
-    const [profile, setProfile] = useState<any>(null)
+    const [profile, setProfile] = useState<UserProfile | null>(null)
     const [profileLoading, setProfileLoading] = useState(true)
 
     useEffect(() => {

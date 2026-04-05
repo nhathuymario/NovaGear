@@ -1,17 +1,35 @@
 import {useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {getMeApi, loginApi} from "../api/authApi"
-import {bootstrapMyProfile, getMyProfile} from "../api/userApi"
+import {bootstrapMyProfile, getMyProfile, type UserProfile} from "../api/userApi"
 import {setStoredUser, setToken} from "../utils/auth"
 
+type AuthIdentity = {
+    id?: number | string
+    username?: string
+    email?: string
+    fullName?: string
+    role?: string
+    roles?: string[] | string
+}
+
+type ApiErrorLike = {
+    response?: {
+        data?: {
+            message?: string
+            error?: string
+        }
+    }
+}
+
 // Chuẩn hóa kiểm tra Role: Chấp nhận ADMIN, ROLE_ADMIN hoặc mảng chứa chúng
-function getNormalizedRole(authData: any): string {
-    const rawRole = Array.isArray(authData?.roles) ? authData.roles[0] : (authData?.role || authData?.roles);
-    if (!rawRole) return "USER";
+function getNormalizedRole(authData: AuthIdentity | null | undefined): string {
+    const rawRole = Array.isArray(authData?.roles) ? authData.roles[0] : (authData?.role || authData?.roles)
+    if (!rawRole) return "USER"
 
     // Xử lý nếu Role bị dính tiền tố ROLE_ từ Spring Security
-    const cleanRole = String(rawRole).replace("ROLE_", "").toUpperCase();
-    return cleanRole;
+    const cleanRole = String(rawRole).replace("ROLE_", "").toUpperCase()
+    return cleanRole
 }
 
 export default function LoginPage() {
@@ -42,23 +60,23 @@ export default function LoginPage() {
             setToken(token)
 
             // 2. Lấy thông tin tài khoản và Profile
-            let authMe: any = null
-            let profile: any = null
+            let authMe: AuthIdentity | null = null
+            let profile: UserProfile | null = null
 
             try {
                 // Gọi song song để tiết kiệm thời gian
-                const [meRes, _] = await Promise.all([
+                const [meRes] = await Promise.all([
                     getMeApi(),
                     bootstrapMyProfile().catch(() => null) // Tạo profile nếu chưa có
-                ]);
-                authMe = meRes.data || meRes;
-                profile = await getMyProfile().catch(() => null);
+                ])
+                authMe = meRes
+                profile = await getMyProfile().catch(() => null)
             } catch (err) {
-                console.warn("Không thể lấy đầy đủ Profile thông qua Gateway:", err);
+                console.warn("Không thể lấy đầy đủ Profile thông qua Gateway:", err)
             }
 
             // 3. Chuẩn hóa Role để AdminRoute không bị lỗi
-            const finalRole = getNormalizedRole(authMe || profile);
+            const finalRole = getNormalizedRole(authMe ?? profile)
 
             // 4. Lưu User vào LocalStorage
             setStoredUser({
@@ -79,9 +97,9 @@ export default function LoginPage() {
             // Ép render lại để cập nhật Auth State toàn hệ thống
             window.location.reload()
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Login Error:", err)
-            const serverError = err.response?.data?.message || err.response?.data?.error
+            const serverError = (err as ApiErrorLike).response?.data?.message || (err as ApiErrorLike).response?.data?.error
             setError(serverError || "Tên đăng nhập hoặc mật khẩu không đúng")
         } finally {
             setLoading(false)

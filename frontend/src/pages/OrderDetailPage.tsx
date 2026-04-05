@@ -32,17 +32,28 @@ export default function OrderDetailPage() {
     const navigate = useNavigate()
     const token = getToken()
     const [order, setOrder] = useState<Order | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(Boolean(token && id))
 
     useEffect(() => {
-        if (!token || !id) {
-            setLoading(false)
-            return
-        }
+        if (!token || !id) return
+
+        let mounted = true
 
         getOrderDetail(id)
-            .then(setOrder)
-            .finally(() => setLoading(false))
+            .then((data) => {
+                if (mounted) {
+                    setOrder(data)
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoading(false)
+                }
+            })
+
+        return () => {
+            mounted = false
+        }
     }, [id, token])
 
     if (!token) {

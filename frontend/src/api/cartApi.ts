@@ -1,14 +1,52 @@
 import axiosClient from "./axiosClient"
-import type { CartItem } from "../types/cart"
+import type {CartItem} from "../types/cart"
+
+type RawVariant = {
+    id?: number | string
+    sku?: string
+    color?: string
+    ram?: string
+    storage?: string
+    versionName?: string
+    price?: number
+    salePrice?: number
+    stockQuantity?: number
+    imageUrl?: string
+}
+
+type RawImage = {
+    thumbnail?: boolean
+    imageUrl?: string
+}
+
+type RawProduct = {
+    id?: number | string
+    productId?: number | string
+    slug?: string
+    name?: string
+    shortDescription?: string
+    description?: string
+    thumbnail?: string
+    imageUrl?: string
+    price?: number
+    salePrice?: number
+    stock?: number
+    brand?: string
+    category?: {
+        name?: string
+    } | string
+    variants?: RawVariant[]
+    images?: RawImage[]
+}
 
 type RawCartItem = {
     id?: number | string
     productId?: number | string
     variantId?: number | string
     quantity?: number
-    product?: any
-    variant?: any
-    productVariant?: any
+    product?: RawProduct
+    variant?: RawVariant
+    productVariant?: RawVariant
     sku?: string
     color?: string
     ram?: string
@@ -16,10 +54,11 @@ type RawCartItem = {
     versionName?: string
 }
 
-function mapProduct(item: any) {
+function mapProduct(item: RawProduct) {
     const firstVariant = item?.variants?.[0]
-    const thumbImage = item?.images?.find((img: any) => img.thumbnail)?.imageUrl
+    const thumbImage = item?.images?.find((img) => img.thumbnail)?.imageUrl
     const firstImage = item?.images?.[0]?.imageUrl
+    const categoryName = typeof item?.category === "string" ? item.category : item?.category?.name ?? ""
 
     return {
         id: item?.id ?? item?.productId ?? "",
@@ -46,12 +85,12 @@ function mapProduct(item: any) {
                 : item?.stock != null
                     ? Number(item.stock)
                     : 0,
-        category: item?.category?.name ?? item?.category ?? "",
+        category: categoryName,
         brand: item?.brand ?? "",
     }
 }
 
-function buildVariantLabel(source: any): string {
+function buildVariantLabel(source?: RawVariant | RawCartItem): string {
     return [
         source?.color,
         source?.ram,
@@ -95,7 +134,7 @@ export async function addToCart(
     quantity = 1,
     variantId?: number | string
 ) {
-    const payload: Record<string, any> = { productId, quantity }
+    const payload: Record<string, number | string> = {productId, quantity}
 
     if (variantId !== undefined && variantId !== null && variantId !== "") {
         payload.variantId = variantId
@@ -106,7 +145,7 @@ export async function addToCart(
 }
 
 export async function updateCartItem(itemId: number | string, quantity: number) {
-    const res = await axiosClient.put(`/cart/items/${itemId}`, { quantity })
+    const res = await axiosClient.put(`/cart/items/${itemId}`, {quantity})
     return res.data
 }
 
