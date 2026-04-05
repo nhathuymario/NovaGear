@@ -15,48 +15,87 @@ export default function HomePage() {
     }, [])
 
     return (
-        <div className="space-y-6">
-            <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-300 to-yellow-100 p-8">
-                <div className="max-w-2xl">
-                    <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-brand-dark">
-                        NovaGear Store
-                    </p>
-                    <h1 className="text-3xl font-extrabold text-brand-dark md:text-5xl">
-                        Công nghệ hiện đại, mua sắm dễ hơn
-                    </h1>
-                    <p className="mt-3 text-sm text-gray-700 md:text-base">
-                        Giao diện lấy cảm hứng từ Thegioididong nhưng tinh gọn hơn, tập trung vào trải nghiệm mua hàng.
-                    </p>
-                    <Link
-                        to="/products"
-                        className="mt-5 inline-block rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
-                    >
-                        Mua ngay
-                    </Link>
+        <div className="space-y-6 md:space-y-8">
+            <section className="overflow-hidden rounded-3xl border border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 p-7 text-white shadow-xl md:p-10">
+                <div className="grid items-center gap-8 md:grid-cols-[1.2fr_0.8fr]">
+                    <div className="max-w-2xl">
+                        <p className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                            NovaGear Premium Store
+                        </p>
+                        <h1 className="text-3xl font-black leading-tight md:text-5xl">
+                            Cong nghe xin, gia tot, giao nhanh
+                        </h1>
+                        <p className="mt-4 text-sm text-slate-200 md:text-base">
+                            Phong cach hien dai va toi gian, toi uu cho mua sam online de dang hon, ro rang hon va an tam hon.
+                        </p>
+                        <div className="mt-6 flex flex-wrap gap-3">
+                            <Link
+                                to="/products"
+                                className="rounded-xl bg-brand-yellow px-5 py-3 text-sm font-bold text-brand-dark transition hover:brightness-95"
+                            >
+                                Mua ngay
+                            </Link>
+                            <Link
+                                to="/products?keyword=laptop"
+                                className="rounded-xl border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Xem laptop
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            ["1000+", "San pham"],
+                            ["2h", "Giao nhanh"],
+                            ["100%", "Hang chinh hang"],
+                            ["24/7", "Ho tro"],
+                        ].map(([value, label]) => (
+                            <div key={label} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                                <p className="text-2xl font-black">{value}</p>
+                                <p className="text-xs text-slate-200">{label}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            <section className="grid grid-cols-2 gap-4 md:grid-cols-5">
-                {["Laptop", "PC", "Màn hình", "Bàn phím", "Tai nghe"].map((item) => (
-                    <div
-                        key={item}
-                        className="rounded-2xl bg-white p-4 text-center font-semibold shadow-sm"
-                    >
-                        {item}
-                    </div>
-                ))}
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-slate-900">Danh muc noi bat</h2>
+                    <Link to="/products" className="text-sm font-semibold text-brand-blue">
+                        Xem them
+                    </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                    {["Laptop", "PC", "Man hinh", "Ban phim", "Tai nghe"].map((item) => (
+                        <Link
+                            key={item}
+                            to={`/products?keyword=${encodeURIComponent(item)}`}
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-brand-blue hover:bg-blue-50 hover:text-brand-blue"
+                        >
+                            {item}
+                        </Link>
+                    ))}
+                </div>
             </section>
 
-            <section>
+            <section className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 md:p-5">
+                <p className="text-sm font-semibold text-amber-800">
+                    Flash deal cuoi tuan - Giam den 20% cho nhieu dong laptop va phu kien.
+                </p>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold">Sản phẩm nổi bật</h2>
-                    <Link to="/products" className="text-sm font-semibold text-blue-600">
-                        Xem tất cả
+                    <h2 className="text-2xl font-black text-slate-900">San pham noi bat</h2>
+                    <Link to="/products" className="text-sm font-semibold text-brand-blue">
+                        Xem tat ca
                     </Link>
                 </div>
 
                 {loading ? (
-                    <div>Đang tải sản phẩm...</div>
+                    <div className="rounded-xl bg-slate-50 px-4 py-8 text-center text-slate-500">Dang tai san pham...</div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         {products.slice(0, 8).map((product) => (

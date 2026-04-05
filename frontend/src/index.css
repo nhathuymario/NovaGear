@@ -6,14 +6,22 @@
     --color-brand-red: #dc2626;
     --color-brand-light: #f3f4f6;
     --color-brand-gray: #6b7280;
+    --color-brand-bg: #f6f8fc;
+    --color-brand-surface: #ffffff;
+    --color-brand-muted: #eef2f7;
+    --color-brand-blue: #1d4ed8;
 }
 
 body {
     margin: 0;
     min-width: 320px;
-    background: #f3f4f6;
+    background:
+        radial-gradient(circle at 0% 0%, #fff5bf 0, rgba(255, 245, 191, 0) 28%),
+        radial-gradient(circle at 100% 0%, #dbeafe 0, rgba(219, 234, 254, 0) 24%),
+        var(--color-brand-bg);
     color: #111827;
-    font-family: Inter, system-ui, Arial, sans-serif;
+    font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
+    line-height: 1.5;
 }
 
 * {

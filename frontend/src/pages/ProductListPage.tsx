@@ -27,29 +27,31 @@ export default function ProductListPage() {
     }, [items, keyword])
 
     return (
-        <div className="grid gap-6 md:grid-cols-[240px_1fr]">
-            <aside className="h-fit rounded-2xl bg-white p-4 shadow-sm">
-                <h3 className="text-lg font-bold">Bộ lọc</h3>
-                <div className="mt-4 space-y-3 text-sm text-brand-gray">
-                    <div className="rounded-xl bg-gray-50 p-3">Laptop</div>
-                    <div className="rounded-xl bg-gray-50 p-3">PC</div>
-                    <div className="rounded-xl bg-gray-50 p-3">Màn hình</div>
-                    <div className="rounded-xl bg-gray-50 p-3">Phụ kiện</div>
+        <div className="grid gap-6 md:grid-cols-[260px_1fr]">
+            <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900">Bo loc nhanh</h3>
+                <div className="mt-4 space-y-3 text-sm text-slate-600">
+                    {["Laptop", "PC", "Man hinh", "Phu kien"].map((label) => (
+                        <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium">
+                            {label}
+                        </div>
+                    ))}
                 </div>
             </aside>
 
             <section>
-                <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
-                    <h1 className="text-2xl font-bold">Danh sách sản phẩm</h1>
+                <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h1 className="text-2xl font-black text-slate-900">Danh sach san pham</h1>
                     {keyword && (
-                        <p className="mt-1 text-sm text-brand-gray">
+                        <p className="mt-1 text-sm text-slate-500">
                             Kết quả tìm kiếm cho: <span className="font-semibold">{keyword}</span>
                         </p>
                     )}
+                    <p className="mt-2 text-sm text-slate-500">Tim thay {filtered.length} san pham</p>
                 </div>
 
                 {loading ? (
-                    <div>Đang tải...</div>
+                    <div className="rounded-xl bg-white px-4 py-8 text-center text-slate-500 shadow-sm">Dang tai...</div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         {filtered.map((product) => (

@@ -1,26 +1,39 @@
 export default function Footer() {
     return (
-        <footer className="mt-10 border-t bg-white">
-            <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 md:grid-cols-3">
-                <div>
-                    <h3 className="text-lg font-bold">NovaGear</h3>
-                    <p className="mt-2 text-sm text-brand-gray">
-                        Shop công nghệ theo phong cách tối giản, hiện đại, dễ dùng.
+        <footer className="mt-14 border-t border-slate-200 bg-white">
+            <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-10 md:grid-cols-3 md:px-5">
+                <div className="space-y-3">
+                    <h3 className="text-xl font-extrabold text-slate-900">NovaGear</h3>
+                    <p className="text-sm text-slate-600">
+                        Shop cong nghe toi gian, tap trung vao trai nghiem mua sam nhanh, ro rang va de chon.
                     </p>
+                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                        Trusted Electronics Store
+                    </span>
                 </div>
 
                 <div>
-                    <h4 className="font-semibold">Hỗ trợ</h4>
-                    <p className="mt-2 text-sm text-brand-gray">Chính sách bảo hành</p>
-                    <p className="text-sm text-brand-gray">Chính sách giao hàng</p>
-                    <p className="text-sm text-brand-gray">Liên hệ</p>
+                    <h4 className="font-bold text-slate-900">Ho tro khach hang</h4>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                        <p>Chinh sach bao hanh</p>
+                        <p>Chinh sach giao hang</p>
+                        <p>Huong dan thanh toan</p>
+                        <p>Lien he ho tro 24/7</p>
+                    </div>
                 </div>
 
                 <div>
-                    <h4 className="font-semibold">Thông tin</h4>
-                    <p className="mt-2 text-sm text-brand-gray">Email: support@novagear.vn</p>
-                    <p className="text-sm text-brand-gray">Hotline: 0123 456 789</p>
+                    <h4 className="font-bold text-slate-900">Thong tin</h4>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                        <p>Email: support@novagear.vn</p>
+                        <p>Hotline: 0123 456 789</p>
+                        <p>Gio ho tro: 8:00 - 22:00 (Mon - Sun)</p>
+                    </div>
                 </div>
+            </div>
+
+            <div className="border-t border-slate-100 bg-slate-50 py-3 text-center text-xs text-slate-500">
+                © 2026 NovaGear. All rights reserved.
             </div>
         </footer>
     )
