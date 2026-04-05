@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const uploadClient = axios.create({
-    baseURL: "http://localhost:8089",
+    baseURL: "",
 })
 
 uploadClient.interceptors.request.use((config) => {

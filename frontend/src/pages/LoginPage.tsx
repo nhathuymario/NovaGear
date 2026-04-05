@@ -13,6 +13,17 @@ type AuthIdentity = {
     roles?: string[] | string
 }
 
+type LoginResponseLike = AuthIdentity & {
+    token?: string
+    accessToken?: string
+    userId?: number | string
+    data?: AuthIdentity & {
+        token?: string
+        accessToken?: string
+        userId?: number | string
+    }
+}
+
 type ApiErrorLike = {
     response?: {
         data?: {
@@ -49,8 +60,8 @@ export default function LoginPage() {
             setError("")
 
             // 1. Đăng nhập lấy Token
-            const res = await loginApi(form)
-            const token = res.token || res.accessToken || res.data?.token
+            const res = await loginApi(form) as LoginResponseLike
+            const token = res.token || res.accessToken || res.data?.token || res.data?.accessToken
 
             if (!token) {
                 throw new Error("Hệ thống không trả về Token xác thực")
@@ -62,6 +73,13 @@ export default function LoginPage() {
             // 2. Lấy thông tin tài khoản và Profile
             let authMe: AuthIdentity | null = null
             let profile: UserProfile | null = null
+
+            const loginIdentity: AuthIdentity = {
+                id: res.userId ?? res.data?.id,
+                username: res.username ?? res.data?.username,
+                email: res.email ?? res.data?.email,
+                roles: res.roles ?? res.data?.roles,
+            }
 
             try {
                 // Gọi song song để tiết kiệm thời gian
@@ -76,14 +94,14 @@ export default function LoginPage() {
             }
 
             // 3. Chuẩn hóa Role để AdminRoute không bị lỗi
-            const finalRole = getNormalizedRole(authMe ?? profile)
+            const finalRole = getNormalizedRole(loginIdentity ?? authMe ?? profile)
 
             // 4. Lưu User vào LocalStorage
             setStoredUser({
-                id: authMe?.id ?? profile?.id,
-                username: authMe?.username ?? profile?.username ?? form.username,
-                email: authMe?.email ?? profile?.email,
-                fullName: profile?.fullName ?? authMe?.fullName ?? "Nguyễn Nhất Huy",
+                id: loginIdentity.id ?? authMe?.id ?? profile?.id,
+                username: loginIdentity.username ?? authMe?.username ?? profile?.username ?? form.username,
+                email: loginIdentity.email ?? authMe?.email ?? profile?.email,
+                fullName: profile?.fullName ?? authMe?.fullName ?? loginIdentity.fullName ?? "Nguyễn Nhất Huy",
                 role: finalRole,
             })
 

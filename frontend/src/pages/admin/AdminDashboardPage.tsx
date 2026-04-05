@@ -5,6 +5,7 @@ import {getAdminCategories, type AdminCategoryItem} from "../../api/adminCategor
 import {getAdminOrders} from "../../api/adminOrderApi"
 import {getAllInventory, type InventoryItem} from "../../api/inventoryApi"
 import type {Order} from "../../types/order"
+import "../../assets/admin-dashboard.css"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -31,6 +32,26 @@ function orderStatusText(status?: string) {
 
 function isLowStock(item: InventoryItem) {
     return item.availableQuantity <= 5
+}
+
+function statusClass(status?: string) {
+    switch (status) {
+        case "PENDING":
+            return "admin-status-pill admin-status-pill--pending"
+        case "CONFIRMED":
+            return "admin-status-pill admin-status-pill--confirmed"
+        case "PROCESSING":
+            return "admin-status-pill admin-status-pill--processing"
+        case "SHIPPING":
+            return "admin-status-pill admin-status-pill--shipping"
+        case "DELIVERED":
+        case "COMPLETED":
+            return "admin-status-pill admin-status-pill--delivered"
+        case "CANCELLED":
+            return "admin-status-pill admin-status-pill--cancelled"
+        default:
+            return "admin-status-pill admin-status-pill--pending"
+    }
 }
 
 export default function AdminDashboardPage() {
@@ -88,129 +109,146 @@ export default function AdminDashboardPage() {
         return orders.slice(0, 5)
     }, [orders])
 
+    const activeInventoryCount = useMemo(() => {
+        return inventoryItems.filter((item) => item.status !== "OUT_OF_STOCK").length
+    }, [inventoryItems])
+
+    const stockCoverage = useMemo(() => {
+        if (!inventoryItems.length) return 0
+        return Math.round((activeInventoryCount / inventoryItems.length) * 100)
+    }, [activeInventoryCount, inventoryItems.length])
+
     if (loading) {
         return (
-            <div className="rounded-[28px] bg-white p-10 text-center shadow-sm">
-                Đang tải dashboard admin...
+            <div className="admin-panel p-8 text-center">
+                <div className="admin-empty">Đang tải dashboard admin...</div>
             </div>
         )
     }
 
     return (
-        <div className="space-y-6">
-            <section
-                className="rounded-[30px] bg-gradient-to-r from-indigo-600 via-blue-600 to-sky-500 p-6 text-white shadow-xl">
-                <h1 className="text-3xl font-extrabold">Dashboard quản trị</h1>
-                <p className="mt-3 text-sm text-white/85">
-                    Theo dõi nhanh sản phẩm, đơn hàng, danh mục và cảnh báo tồn kho.
+        <div className="admin-dashboard-shell">
+            <section className="admin-hero">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">Admin overview</p>
+                <h1 className="admin-hero__title mt-2">Dashboard quản trị NovaGear</h1>
+                <p className="admin-hero__subtitle">
+                    Theo dõi nhanh danh mục, đơn hàng, tồn kho và các khu vực cần chú ý trong một màn hình riêng cho admin.
                 </p>
-            </section>
 
-            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-[24px] bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Sản phẩm</p>
-                    <p className="mt-3 text-3xl font-extrabold">{products.length}</p>
-                </div>
-
-                <div className="rounded-[24px] bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Danh mục</p>
-                    <p className="mt-3 text-3xl font-extrabold">{categories.length}</p>
-                </div>
-
-                <div className="rounded-[24px] bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Đơn chờ xử lý</p>
-                    <p className="mt-3 text-3xl font-extrabold">{pendingOrders}</p>
-                </div>
-
-                <div className="rounded-[24px] bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Doanh thu tạm tính</p>
-                    <p className="mt-3 text-3xl font-extrabold">{formatCurrency(totalRevenue)}</p>
+                <div className="admin-chip-row">
+                    <span className="admin-chip">{products.length} sản phẩm</span>
+                    <span className="admin-chip">{categories.length} danh mục</span>
+                    <span className="admin-chip">{orders.length} đơn hàng</span>
+                    <span className="admin-chip">{inventoryItems.length} bản ghi tồn kho</span>
                 </div>
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="rounded-[24px] bg-white p-6 shadow-sm">
-                    <h2 className="text-xl font-bold">Lối tắt quản trị</h2>
+            <section className="admin-metric-grid">
+                <div className="admin-metric-card">
+                    <div className="admin-metric-label">Sản phẩm</div>
+                    <div className="admin-metric-value">{products.length}</div>
+                </div>
+                <div className="admin-metric-card">
+                    <div className="admin-metric-label">Đơn chờ xử lý</div>
+                    <div className="admin-metric-value">{pendingOrders}</div>
+                </div>
+                <div className="admin-metric-card">
+                    <div className="admin-metric-label">Doanh thu</div>
+                    <div className="admin-metric-value">{formatCurrency(totalRevenue)}</div>
+                </div>
+                <div className="admin-metric-card">
+                    <div className="admin-metric-label">Tỷ lệ có hàng</div>
+                    <div className="admin-metric-value">{stockCoverage}%</div>
+                </div>
+            </section>
 
-                    <div className="mt-5 grid gap-4 md:grid-cols-2">
-                        <Link to="/admin/products" className="rounded-2xl border p-4 font-semibold">
-                            Quản lý sản phẩm
+            <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="admin-panel p-6">
+                    <div className="admin-panel__header">
+                        <h2 className="admin-panel__title">Lối tắt quản trị</h2>
+                        <Link to="/admin/orders" className="text-sm font-semibold text-brand-blue">Mở đơn hàng</Link>
+                    </div>
+
+                    <div className="admin-action-grid">
+                        <Link to="/admin/products" className="admin-action-card">
+                            <div className="admin-action-card__label">Catalog</div>
+                            <div className="admin-action-card__title">Quản lý sản phẩm</div>
                         </Link>
-                        <Link to="/admin/categories" className="rounded-2xl border p-4 font-semibold">
-                            Quản lý danh mục
+                        <Link to="/admin/categories" className="admin-action-card">
+                            <div className="admin-action-card__label">Catalog</div>
+                            <div className="admin-action-card__title">Quản lý danh mục</div>
                         </Link>
-                        <Link to="/admin/orders" className="rounded-2xl border p-4 font-semibold">
-                            Quản lý đơn hàng
+                        <Link to="/admin/orders" className="admin-action-card">
+                            <div className="admin-action-card__label">Sales</div>
+                            <div className="admin-action-card__title">Quản lý đơn hàng</div>
                         </Link>
-                        <Link to="/admin/inventory" className="rounded-2xl border p-4 font-semibold">
-                            Quản lý tồn kho
+                        <Link to="/admin/inventory" className="admin-action-card">
+                            <div className="admin-action-card__label">Stock</div>
+                            <div className="admin-action-card__title">Quản lý tồn kho</div>
                         </Link>
                     </div>
                 </div>
 
-                <div className="rounded-[24px] bg-white p-6 shadow-sm">
-                    <h2 className="text-xl font-bold">Sắp hết hàng</h2>
+                <div className="admin-panel p-6">
+                    <div className="admin-panel__header">
+                        <h2 className="admin-panel__title">Cảnh báo tồn kho</h2>
+                        <span className="text-sm text-slate-500">{lowStockItems.length} SKU cần chú ý</span>
+                    </div>
 
-                    <div className="mt-4 space-y-3">
+                    <div className="admin-stat-list">
                         {lowStockItems.length === 0 ? (
-                            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
-                                Chưa có variant nào sắp hết hàng.
-                            </div>
+                            <div className="admin-empty">Chưa có variant nào sắp hết hàng.</div>
                         ) : (
-                            lowStockItems.map((item) => (
-                                <div key={item.id} className="rounded-2xl border p-4">
-                                    <p className="font-semibold">{item.productName || "Sản phẩm"}</p>
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        {item.sku || "—"} · {[item.color, item.ram, item.storage].filter(Boolean).join(" / ")}
-                                    </p>
-                                    <p className="mt-2 font-bold text-red-500">
-                                        Khả dụng: {item.availableQuantity}
-                                    </p>
-                                </div>
-                            ))
+                            lowStockItems.map((item) => {
+                                const value = Math.max(0, Math.min(100, item.availableQuantity * 4))
+                                return (
+                                    <div key={item.id} className="admin-stat-item">
+                                        <div className="admin-stat-item__meta">
+                                            <div className="admin-stat-item__title">{item.productName || "Sản phẩm"}</div>
+                                            <div className="admin-stat-item__sub">
+                                                {item.sku || "—"} · {[item.color, item.ram, item.storage].filter(Boolean).join(" / ")}
+                                            </div>
+                                            <div className="admin-bar"><span style={{width: `${value}%`}} /></div>
+                                        </div>
+                                        <div className="admin-stat-item__value">{item.availableQuantity}</div>
+                                    </div>
+                                )
+                            })
                         )}
                     </div>
                 </div>
             </section>
 
-            <section className="rounded-[24px] bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Đơn hàng gần đây</h2>
-                    <Link to="/admin/orders" className="text-sm font-semibold text-indigo-600">
-                        Xem tất cả
-                    </Link>
+            <section className="admin-panel p-6">
+                <div className="admin-panel__header">
+                    <h2 className="admin-panel__title">Đơn hàng gần đây</h2>
+                    <Link to="/admin/orders" className="text-sm font-semibold text-brand-blue">Xem tất cả</Link>
                 </div>
 
-                <div className="mt-5 overflow-x-auto">
-                    <table className="min-w-full text-sm">
+                <div className="overflow-x-auto">
+                    <table className="admin-table">
                         <thead>
-                        <tr className="border-b text-left text-slate-500">
-                            <th className="px-3 py-3">Mã đơn</th>
-                            <th className="px-3 py-3">Khách hàng</th>
-                            <th className="px-3 py-3">Tổng tiền</th>
-                            <th className="px-3 py-3">Trạng thái</th>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
                         </tr>
                         </thead>
                         <tbody>
                         {recentOrders.map((order) => (
-                            <tr key={order.id} className="border-b border-slate-50">
-                                <td className="px-3 py-4 font-semibold">
-                                    {order.orderCode || `#${order.id}`}
-                                </td>
-                                <td className="px-3 py-4">{order.receiverName || "—"}</td>
-                                <td className="px-3 py-4 font-semibold text-rose-500">
-                                    {formatCurrency(order.totalAmount)}
-                                </td>
-                                <td className="px-3 py-4">
-                                    {orderStatusText(order.status)}
-                                </td>
+                            <tr key={order.id}>
+                                <td className="font-semibold text-slate-900">{order.orderCode || `#${order.id}`}</td>
+                                <td>{order.receiverName || "—"}</td>
+                                <td className="font-semibold text-rose-500">{formatCurrency(order.totalAmount)}</td>
+                                <td><span className={statusClass(order.status)}>{orderStatusText(order.status)}</span></td>
                             </tr>
                         ))}
 
                         {recentOrders.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
-                                    Chưa có đơn hàng nào.
+                                <td colSpan={4}>
+                                    <div className="admin-empty">Chưa có đơn hàng nào.</div>
                                 </td>
                             </tr>
                         )}

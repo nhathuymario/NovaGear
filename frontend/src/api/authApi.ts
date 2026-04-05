@@ -15,9 +15,17 @@ export interface RegisterRequest {
 export interface LoginResponse {
     token?: string
     accessToken?: string
+    userId?: number | string
+    username?: string
+    email?: string
+    roles?: string[] | string
     data?: {
         token?: string
         accessToken?: string
+        userId?: number | string
+        username?: string
+        email?: string
+        roles?: string[] | string
     }
 }
 
