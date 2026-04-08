@@ -159,3 +159,8 @@ export async function getOrderDetail(orderId: number | string): Promise<Order> {
     const res = await axiosClient.get(`/orders/${orderId}`)
     return mapOrder(res.data)
 }
+
+export async function cancelMyOrder(orderId: number | string): Promise<Order> {
+    const res = await axiosClient.delete(`/orders/${orderId}/cancel`)
+    return mapOrder(res.data)
+}
