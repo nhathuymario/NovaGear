@@ -1,18 +1,13 @@
-import { useCallback, useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import {
-    createPayment,
-    getPaymentByOrderId,
-    mockPaymentFail,
-    mockPaymentSuccess,
-} from "../api/paymentApi"
-import { getOrderDetail } from "../api/orderApi"
-import type { Order } from "../types/order"
-import type { Payment } from "../types/payment"
-import { getToken } from "../utils/auth"
+import {useCallback, useEffect, useState} from "react"
+import {useNavigate, useParams} from "react-router-dom"
+import {createPayment, getPaymentByOrderId} from "../api/paymentApi"
+import {getOrderDetail} from "../api/orderApi"
+import type {Order} from "../types/order"
+import type {Payment} from "../types/payment"
+import {getToken} from "../utils/auth"
 
 export default function PaymentPage() {
-    const { orderId = "" } = useParams()
+    const {orderId = ""} = useParams()
     const navigate = useNavigate()
     const token = getToken()
 
@@ -21,7 +16,6 @@ export default function PaymentPage() {
     const [method, setMethod] = useState("COD")
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
-    const [mocking, setMocking] = useState(false)
 
     const loadData = useCallback(async () => {
         if (!orderId) return
@@ -69,26 +63,6 @@ export default function PaymentPage() {
         }
     }
 
-    const handleMock = async (type: "success" | "failed") => {
-        if (!order) return
-
-        try {
-            setMocking(true)
-
-            if (type === "success") {
-                await mockPaymentSuccess(order.id)
-                navigate(`/payment/result?orderId=${order.id}&status=success`)
-            } else {
-                await mockPaymentFail(order.id)
-                navigate(`/payment/result?orderId=${order.id}&status=failed`)
-            }
-        } catch (err) {
-            console.error(err)
-            alert("Mock callback thất bại")
-        } finally {
-            setMocking(false)
-        }
-    }
 
     if (!token) {
         return (
@@ -141,7 +115,8 @@ export default function PaymentPage() {
                         />
                         <div>
                             <p className="font-semibold">Thanh toán online (PayOS)</p>
-                            <p className="text-sm text-brand-gray">Chuyển khoản, ví điện tử, QR code - an toàn và nhanh chóng</p>
+                            <p className="text-sm text-brand-gray">Chuyển khoản, ví điện tử, QR code - an toàn và nhanh
+                                chóng</p>
                         </div>
                     </label>
                 </div>
@@ -154,29 +129,29 @@ export default function PaymentPage() {
                     {creating ? "Đang tạo thanh toán..." : "Xác nhận thanh toán"}
                 </button>
 
-                <div className="mt-6 rounded-2xl border bg-gray-50 p-4">
-                    <h3 className="font-semibold">Test mock callback</h3>
-                    <p className="mt-1 text-sm text-brand-gray">
-                        Backend hiện có endpoint mock callback qua query params.
-                    </p>
+                {/*<div className="mt-6 rounded-2xl border bg-gray-50 p-4">*/}
+                {/*    <h3 className="font-semibold">Test mock callback</h3>*/}
+                {/*    <p className="mt-1 text-sm text-brand-gray">*/}
+                {/*        Backend hiện có endpoint mock callback qua query params.*/}
+                {/*    </p>*/}
 
-                    <div className="mt-4 flex gap-3">
-                        <button
-                            onClick={() => handleMock("success")}
-                            disabled={mocking}
-                            className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
-                        >
-                            Mock success
-                        </button>
-                        <button
-                            onClick={() => handleMock("failed")}
-                            disabled={mocking}
-                            className="rounded-xl border border-red-500 px-4 py-2 font-semibold text-red-500 disabled:opacity-60"
-                        >
-                            Mock failed
-                        </button>
-                    </div>
-                </div>
+                {/*    <div className="mt-4 flex gap-3">*/}
+                {/*        <button*/}
+                {/*            onClick={() => handleMock("success")}*/}
+                {/*            disabled={mocking}*/}
+                {/*            className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white disabled:opacity-60"*/}
+                {/*        >*/}
+                {/*            Mock success*/}
+                {/*        </button>*/}
+                {/*        <button*/}
+                {/*            onClick={() => handleMock("failed")}*/}
+                {/*            disabled={mocking}*/}
+                {/*            className="rounded-xl border border-red-500 px-4 py-2 font-semibold text-red-500 disabled:opacity-60"*/}
+                {/*        >*/}
+                {/*            Mock failed*/}
+                {/*        </button>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
 
                 {payment && (
                     <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-sm text-brand-gray">

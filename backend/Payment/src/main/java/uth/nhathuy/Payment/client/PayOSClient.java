@@ -10,9 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * PayOS Sandbox Integration
  * PayOS cung cấp gateway thanh toán đơn giản cho Việt Nam
@@ -52,8 +49,9 @@ public class PayOSClient {
      */
     public CreateCheckoutResponse createCheckout(Long orderId, Long amount, String orderCode) {
         try {
+            long safeOrderCode = orderId != null ? orderId : System.currentTimeMillis();
             CreateCheckoutRequest request = CreateCheckoutRequest.builder()
-                    .orderCode(Long.parseLong(orderCode.replaceAll("[^0-9]", "0")))
+                    .orderCode(safeOrderCode)
                     .amount(amount)
                     .description("Thanh toán đơn hàng " + orderCode)
                     .buyerName("Customer")

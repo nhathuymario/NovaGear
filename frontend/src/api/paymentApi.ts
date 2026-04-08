@@ -50,9 +50,16 @@ export async function getMyPayments(): Promise<Payment[]> {
 }
 
 export async function getPaymentByOrderId(orderId: number | string): Promise<Payment | null> {
-    const res = await axiosClient.get(`/payments/order/${orderId}`)
-    if (!res.data) return null
-    return mapPayment(res.data)
+    try {
+        const res = await axiosClient.get(`/payments/order/${orderId}`)
+        if (!res.data) return null
+        return mapPayment(res.data)
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            return null
+        }
+        throw error
+    }
 }
 
 export async function mockPaymentCallback(
