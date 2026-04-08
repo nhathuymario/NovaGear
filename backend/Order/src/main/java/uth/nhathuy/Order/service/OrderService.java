@@ -99,6 +99,34 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
+    @Transactional
+    public OrderResponse cancelMyOrder(Long userId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+
+        if (!order.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("Không tìm thấy đơn hàng");
+        }
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            return mapToOrderResponse(order);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Chỉ được hủy đơn ở trạng thái chờ xác nhận hoặc đã xác nhận");
+        }
+
+        if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+            throw new IllegalStateException("Đơn đã thanh toán, không thể tự hủy");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setPaymentStatus("CANCELLED");
+        order.setUpdatedAt(LocalDateTime.now());
+
+        return mapToOrderResponse(orderRepository.save(order));
+    }
+
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAll()

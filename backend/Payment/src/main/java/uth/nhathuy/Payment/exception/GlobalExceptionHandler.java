@@ -53,6 +53,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_GATEWAY, "Loi ket noi service phu thuoc: " + ex.getMessage());
     }
 
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<?> handlePaymentGateway(PaymentGatewayException ex) {
+        return build(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleOther(Exception ex) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
