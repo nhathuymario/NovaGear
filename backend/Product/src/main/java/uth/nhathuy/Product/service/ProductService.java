@@ -298,6 +298,8 @@ public class ProductService {
     private ProductVariantResponse mapVariant(ProductVariant variant) {
         return ProductVariantResponse.builder()
                 .id(variant.getId())
+                .productId(variant.getProduct().getId())
+                .productName(variant.getProduct().getName())
                 .sku(variant.getSku())
                 .color(variant.getColor())
                 .ram(variant.getRam())

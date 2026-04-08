@@ -259,6 +259,8 @@ public class InventoryService {
                 .id(inventory.getId())
                 .productId(inventory.getProductId())
                 .variantId(inventory.getVariantId())
+                // These fields will be populated from product service calls when needed
+                // For now, they'll be null and frontend can fetch from product API
                 .availableQuantity(inventory.getAvailableQuantity())
                 .reservedQuantity(inventory.getReservedQuantity())
                 .sellableQuantity(getSellableQuantity(inventory))
