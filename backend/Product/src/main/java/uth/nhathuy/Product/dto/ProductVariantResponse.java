@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 @Builder
 public class ProductVariantResponse {
     private Long id;
+    private Long productId;
+    private String productName;
     private String sku;
     private String color;
     private String ram;

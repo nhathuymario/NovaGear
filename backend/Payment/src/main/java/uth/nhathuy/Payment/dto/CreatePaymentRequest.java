@@ -1,6 +1,5 @@
 package uth.nhathuy.Payment.dto;
 
-import uth.nhathuy.Payment.entity.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -11,7 +10,7 @@ public class CreatePaymentRequest {
     private Long orderId;
 
     @NotNull
-    private PaymentMethod method;
+    private String method;
 
     private String note;
 }

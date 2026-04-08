@@ -10,6 +10,12 @@ public class InventoryResponse {
     private Long id;
     private Long productId;
     private Long variantId;
+    private String productName;
+    private String sku;
+    private String color;
+    private String ram;
+    private String storage;
+    private String versionName;
     private Integer availableQuantity;
     private Integer reservedQuantity;
     private Integer sellableQuantity;
