@@ -140,8 +140,8 @@ export default function PaymentPage() {
                             onChange={(e) => setMethod(e.target.value)}
                         />
                         <div>
-                            <p className="font-semibold">Thanh toán online</p>
-                            <p className="text-sm text-brand-gray">Dùng khi backend hỗ trợ cổng thanh toán hoặc mock callback.</p>
+                            <p className="font-semibold">Thanh toán online (PayOS)</p>
+                            <p className="text-sm text-brand-gray">Chuyển khoản, ví điện tử, QR code - an toàn và nhanh chóng</p>
                         </div>
                     </label>
                 </div>

@@ -7,6 +7,16 @@ import {
     type InventoryItem,
     type InventoryTransaction,
 } from "../../api/inventoryApi"
+import { getAdminProductDetail } from "../../api/adminProductApi"
+
+type ProductVariantLookup = {
+    productName?: string
+    sku?: string
+    color?: string
+    ram?: string
+    storage?: string
+    versionName?: string
+}
 
 export default function AdminInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([])
@@ -25,6 +35,77 @@ export default function AdminInventoryPage() {
         note: "",
     })
 
+    const enrichInventoryItems = useCallback(async (rows: InventoryItem[]): Promise<InventoryItem[]> => {
+        const missingVariantRows = rows.filter(
+            (item) => item.variantId && (!item.productName || !item.sku)
+        )
+
+        if (missingVariantRows.length === 0) {
+            return rows
+        }
+
+        const productIds = Array.from(
+            new Set(
+                missingVariantRows
+                    .map((item) => String(item.productId ?? "").trim())
+                    .filter(Boolean)
+            )
+        )
+
+        if (productIds.length === 0) {
+            return rows
+        }
+
+        const productDetails = await Promise.all(
+            productIds.map(async (productId) => {
+                try {
+                    return await getAdminProductDetail(productId)
+                } catch (error) {
+                    console.error(error)
+                    return null
+                }
+            })
+        )
+
+        const variantLookup = new Map<string, ProductVariantLookup>()
+        for (const product of productDetails) {
+            if (!product) continue
+
+            const productName = String(product.name ?? "")
+            const variants = Array.isArray(product.variants) ? product.variants : []
+
+            for (const variant of variants) {
+                const variantId = String(variant?.id ?? "").trim()
+                if (!variantId) continue
+
+                variantLookup.set(variantId, {
+                    productName,
+                    sku: String(variant?.sku ?? ""),
+                    color: String(variant?.color ?? ""),
+                    ram: String(variant?.ram ?? ""),
+                    storage: String(variant?.storage ?? ""),
+                    versionName: String(variant?.versionName ?? ""),
+                })
+            }
+        }
+
+        return rows.map((item) => {
+            const key = String(item.variantId ?? "").trim()
+            const found = variantLookup.get(key)
+            if (!found) return item
+
+            return {
+                ...item,
+                productName: item.productName || found.productName || "",
+                sku: item.sku || found.sku || "",
+                color: item.color || found.color || "",
+                ram: item.ram || found.ram || "",
+                storage: item.storage || found.storage || "",
+                versionName: item.versionName || found.versionName || "",
+            }
+        })
+    }, [])
+
     const loadData = useCallback(async (nextKeyword = keyword) => {
         try {
             setLoading(true)
@@ -33,14 +114,15 @@ export default function AdminInventoryPage() {
                 page: 0,
                 size: 50,
             })
-            setItems(result.items)
+            const enrichedItems = await enrichInventoryItems(result.items)
+            setItems(enrichedItems)
         } catch (error) {
             console.error(error)
             setItems([])
         } finally {
             setLoading(false)
         }
-    }, [keyword])
+    }, [enrichInventoryItems, keyword])
 
     useEffect(() => {
         loadData("")
@@ -53,8 +135,16 @@ export default function AdminInventoryPage() {
         return items.filter((item) => {
             const productId = String(item.productId ?? "").toLowerCase()
             const variantId = String(item.variantId ?? "").toLowerCase()
+            const productName = String(item.productName ?? "").toLowerCase()
+            const sku = String(item.sku ?? "").toLowerCase()
             const status = item.status?.toLowerCase() ?? ""
-            return productId.includes(q) || variantId.includes(q) || status.includes(q)
+            return (
+                productId.includes(q) ||
+                variantId.includes(q) ||
+                productName.includes(q) ||
+                sku.includes(q) ||
+                status.includes(q)
+            )
         })
     }, [items, keyword])
 
@@ -172,7 +262,9 @@ export default function AdminInventoryPage() {
                                         <td className="px-4 py-3">{item.productName || "—"}</td>
                                         <td className="px-4 py-3">{item.sku || "—"}</td>
                                         <td className="px-4 py-3">
-                                            {[item.color, item.ram, item.storage].filter(Boolean).join(" / ") || "—"}
+                                            {[item.color, item.ram, item.storage, item.versionName]
+                                                .filter(Boolean)
+                                                .join(" / ") || "—"}
                                         </td>
                                         <td className="px-4 py-3 font-semibold">{item.stockQuantity}</td>
                                         <td className="px-4 py-3">{item.availableQuantity}</td>
