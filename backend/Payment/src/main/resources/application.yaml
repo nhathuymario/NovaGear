@@ -30,7 +30,9 @@ services:
 payos:
   api-key: ${PAYOS_API_KEY:SANDBOX_API_KEY}
   client-id: ${PAYOS_CLIENT_ID:SANDBOX_CLIENT_ID}
-  api-url: ${PAYOS_API_URL:https://sandbox-api.payos.vn}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:}
+  api-url: ${PAYOS_API_URL:https://api-merchant.payos.vn}
+  checkout-path: ${PAYOS_CHECKOUT_PATH:/v2/payment-requests}
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/result}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/order}
 
