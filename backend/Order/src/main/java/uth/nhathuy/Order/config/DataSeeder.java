@@ -33,8 +33,8 @@ public class DataSeeder implements CommandLineRunner {
                 OrderStatus.COMPLETED,
                 "SUCCESS",
                 List.of(
-                        new ItemSeed(1L, 1L, "MacBook Air M3 13 inch", "Midnight / 8GB / 256GB", "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=600", "25990000", 1),
-                        new ItemSeed(5L, 9L, "Keychron K2 Wireless", "Brown Switch", "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600", "1990000", 1)
+                        new ItemSeed(1L, 1L, "MacBook Air M3 13 inch", "Midnight / 8GB / 256GB", "/product-placeholder.svg", "25990000", 1),
+                        new ItemSeed(5L, 9L, "Keychron K2 Wireless", "Brown Switch", "/product-placeholder.svg", "1990000", 1)
                 )
         );
 
@@ -49,7 +49,7 @@ public class DataSeeder implements CommandLineRunner {
                 OrderStatus.SHIPPING,
                 "PENDING",
                 List.of(
-                        new ItemSeed(3L, 5L, "iPhone 15 Pro Max", "Titan Tu Nhien / 256GB", "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600", "31990000", 1)
+                        new ItemSeed(3L, 5L, "iPhone 15 Pro Max", "Titan Tu Nhien / 256GB", "/product-placeholder.svg", "31990000", 1)
                 )
         );
     }

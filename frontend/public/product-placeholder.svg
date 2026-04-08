@@ -1,0 +1,22 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" rx="96" fill="url(#bg)"/>
+  <circle cx="600" cy="420" r="220" fill="url(#accent)" opacity="0.12"/>
+  <path d="M414 470C414 344.552 515.552 243 641 243C766.448 243 868 344.552 868 470V640C868 667.614 845.614 690 818 690H464C436.386 690 414 667.614 414 640V470Z" fill="#CBD5E1"/>
+  <path d="M455 585C455 557.386 477.386 535 505 535H753C780.614 535 803 557.386 803 585V680H455V585Z" fill="#94A3B8"/>
+  <rect x="360" y="736" width="480" height="320" rx="48" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="8"/>
+  <rect x="420" y="796" width="360" height="32" rx="16" fill="#CBD5E1"/>
+  <rect x="420" y="858" width="280" height="32" rx="16" fill="#E2E8F0"/>
+  <rect x="420" y="920" width="210" height="32" rx="16" fill="#E2E8F0"/>
+  <text x="600" y="1080" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700" fill="#0F172A">NovaGear</text>
+</svg>
+

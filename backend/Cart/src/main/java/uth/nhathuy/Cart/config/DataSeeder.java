@@ -31,7 +31,7 @@ public class DataSeeder implements CommandLineRunner {
                 1L,
                 "MacBook Air M3 13 inch",
                 "Midnight / 8GB / 256GB",
-                "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=600",
+                "/product-placeholder.svg",
                 "25990000",
                 1
         );
@@ -41,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
                 9L,
                 "Keychron K2 Wireless",
                 "Brown Switch",
-                "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600",
+                "/product-placeholder.svg",
                 "1990000",
                 1
         );

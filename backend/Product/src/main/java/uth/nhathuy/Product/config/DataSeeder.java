@@ -35,12 +35,12 @@ public class DataSeeder implements CommandLineRunner {
                 laptop,
                 "Laptop sieu nhe cho hoc tap va cong viec",
                 "MacBook Air M3 13 inch vo nhom, pin ben, man hinh dep va hieu nang tot cho nhu cau hieu suat cao.",
-                "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=1200",
+                "/product-placeholder.svg",
                 ProductStatus.ACTIVE,
                 true
         );
-        upsertVariant(macbook, "MBA-M3-8-256", "Midnight", "8GB", "256GB", "Base", "27990000", "25990000", 40, "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=1000", VariantStatus.ACTIVE);
-        upsertVariant(macbook, "MBA-M3-16-512", "Silver", "16GB", "512GB", "Premium", "34990000", "32990000", 24, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=1000", VariantStatus.ACTIVE);
+        upsertVariant(macbook, "MBA-M3-8-256", "Midnight", "8GB", "256GB", "Base", "27990000", "25990000", 40, "/product-placeholder.svg", VariantStatus.ACTIVE);
+        upsertVariant(macbook, "MBA-M3-16-512", "Silver", "16GB", "512GB", "Premium", "34990000", "32990000", 24, "/product-placeholder.svg", VariantStatus.ACTIVE);
         seedSpecificationsIfMissing(macbook, List.of(
                 spec(macbook, "Hieu nang", "CPU", "Apple M3", 1),
                 spec(macbook, "Hieu nang", "RAM", "8GB/16GB", 2),
@@ -48,8 +48,8 @@ public class DataSeeder implements CommandLineRunner {
                 spec(macbook, "Pin", "Thoi luong", "Den 18 gio", 4)
         ));
         seedImagesIfMissing(macbook, List.of(
-                image(macbook, "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?w=1200", true, 1),
-                image(macbook, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=1200", false, 2)
+                image(macbook, "/product-placeholder.svg", true, 1),
+                image(macbook, "/product-placeholder.svg", false, 2)
         ));
 
         Product rog = upsertProduct(
@@ -59,12 +59,12 @@ public class DataSeeder implements CommandLineRunner {
                 laptop,
                 "Laptop gaming gon nhe, man dep",
                 "ROG Zephyrus G14 toi uu cho gaming va sang tao noi dung voi GPU manh me, tan nhiet tot.",
-                "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?w=1200",
+                "/product-placeholder.svg",
                 ProductStatus.ACTIVE,
                 true
         );
-        upsertVariant(rog, "ROG-G14-16-1TB", "Moonlight White", "16GB", "1TB", "RTX 4060", "45990000", "42990000", 18, "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?w=1000", VariantStatus.ACTIVE);
-        upsertVariant(rog, "ROG-G14-32-1TB", "Eclipse Gray", "32GB", "1TB", "RTX 4070", "54990000", null, 8, "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=1000", VariantStatus.ACTIVE);
+        upsertVariant(rog, "ROG-G14-16-1TB", "Moonlight White", "16GB", "1TB", "RTX 4060", "45990000", "42990000", 18, "/product-placeholder.svg", VariantStatus.ACTIVE);
+        upsertVariant(rog, "ROG-G14-32-1TB", "Eclipse Gray", "32GB", "1TB", "RTX 4070", "54990000", null, 8, "/product-placeholder.svg", VariantStatus.ACTIVE);
         seedSpecificationsIfMissing(rog, List.of(
                 spec(rog, "Hieu nang", "CPU", "AMD Ryzen 9", 1),
                 spec(rog, "Hieu nang", "GPU", "NVIDIA RTX 4060/4070", 2),
@@ -72,8 +72,8 @@ public class DataSeeder implements CommandLineRunner {
                 spec(rog, "Khoi luong", "Can nang", "1.65kg", 4)
         ));
         seedImagesIfMissing(rog, List.of(
-                image(rog, "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?w=1200", true, 1),
-                image(rog, "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=1200", false, 2)
+                image(rog, "/product-placeholder.svg", true, 1),
+                image(rog, "/product-placeholder.svg", false, 2)
         ));
 
         Product iphone = upsertProduct(
@@ -83,12 +83,12 @@ public class DataSeeder implements CommandLineRunner {
                 smartphone,
                 "Flagship camera va hieu nang cao",
                 "iPhone 15 Pro Max khung titan, camera zoom 5x va chip A17 Pro cho trai nghiem cao cap.",
-                "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200",
+                "/product-placeholder.svg",
                 ProductStatus.ACTIVE,
                 true
         );
-        upsertVariant(iphone, "IP15PM-256-TN", "Titan Tu Nhien", "8GB", "256GB", "Standard", "33990000", "31990000", 36, "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1000", VariantStatus.ACTIVE);
-        upsertVariant(iphone, "IP15PM-512-BL", "Titan Xanh", "8GB", "512GB", "Pro Storage", "39990000", null, 16, "https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=1000", VariantStatus.ACTIVE);
+        upsertVariant(iphone, "IP15PM-256-TN", "Titan Tu Nhien", "8GB", "256GB", "Standard", "33990000", "31990000", 36, "/product-placeholder.svg", VariantStatus.ACTIVE);
+        upsertVariant(iphone, "IP15PM-512-BL", "Titan Xanh", "8GB", "512GB", "Pro Storage", "39990000", null, 16, "/product-placeholder.svg", VariantStatus.ACTIVE);
         seedSpecificationsIfMissing(iphone, List.of(
                 spec(iphone, "Camera", "Camera chinh", "48MP", 1),
                 spec(iphone, "Man hinh", "Do sang", "2000 nits", 2),
@@ -96,8 +96,8 @@ public class DataSeeder implements CommandLineRunner {
                 spec(iphone, "Hieu nang", "Chip", "A17 Pro", 4)
         ));
         seedImagesIfMissing(iphone, List.of(
-                image(iphone, "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200", true, 1),
-                image(iphone, "https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=1200", false, 2)
+                image(iphone, "/product-placeholder.svg", true, 1),
+                image(iphone, "/product-placeholder.svg", false, 2)
         ));
 
         Product monitorProduct = upsertProduct(
@@ -107,20 +107,20 @@ public class DataSeeder implements CommandLineRunner {
                 monitor,
                 "Man hinh 4K cho cong viec sang tao",
                 "Man hinh LG UltraFine 27 inch 4K voi mau sac chuan va ket noi da dang cho workstation.",
-                "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1200",
+                "/product-placeholder.svg",
                 ProductStatus.ACTIVE,
                 false
         );
-        upsertVariant(monitorProduct, "LG-UF27-4K", "Den", "-", "-", "27 inch", "11990000", "9990000", 20, "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1000", VariantStatus.ACTIVE);
-        upsertVariant(monitorProduct, "LG-UF32-4K", "Den", "-", "-", "32 inch", "14990000", null, 10, "https://images.unsplash.com/photo-1546538915-a9e2c8d8330b?w=1000", VariantStatus.ACTIVE);
+        upsertVariant(monitorProduct, "LG-UF27-4K", "Den", "-", "-", "27 inch", "11990000", "9990000", 20, "/product-placeholder.svg", VariantStatus.ACTIVE);
+        upsertVariant(monitorProduct, "LG-UF32-4K", "Den", "-", "-", "32 inch", "14990000", null, 10, "/product-placeholder.svg", VariantStatus.ACTIVE);
         seedSpecificationsIfMissing(monitorProduct, List.of(
                 spec(monitorProduct, "Thong so", "Do phan giai", "4K UHD", 1),
                 spec(monitorProduct, "Thong so", "Tam nen", "IPS", 2),
                 spec(monitorProduct, "Ket noi", "Cong", "HDMI/DisplayPort/USB-C", 3)
         ));
         seedImagesIfMissing(monitorProduct, List.of(
-                image(monitorProduct, "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1200", true, 1),
-                image(monitorProduct, "https://images.unsplash.com/photo-1546538915-a9e2c8d8330b?w=1200", false, 2)
+                image(monitorProduct, "/product-placeholder.svg", true, 1),
+                image(monitorProduct, "/product-placeholder.svg", false, 2)
         ));
 
         Product keyboard = upsertProduct(
@@ -130,18 +130,18 @@ public class DataSeeder implements CommandLineRunner {
                 accessories,
                 "Ban phim co khong day da nen tang",
                 "Keychron K2 layout gon, ho tro bluetooth va hot-swap, phu hop cho ca macOS va Windows.",
-                "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=1200",
+                "/product-placeholder.svg",
                 ProductStatus.ACTIVE,
                 false
         );
-        upsertVariant(keyboard, "K2-BROWN", "Xam", "-", "-", "Brown Switch", "2290000", "1990000", 55, "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=1000", VariantStatus.ACTIVE);
+        upsertVariant(keyboard, "K2-BROWN", "Xam", "-", "-", "Brown Switch", "2290000", "1990000", 55, "/product-placeholder.svg", VariantStatus.ACTIVE);
         seedSpecificationsIfMissing(keyboard, List.of(
                 spec(keyboard, "Ket noi", "Bluetooth", "Bluetooth 5.1", 1),
                 spec(keyboard, "Pin", "Dung luong", "4000mAh", 2),
                 spec(keyboard, "Switch", "Loai", "Gateron Brown", 3)
         ));
         seedImagesIfMissing(keyboard, List.of(
-                image(keyboard, "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=1200", true, 1)
+                image(keyboard, "/product-placeholder.svg", true, 1)
         ));
     }
 
