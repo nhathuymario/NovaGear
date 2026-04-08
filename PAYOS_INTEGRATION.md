@@ -50,7 +50,7 @@ Replaced mock payment callbacks with **PayOS** - Vietnam's leading payment gatew
 payos:
   api-key: ${PAYOS_API_KEY:SANDBOX_API_KEY}
   client-id: ${PAYOS_CLIENT_ID:SANDBOX_CLIENT_ID}
-  api-url: ${PAYOS_API_URL:https://sandbox-api.payos.vn}
+  api-url: ${PAYOS_API_URL:https://api-merchant.payos.vn}
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/result}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/order}
 ```
@@ -109,7 +109,7 @@ User sees success message
 ```
 API Key: SANDBOX_API_KEY
 Client ID: SANDBOX_CLIENT_ID
-API URL: https://sandbox-api.payos.vn
+API URL: https://api-merchant.payos.vn
 ```
 
 ### Environment Variables
@@ -117,7 +117,7 @@ API URL: https://sandbox-api.payos.vn
 ```bash
 export PAYOS_API_KEY=your_api_key
 export PAYOS_CLIENT_ID=your_client_id
-export PAYOS_API_URL=https://sandbox-api.payos.vn
+export PAYOS_API_URL=https://api-merchant.payos.vn
 export PAYOS_RETURN_URL=http://localhost:5173/payment/result
 export PAYOS_CANCEL_URL=http://localhost:5173/order
 ```
@@ -351,7 +351,7 @@ When ready for production:
 ## Support
 
 - PayOS Documentation: https://docs.payos.vn
-- Sandbox API: https://sandbox-api.payos.vn
+- Merchant API: https://api-merchant.payos.vn
 - Support: https://payos.vn/support
 
 ---

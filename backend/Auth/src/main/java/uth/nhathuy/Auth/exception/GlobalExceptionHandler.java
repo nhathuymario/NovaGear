@@ -2,6 +2,10 @@ package uth.nhathuy.Auth.exception;
 
 import uth.nhathuy.Auth.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -40,6 +44,30 @@ public class GlobalExceptionHandler {
                 .forEach(err -> details.put(err.getField(), err.getDefaultMessage()));
 
         return build(HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ", request, details);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            BadCredentialsException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không đúng", request, null);
+    }
+
+    @ExceptionHandler({DisabledException.class, LockedException.class})
+    public ResponseEntity<ErrorResponse> handleDisabledOrLocked(
+            AuthenticationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.FORBIDDEN, "Tài khoản đã bị khóa hoặc vô hiệu hóa", request, null);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuth(
+            AuthenticationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.UNAUTHORIZED, "Không thể xác thực tài khoản", request, null);
     }
 
     @ExceptionHandler(Exception.class)
