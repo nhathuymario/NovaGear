@@ -7,9 +7,9 @@ export type OrderStatus =
     | "CANCELLED"
 
 export interface CreateOrderPayload {
-    receiverName: string
-    receiverPhone: string
-    shippingAddress: string
+    customerName: string
+    phone: string
+    address: string
     note?: string
 }
 

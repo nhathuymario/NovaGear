@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient"
-import type {CartItem} from "../types/cart"
+import type { CartItem } from "../types/cart"
 
 type RawVariant = {
     id?: number | string
@@ -43,6 +43,12 @@ type RawCartItem = {
     id?: number | string
     productId?: number | string
     variantId?: number | string
+    productName?: string
+    variantName?: string
+    thumbnail?: string
+    price?: number
+    salePrice?: number
+    lineTotal?: number
     quantity?: number
     product?: RawProduct
     variant?: RawVariant
@@ -90,6 +96,29 @@ function mapProduct(item: RawProduct) {
     }
 }
 
+function mapProductFromCartItem(item: RawCartItem): CartItem["product"] {
+    if (item.product) {
+        return mapProduct(item.product)
+    }
+
+    if (!item.productId && !item.productName && !item.thumbnail && item.price == null) {
+        return undefined
+    }
+
+    return {
+        id: item.productId ?? "",
+        slug: "",
+        name: item.productName ?? "",
+        description: "",
+        imageUrl: item.thumbnail ?? "",
+        price: Number(item.price ?? 0),
+        salePrice: item.salePrice != null ? Number(item.salePrice) : undefined,
+        stock: 0,
+        category: "",
+        brand: "",
+    }
+}
+
 function buildVariantLabel(source?: RawVariant | RawCartItem): string {
     return [
         source?.color,
@@ -103,6 +132,7 @@ function buildVariantLabel(source?: RawVariant | RawCartItem): string {
 
 function mapCartItem(item: RawCartItem): CartItem {
     const variantSource = item.variant ?? item.productVariant ?? item
+    const product = mapProductFromCartItem(item)
 
     return {
         id: item.id ?? "",
@@ -113,14 +143,22 @@ function mapCartItem(item: RawCartItem): CartItem {
             item.productVariant?.id ??
             "",
         quantity: Number(item.quantity ?? 0),
+        productName: item.productName ?? item.product?.name ?? "",
+        thumbnail: item.thumbnail ?? item.product?.imageUrl ?? "",
+        price: Number(item.price ?? item.product?.salePrice ?? item.product?.price ?? 0),
+        salePrice:
+            item.salePrice != null
+                ? Number(item.salePrice)
+                : item.product?.salePrice,
+        lineTotal: item.lineTotal != null ? Number(item.lineTotal) : undefined,
         variantSku:
             item.variant?.sku ??
             item.productVariant?.sku ??
             item.sku ??
             "",
         variantLabel: buildVariantLabel(variantSource),
-        product: item.product ? mapProduct(item.product) : undefined,
-    }
+        product,
+    } as CartItem
 }
 
 export async function getMyCart(): Promise<CartItem[]> {
@@ -173,6 +211,3 @@ export async function removeCartItem(itemId: number | string) {
     return res.data
 }
 
-export async function clearCart() {
-    await axiosClient.delete("/cart/clear")
-}

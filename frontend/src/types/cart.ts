@@ -3,6 +3,11 @@ export interface CartItem {
     productId: number | string
     variantId?: number | string
     quantity: number
+    productName?: string
+    thumbnail?: string
+    price?: number
+    salePrice?: number
+    lineTotal?: number
     variantLabel?: string
     variantSku?: string
     product?: {

@@ -1,3 +1,4 @@
+import axios from "axios"
 import axiosClient from "./axiosClient"
 
 export interface LoginRequest {
@@ -15,16 +16,20 @@ export interface RegisterRequest {
 export interface LoginResponse {
     token?: string
     accessToken?: string
+    refreshToken?: string
     userId?: number | string
     username?: string
     email?: string
+    fullName?: string
     roles?: string[] | string
     data?: {
         token?: string
         accessToken?: string
+        refreshToken?: string
         userId?: number | string
         username?: string
         email?: string
+        fullName?: string
         roles?: string[] | string
     }
 }
@@ -41,6 +46,15 @@ export interface AuthMeResponse {
 
 export async function loginApi(payload: LoginRequest): Promise<LoginResponse> {
     const res = await axiosClient.post("/auth/login", payload)
+    return res.data as LoginResponse
+}
+
+export interface RefreshTokenRequest {
+    refreshToken: string
+}
+
+export async function refreshAuthApi(payload: RefreshTokenRequest): Promise<LoginResponse> {
+    const res = await axios.post("/api/auth/refresh", payload)
     return res.data as LoginResponse
 }
 
