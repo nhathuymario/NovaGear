@@ -12,6 +12,7 @@ import uth.nhathuy.Payment.dto.PaymentResponse;
 import uth.nhathuy.Payment.entity.Payment;
 import uth.nhathuy.Payment.entity.PaymentMethod;
 import uth.nhathuy.Payment.entity.PaymentStatus;
+import uth.nhathuy.Payment.exception.PaymentGatewayException;
 import uth.nhathuy.Payment.exception.ResourceNotFoundException;
 import uth.nhathuy.Payment.repository.PaymentRepository;
 
@@ -30,10 +31,46 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse createPayment(Long currentUserId, CreatePaymentRequest request) {
-        paymentRepository.findByOrderId(request.getOrderId())
-                .ifPresent(payment -> {
-                    throw new IllegalStateException("Đơn hàng này đã có payment");
-                });
+        PaymentMethod requestedMethod = parsePaymentMethod(request.getMethod());
+
+        Payment existingPayment = paymentRepository.findByOrderId(request.getOrderId()).orElse(null);
+        if (existingPayment != null) {
+            if (!existingPayment.getUserId().equals(currentUserId)) {
+                throw new SecurityException("Không có quyền truy cập payment này");
+            }
+
+            if (requestedMethod == PaymentMethod.BANK_TRANSFER
+                    && existingPayment.getStatus() == PaymentStatus.PENDING
+                    && existingPayment.getMethod() == PaymentMethod.BANK_TRANSFER
+                    && existingPayment.getPaymentUrl() != null
+                    && !existingPayment.getPaymentUrl().isBlank()) {
+                return mapToResponse(existingPayment);
+            }
+
+            if (requestedMethod == PaymentMethod.BANK_TRANSFER
+                    && existingPayment.getStatus() == PaymentStatus.PENDING
+                    && (existingPayment.getMethod() == PaymentMethod.COD
+                    || existingPayment.getPaymentUrl() == null
+                    || existingPayment.getPaymentUrl().isBlank())) {
+                String txRef = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+                String checkoutUrl = createPayOSCheckoutUrl(
+                        existingPayment.getOrderId(),
+                        existingPayment.getAmount(),
+                        txRef
+                );
+
+                existingPayment.setMethod(PaymentMethod.BANK_TRANSFER);
+                existingPayment.setTransactionRef(txRef);
+                existingPayment.setPaymentUrl(checkoutUrl);
+                existingPayment.setNote(request.getNote());
+                existingPayment.setUpdatedAt(LocalDateTime.now());
+
+                Payment upgraded = paymentRepository.save(existingPayment);
+                return mapToResponse(upgraded);
+            }
+
+            return mapToResponse(existingPayment);
+        }
 
         OrderResponse order = orderClient.getOrderById(request.getOrderId());
 
@@ -50,35 +87,12 @@ public class PaymentService {
         }
 
         String txRef = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-
-        PaymentMethod method;
-        try {
-            String rawMethod = request.getMethod() == null ? "COD" : request.getMethod().trim().toUpperCase();
-            if ("ONLINE".equals(rawMethod)) {
-                rawMethod = "BANK_TRANSFER";
-            }
-            method = PaymentMethod.valueOf(rawMethod);
-        } catch (IllegalArgumentException e) {
-            method = PaymentMethod.COD;
-        }
+        PaymentMethod method = requestedMethod;
 
         // Generate PayOS checkout URL if payment method is BANK_TRANSFER
         String paymentUrl = null;
         if (method == PaymentMethod.BANK_TRANSFER) {
-            try {
-                PayOSClient.CreateCheckoutResponse checkoutResponse = payOSClient.createCheckout(
-                        order.getId(),
-                        order.getTotalAmount().longValue(),
-                        order.getId() + "_" + txRef
-                );
-                if (checkoutResponse.isSuccess() && checkoutResponse.getData() != null) {
-                    paymentUrl = checkoutResponse.getData().getCheckoutUrl();
-                }
-            } catch (Exception e) {
-                log.warn("Failed to create PayOS checkout for order {}: {}", order.getId(), e.getMessage());
-                // Fallback to COD if PayOS fails
-                method = PaymentMethod.COD;
-            }
+            paymentUrl = createPayOSCheckoutUrl(order.getId(), order.getTotalAmount(), txRef);
         }
 
         Payment payment = Payment.builder()
@@ -94,6 +108,43 @@ public class PaymentService {
 
         Payment saved = paymentRepository.save(payment);
         return mapToResponse(saved);
+    }
+
+    private PaymentMethod parsePaymentMethod(String methodRaw) {
+        try {
+            String rawMethod = methodRaw == null ? "COD" : methodRaw.trim().toUpperCase();
+            if ("ONLINE".equals(rawMethod)) {
+                rawMethod = "BANK_TRANSFER";
+            }
+            return PaymentMethod.valueOf(rawMethod);
+        } catch (IllegalArgumentException e) {
+            return PaymentMethod.COD;
+        }
+    }
+
+    private String createPayOSCheckoutUrl(Long orderId, java.math.BigDecimal amount, String txRef) {
+        OrderResponse order = orderClient.getOrderById(orderId);
+        try {
+            PayOSClient.CreateCheckoutResponse checkoutResponse = payOSClient.createCheckout(
+                    orderId,
+                    amount.longValue(),
+                    orderId + "_" + txRef,
+                    order != null ? order.getReceiverName() : null,
+                    order != null ? order.getReceiverPhone() : null,
+                    null,
+                    order != null ? order.getAddress() : null
+            );
+            if (checkoutResponse.isSuccess()
+                    && checkoutResponse.getData() != null
+                    && checkoutResponse.getData().getCheckoutUrl() != null
+                    && !checkoutResponse.getData().getCheckoutUrl().isBlank()) {
+                return checkoutResponse.getData().getCheckoutUrl();
+            }
+            throw new PaymentGatewayException("Khong tao duoc link thanh toan online");
+        } catch (Exception e) {
+            log.warn("Failed to create PayOS checkout for order {}: {}", orderId, e.getMessage());
+            throw new PaymentGatewayException("Khong tao duoc link thanh toan online. Vui long thu lai.");
+        }
     }
 
     public List<PaymentResponse> getMyPayments(Long userId) {
