@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
-import { useState } from "react"
+import { useState, type SyntheticEvent } from "react"
 import { useAuth } from "../../hooks/useAuth"
 
 export default function Header() {
@@ -7,7 +7,7 @@ export default function Header() {
     const navigate = useNavigate()
     const { isAuthenticated, user, logout } = useAuth()
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
         navigate(`/products?keyword=${encodeURIComponent(keyword)}`)
     }
@@ -15,7 +15,6 @@ export default function Header() {
     const handleLogout = () => {
         logout()
         navigate("/")
-        window.location.reload()
     }
 
     return (

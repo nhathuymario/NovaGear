@@ -1,8 +1,8 @@
-import {useState} from "react"
+import {useState, type SyntheticEvent} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {getMeApi, loginApi} from "../api/authApi"
 import {bootstrapMyProfile, getMyProfile, type UserProfile} from "../api/userApi"
-import {setStoredUser, setToken} from "../utils/auth"
+import {setRefreshToken, setStoredUser, setToken} from "../utils/auth"
 
 type AuthIdentity = {
     id?: number | string
@@ -16,10 +16,12 @@ type AuthIdentity = {
 type LoginResponseLike = AuthIdentity & {
     token?: string
     accessToken?: string
+    refreshToken?: string
     userId?: number | string
     data?: AuthIdentity & {
         token?: string
         accessToken?: string
+        refreshToken?: string
         userId?: number | string
     }
 }
@@ -36,11 +38,7 @@ type ApiErrorLike = {
 // Chuẩn hóa kiểm tra Role: Chấp nhận ADMIN, ROLE_ADMIN hoặc mảng chứa chúng
 function getNormalizedRole(authData: AuthIdentity | null | undefined): string {
     const rawRole = Array.isArray(authData?.roles) ? authData.roles[0] : (authData?.role || authData?.roles)
-    if (!rawRole) return "USER"
-
-    // Xử lý nếu Role bị dính tiền tố ROLE_ từ Spring Security
-    const cleanRole = String(rawRole).replace("ROLE_", "").toUpperCase()
-    return cleanRole
+    return rawRole ? String(rawRole).replace("ROLE_", "").toUpperCase() : "USER"
 }
 
 export default function LoginPage() {
@@ -52,7 +50,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         try {
@@ -62,13 +60,18 @@ export default function LoginPage() {
             // 1. Đăng nhập lấy Token
             const res = await loginApi(form) as LoginResponseLike
             const token = res.token || res.accessToken || res.data?.token || res.data?.accessToken
+            const refreshToken = res.refreshToken || res.data?.refreshToken
 
             if (!token) {
-                throw new Error("Hệ thống không trả về Token xác thực")
+                setError("Hệ thống không trả về Token xác thực")
+                return
             }
 
             // Lưu Token vào LocalStorage ngay lập tức
             setToken(token)
+            if (refreshToken) {
+                setRefreshToken(refreshToken)
+            }
 
             // 2. Lấy thông tin tài khoản và Profile
             let authMe: AuthIdentity | null = null
@@ -112,8 +115,6 @@ export default function LoginPage() {
                 navigate("/", {replace: true})
             }
 
-            // Ép render lại để cập nhật Auth State toàn hệ thống
-            window.location.reload()
 
         } catch (err: unknown) {
             console.error("Login Error:", err)
@@ -137,8 +138,9 @@ export default function LoginPage() {
 
                 <div className="mt-8 space-y-4">
                     <div className="space-y-1">
-                        <label className="ml-1 text-xs font-bold uppercase text-brand-gray">Tên đăng nhập</label>
+                        <label htmlFor="login-username" className="ml-1 text-xs font-bold uppercase text-brand-gray">Tên đăng nhập</label>
                         <input
+                            id="login-username"
                             type="text"
                             placeholder="Nhập username..."
                             className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-brand-dark transition-all"
@@ -149,8 +151,9 @@ export default function LoginPage() {
                     </div>
 
                     <div className="space-y-1">
-                        <label className="ml-1 text-xs font-bold uppercase text-brand-gray">Mật khẩu</label>
+                        <label htmlFor="login-password" className="ml-1 text-xs font-bold uppercase text-brand-gray">Mật khẩu</label>
                         <input
+                            id="login-password"
                             type="password"
                             placeholder="••••••••"
                             className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-brand-dark transition-all"

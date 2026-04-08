@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom"
 import { getOrderDetail } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
+import { getFallbackImageSrc, handleImageError } from "../utils/image"
 
 function getStatusText(status: Order["status"]) {
     switch (status) {
@@ -105,13 +106,15 @@ export default function OrderDetailPage() {
                             {order.items.map((item) => (
                                 <div key={item.id} className="flex gap-4 border-b pb-4 last:border-b-0 last:pb-0">
                                     <img
-                                        src={item.imageUrl || "https://via.placeholder.com/120"}
-                                        alt={item.productName}
+                                        src={item.imageUrl || getFallbackImageSrc("NovaGear")}
+                                        alt={item.productName || "Sản phẩm"}
                                         className="h-20 w-20 rounded-xl object-cover"
+                                        data-fallback={getFallbackImageSrc("NovaGear")}
+                                        onError={handleImageError}
                                     />
 
                                     <div className="flex-1">
-                                        <h3 className="font-semibold">{item.productName}</h3>
+                                        <h3 className="font-semibold">{item.productName || "Sản phẩm"}</h3>
 
                                         {item.variantLabel && (
                                             <p className="mt-1 text-sm text-brand-gray">

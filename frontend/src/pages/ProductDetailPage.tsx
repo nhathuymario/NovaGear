@@ -6,6 +6,8 @@ import {
     type InventoryItem,
 } from "../api/inventoryApi"
 import {getProductDetailBySlug, type ProductDetailData, type PublicProductVariant,} from "../api/productApi"
+import {getToken} from "../utils/auth"
+import { getFallbackImageSrc, handleImageError } from "../utils/image"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -77,13 +79,6 @@ export default function ProductDetailPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            setSelectedInventory(null)
-            setInventoryLoading(false)
-            return
-        }
-
         const loadInventory = async () => {
             try {
                 setInventoryLoading(true)
@@ -109,7 +104,7 @@ export default function ProductDetailPage() {
 
         return (
             product?.images[0]?.imageUrl ||
-            "https://via.placeholder.com/600x600?text=NovaGear"
+            getFallbackImageSrc("NovaGear")
         )
     }, [product, selectedVariant])
 
@@ -132,6 +127,11 @@ export default function ProductDetailPage() {
 
     const handleAddToCart = async () => {
         if (!product) return
+
+        if (!getToken()) {
+            navigate("/login", {state: {from: `/products/${slug}`}})
+            return
+        }
 
         if (product.variants.length > 0 && !selectedVariant) {
             alert("Vui lòng chọn phiên bản")
@@ -165,6 +165,11 @@ export default function ProductDetailPage() {
 
     const handleBuyNow = async () => {
         if (!product) return
+
+        if (!getToken()) {
+            navigate("/login", {state: {from: `/products/${slug}`}})
+            return
+        }
 
         if (product.variants.length > 0 && !selectedVariant) {
             alert("Vui lòng chọn phiên bản")
@@ -207,6 +212,8 @@ export default function ProductDetailPage() {
                         src={galleryImage}
                         alt={product.name}
                         className="h-full w-full object-cover"
+                            data-fallback={getFallbackImageSrc("NovaGear")}
+                            onError={handleImageError}
                     />
                 </div>
 
@@ -218,9 +225,11 @@ export default function ProductDetailPage() {
                                 className="overflow-hidden rounded-xl border bg-gray-50"
                             >
                                 <img
-                                    src={img.imageUrl || "https://via.placeholder.com/120"}
+                                    src={img.imageUrl || getFallbackImageSrc("NovaGear")}
                                     alt={`${product.name}-${index}`}
                                     className="h-24 w-full object-cover"
+                                    data-fallback={getFallbackImageSrc("NovaGear")}
+                                    onError={handleImageError}
                                 />
                             </div>
                         ))}

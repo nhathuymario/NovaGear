@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
+import type { SyntheticEvent } from "react"
 import { useNavigate } from "react-router-dom"
+import axiosClient from "../api/axiosClient"
 import { createOrderFromCart } from "../api/orderApi"
 import { getToken } from "../utils/auth"
 
@@ -24,7 +26,7 @@ export default function CheckoutPage() {
         )
     }, [form])
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         if (!token) {
@@ -37,15 +39,18 @@ export default function CheckoutPage() {
             setError("")
 
             const order = await createOrderFromCart({
-                receiverName: form.receiverName,
-                receiverPhone: form.receiverPhone,
-                shippingAddress: form.shippingAddress,
+                customerName: form.receiverName,
+                phone: form.receiverPhone,
+                address: form.shippingAddress,
                 note: form.note,
             })
 
             if (!order.id) {
-                throw new Error("Không nhận được orderId từ checkout")
+                setError("Không nhận được orderId từ checkout")
+                return
             }
+
+            await axiosClient.delete("/cart/clear")
 
             navigate(`/payment/${order.id}`)
         } catch (err) {

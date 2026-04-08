@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom"
 import type { CartItem } from "../types/cart"
 import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
 import { getToken } from "../utils/auth"
+import { getFallbackImageSrc, handleImageError } from "../utils/image"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -62,8 +63,8 @@ export default function CartPage() {
 
     const total = useMemo(() => {
         return items.reduce((sum, item) => {
-            const price = item.product?.salePrice ?? item.product?.price ?? 0
-            return sum + price * item.quantity
+            const price = item.salePrice ?? item.price ?? item.product?.salePrice ?? item.product?.price ?? 0
+            return sum + (item.lineTotal ?? price * item.quantity)
         }, 0)
     }, [items])
 
@@ -99,7 +100,9 @@ export default function CartPage() {
                     </div>
                 ) : (
                     items.map((item) => {
-                        const price = item.product?.salePrice ?? item.product?.price ?? 0
+                        const price = item.salePrice ?? item.price ?? item.product?.salePrice ?? item.product?.price ?? 0
+                        const imageSrc = item.thumbnail || item.product?.imageUrl || getFallbackImageSrc("NovaGear")
+                        const productName = item.productName || item.product?.name || "Sản phẩm"
 
                         return (
                             <div
@@ -107,13 +110,15 @@ export default function CartPage() {
                                 className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
                             >
                                 <img
-                                    src={item.product?.imageUrl || "https://via.placeholder.com/120"}
-                                    alt={item.product?.name}
+                                    src={imageSrc}
+                                    alt={productName}
                                     className="h-24 w-24 rounded-xl object-cover"
+                                    data-fallback={getFallbackImageSrc("NovaGear")}
+                                    onError={handleImageError}
                                 />
 
                                 <div className="flex-1">
-                                    <h3 className="font-semibold">{item.product?.name}</h3>
+                                    <h3 className="font-semibold">{productName}</h3>
 
                                     {(item.variantLabel || item.variantSku) && (
                                         <div className="mt-1 space-y-1">

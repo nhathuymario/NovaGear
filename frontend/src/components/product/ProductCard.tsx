@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom"
 import type { Product } from "../../types/product"
+import { getFallbackImageSrc, handleImageError } from "../../utils/image"
 
 interface Props {
-    product: Product
+    readonly product: Product
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({ product }: Readonly<Props>) {
     const finalPrice = product.salePrice ?? product.price
     const percentOff =
         product.salePrice != null && product.price > 0
@@ -17,9 +18,11 @@ export default function ProductCard({ product }: Props) {
             <Link to={`/products/${product.slug}`}>
                 <div className="relative aspect-square bg-slate-100">
                     <img
-                        src={product.imageUrl || "https://via.placeholder.com/400x400?text=NovaGear"}
+                        src={product.imageUrl || getFallbackImageSrc("NovaGear")}
                         alt={product.name}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        data-fallback={getFallbackImageSrc("NovaGear")}
+                        onError={handleImageError}
                     />
                     {percentOff > 0 && (
                         <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
