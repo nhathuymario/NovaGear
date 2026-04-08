@@ -1,9 +1,10 @@
 package uth.nhathuy.User.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uth.nhathuy.User.entity.Address;
 import uth.nhathuy.User.entity.UserProfile;
 import uth.nhathuy.User.repository.AddressRepository;
@@ -12,7 +13,7 @@ import uth.nhathuy.User.repository.UserProfileRepository;
 import java.time.LocalDate;
 
 @Component
-@Profile("seed")
+@Slf4j
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 

@@ -1,9 +1,11 @@
 package uth.nhathuy.Cart.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uth.nhathuy.Cart.entity.Cart;
 import uth.nhathuy.Cart.entity.CartItem;
 import uth.nhathuy.Cart.repository.CartItemRepository;
@@ -14,7 +16,9 @@ import java.util.List;
 
 @Component
 @Profile("seed")
+@Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class DataSeeder implements CommandLineRunner {
 
     private final CartRepository cartRepository;
@@ -22,7 +26,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Cart userCart = cartRepository.findByUserId(3L)
+        try {
+            log.info("Starting data seeding for Cart service...");
+            Cart userCart = cartRepository.findByUserId(3L)
                 .orElseGet(() -> cartRepository.save(Cart.builder().userId(3L).build()));
 
         upsertCartItem(
@@ -45,6 +51,10 @@ public class DataSeeder implements CommandLineRunner {
                 "1990000",
                 1
         );
+            log.info("Data seeding completed successfully for Cart service!");
+        } catch (Exception e) {
+            log.error("Error during data seeding for Cart service: ", e);
+        }
     }
 
     private void upsertCartItem(

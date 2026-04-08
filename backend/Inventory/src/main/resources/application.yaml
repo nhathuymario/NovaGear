@@ -5,6 +5,9 @@ spring:
   application:
     name: inventory-service
 
+  profiles:
+    active: seed
+
   datasource:
     url: jdbc:postgresql://localhost:5432/inventory_db
     username: postgres

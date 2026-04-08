@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: order-service
+  
+  profiles:
+    active: seed
 
   datasource:
     url: jdbc:postgresql://localhost:5432/order_db

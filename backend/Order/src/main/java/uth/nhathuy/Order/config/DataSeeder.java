@@ -1,9 +1,11 @@
 package uth.nhathuy.Order.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uth.nhathuy.Order.entity.Order;
 import uth.nhathuy.Order.entity.OrderItem;
 import uth.nhathuy.Order.entity.OrderStatus;
@@ -15,15 +17,19 @@ import java.util.List;
 
 @Component
 @Profile("seed")
+@Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class DataSeeder implements CommandLineRunner {
 
     private final OrderRepository orderRepository;
 
     @Override
     public void run(String... args) {
-        seedOrder(
-                "SEED-ORDER-001",
+        try {
+            log.info("Starting data seeding for Order service...");
+            seedOrder(
+                    "SEED-ORDER-001",
                 3L,
                 "user",
                 "Normal User",
@@ -52,6 +58,10 @@ public class DataSeeder implements CommandLineRunner {
                         new ItemSeed(3L, 5L, "iPhone 15 Pro Max", "Titan Tu Nhien / 256GB", "/product-placeholder.svg", "31990000", 1)
                 )
         );
+            log.info("Data seeding completed successfully for Order service!");
+        } catch (Exception e) {
+            log.error("Error during data seeding for Order service: ", e);
+        }
     }
 
     private void seedOrder(
@@ -70,7 +80,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Order order = orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .filter(existing -> existing.getNote() != null)
-                .filter(existing -> existing.getNote().contains(seedCode) || existing.getNote().equals(note))
+                .filter(existing -> existing.getNote().contains(seedCode))
                 .findFirst()
                 .orElseGet(Order::new);
 

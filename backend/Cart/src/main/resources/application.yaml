@@ -5,6 +5,9 @@ spring:
   application:
     name: cart-service
 
+  profiles:
+    active: seed
+
   datasource:
     url: jdbc:postgresql://localhost:5432/cart_db
     username: postgres

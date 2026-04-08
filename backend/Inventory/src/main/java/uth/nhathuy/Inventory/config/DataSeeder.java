@@ -1,9 +1,11 @@
 package uth.nhathuy.Inventory.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uth.nhathuy.Inventory.entity.Inventory;
 import uth.nhathuy.Inventory.entity.InventoryStatus;
 import uth.nhathuy.Inventory.entity.InventoryTransaction;
@@ -16,7 +18,9 @@ import java.util.List;
 
 @Component
 @Profile("seed")
+@Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class DataSeeder implements CommandLineRunner {
 
     private final InventoryRepository inventoryRepository;
@@ -24,7 +28,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        List<Inventory> seeded = new ArrayList<>();
+        try {
+            log.info("Starting data seeding for Inventory service...");
+            List<Inventory> seeded = new ArrayList<>();
         seeded.add(upsertInventory(1L, 1L, 40, 2, 5));
         seeded.add(upsertInventory(1L, 2L, 24, 1, 5));
         seeded.add(upsertInventory(2L, 3L, 18, 1, 5));
@@ -35,7 +41,11 @@ public class DataSeeder implements CommandLineRunner {
         seeded.add(upsertInventory(4L, 8L, 10, 0, 5));
         seeded.add(upsertInventory(5L, 9L, 55, 4, 5));
 
-        seedInitialImportTransactionsIfMissing(seeded);
+            seedInitialImportTransactionsIfMissing(seeded);
+            log.info("Data seeding completed successfully for Inventory service!");
+        } catch (Exception e) {
+            log.error("Error during data seeding for Inventory service: ", e);
+        }
     }
 
     private Inventory upsertInventory(Long productId, Long variantId, int available, int reserved, int threshold) {
