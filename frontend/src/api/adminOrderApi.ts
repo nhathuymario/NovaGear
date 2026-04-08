@@ -9,6 +9,8 @@ type RawOrderItem = {
     price?: number
     salePrice?: number
     imageUrl?: string
+    thumbnail?: string
+    variantName?: string
 }
 
 type RawOrder = {
@@ -19,6 +21,9 @@ type RawOrder = {
     shippingAddress?: string
     receiverName?: string
     receiverPhone?: string
+    customerName?: string
+    phone?: string
+    address?: string
     note?: string
     createdAt?: string
     items?: RawOrderItem[]
@@ -30,20 +35,21 @@ function mapOrder(raw: RawOrder): Order {
         orderCode: raw.orderCode ?? "",
         status: (raw.status as Order["status"]) ?? "PENDING",
         totalAmount: Number(raw.totalAmount ?? 0),
-        shippingAddress: raw.shippingAddress ?? "",
-        receiverName: raw.receiverName ?? "",
-        receiverPhone: raw.receiverPhone ?? "",
+        shippingAddress: raw.shippingAddress ?? raw.address ?? "",
+        receiverName: raw.receiverName ?? raw.customerName ?? "",
+        receiverPhone: raw.receiverPhone ?? raw.phone ?? "",
         note: raw.note ?? "",
         createdAt: raw.createdAt ?? "",
         items: (raw.items ?? []).map((item) => ({
             id: item.id ?? "",
             productId: item.productId ?? "",
             productName: item.productName ?? "",
-            imageUrl: item.imageUrl ?? "",
+            imageUrl: item.imageUrl ?? item.thumbnail ?? "",
             quantity: Number(item.quantity ?? 0),
             price: Number(item.price ?? 0),
             salePrice:
                 item.salePrice != null ? Number(item.salePrice) : undefined,
+            variantLabel: item.variantName ?? "",
         })),
     }
 }

@@ -9,6 +9,7 @@ export interface InventoryItem {
     color?: string
     ram?: string
     storage?: string
+    versionName?: string
     stockQuantity: number
     reservedQuantity: number
     availableQuantity: number
@@ -61,6 +62,7 @@ type RawInventoryItem = {
     color?: string
     ram?: string
     storage?: string
+    versionName?: string
     stockQuantity?: number
     sellableQuantity?: number
     reservedQuantity?: number
@@ -83,6 +85,12 @@ type RawInventoryTransaction = {
 }
 
 function mapInventoryItem(raw: RawInventoryItem): InventoryItem {
+    const available = Number(raw.availableQuantity ?? 0)
+    const reserved = Number(raw.reservedQuantity ?? 0)
+    const total = raw.stockQuantity != null
+        ? Number(raw.stockQuantity)
+        : available + reserved
+
     return {
         id: raw.id ?? "",
         productId: raw.productId ?? "",
@@ -92,9 +100,10 @@ function mapInventoryItem(raw: RawInventoryItem): InventoryItem {
         color: raw.color ?? "",
         ram: raw.ram ?? "",
         storage: raw.storage ?? "",
-        stockQuantity: Number(raw.stockQuantity ?? raw.sellableQuantity ?? raw.availableQuantity ?? 0),
-        reservedQuantity: Number(raw.reservedQuantity ?? 0),
-        availableQuantity: Number(raw.availableQuantity ?? 0),
+        versionName: raw.versionName ?? "",
+        stockQuantity: total,
+        reservedQuantity: reserved,
+        availableQuantity: available,
         updatedAt: raw.updatedAt ?? "",
         status: raw.status ?? "",
     }

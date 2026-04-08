@@ -9,7 +9,17 @@ type RawPayment = {
     status?: string
     paymentUrl?: string
     transactionCode?: string
+    transactionRef?: string
     createdAt?: string
+}
+
+function normalizePaymentMethod(method?: string): string {
+    const value = (method ?? "COD").trim().toUpperCase()
+    if (value === "ONLINE") return "BANK_TRANSFER"
+    if (value === "BANK_TRANSFER" || value === "E_WALLET" || value === "COD") {
+        return value
+    }
+    return "COD"
 }
 
 function mapPayment(raw: RawPayment): Payment {
@@ -20,13 +30,16 @@ function mapPayment(raw: RawPayment): Payment {
         amount: Number(raw.amount ?? 0),
         status: (raw.status as Payment["status"]) ?? "PENDING",
         paymentUrl: raw.paymentUrl ?? "",
-        transactionCode: raw.transactionCode ?? "",
+        transactionCode: raw.transactionCode ?? raw.transactionRef ?? "",
         createdAt: raw.createdAt ?? "",
     }
 }
 
 export async function createPayment(orderId: number | string, method = "COD"): Promise<Payment> {
-    const res = await axiosClient.post("/payments", { orderId, method })
+    const res = await axiosClient.post("/payments", {
+        orderId,
+        method: normalizePaymentMethod(method),
+    })
     return mapPayment(res.data)
 }
 
