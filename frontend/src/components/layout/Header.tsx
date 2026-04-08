@@ -1,11 +1,11 @@
-import { Link, useNavigate } from "react-router-dom"
-import { useState, type SyntheticEvent } from "react"
-import { useAuth } from "../../hooks/useAuth"
+import {Link, useNavigate} from "react-router-dom"
+import {type SyntheticEvent, useState} from "react"
+import {useAuth} from "../../hooks/useAuth"
 
 export default function Header() {
     const [keyword, setKeyword] = useState("")
     const navigate = useNavigate()
-    const { isAuthenticated, user, logout } = useAuth()
+    const {isAuthenticated, user, logout} = useAuth()
 
     const handleSearch = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -21,7 +21,7 @@ export default function Header() {
         <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
             <div className="border-b border-slate-100 bg-slate-50/80">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs text-slate-600">
-                    <p>Gia tot moi ngay - Ho tro doi tra linh hoat</p>
+                    <p>Giá tốt mỗi ngày - Hỗ trợ đổi trả linh hoạt</p>
                     <p className="hidden md:block">Hotline: 0123 456 789</p>
                 </div>
             </div>
@@ -33,28 +33,33 @@ export default function Header() {
                 </Link>
 
                 <form onSubmit={handleSearch} className="order-3 w-full md:order-none md:flex-1">
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-brand-blue focus-within:bg-white">
+                    <div
+                        className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-brand-blue focus-within:bg-white">
                         <input
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            placeholder="Ban tim gi hom nay?"
+                            placeholder="Bạn tìm gì hôm nay?"
                             className="w-full bg-transparent text-sm outline-none"
                         />
-                        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
-                            Tim
+                        <button type="submit"
+                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
+                            Tìm
                         </button>
                     </div>
                 </form>
 
                 <nav className="flex items-center gap-2 md:gap-3">
-                    <Link to="/products" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                        San pham
+                    <Link to="/products"
+                          className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                        Sản phẩm
                     </Link>
-                    <Link to="/cart" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                        Gio hang
+                    <Link to="/cart"
+                          className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                        Giỏ hàng
                     </Link>
-                    <Link to="/orders" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 md:inline-block">
-                        Don hang
+                    <Link to="/orders"
+                          className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 md:inline-block">
+                        Đơn hàng
                     </Link>
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
@@ -62,13 +67,13 @@ export default function Header() {
                                 onClick={() => navigate("/profile")}
                                 className="max-w-[130px] truncate rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                             >
-                                {user?.fullName || user?.email || "Tai khoan"}
+                                {user?.fullName || user?.email || "Tài khoản"}
                             </button>
                             <button
                                 onClick={handleLogout}
                                 className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
                             >
-                                Dang xuat
+                                Đăng xuất
                             </button>
                         </div>
                     ) : (
@@ -76,7 +81,7 @@ export default function Header() {
                             to="/login"
                             className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
                         >
-                            Dang nhap
+                            Đăng nhập
                         </Link>
                     )}
                 </nav>

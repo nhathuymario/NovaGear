@@ -5,29 +5,30 @@ export default function Footer() {
                 <div className="space-y-3">
                     <h3 className="text-xl font-extrabold text-slate-900">NovaGear</h3>
                     <p className="text-sm text-slate-600">
-                        Shop cong nghe toi gian, tap trung vao trai nghiem mua sam nhanh, ro rang va de chon.
+                        Shop công nghệ thối giản, tập trung vào trải nghiệm mua sắm nhanh, rỏ ráng và dễ chọn.
                     </p>
-                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    <span
+                        className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                         Trusted Electronics Store
                     </span>
                 </div>
 
                 <div>
-                    <h4 className="font-bold text-slate-900">Ho tro khach hang</h4>
+                    <h4 className="font-bold text-slate-900">Hỗ trợ khách hàng</h4>
                     <div className="mt-3 space-y-2 text-sm text-slate-600">
-                        <p>Chinh sach bao hanh</p>
-                        <p>Chinh sach giao hang</p>
-                        <p>Huong dan thanh toan</p>
-                        <p>Lien he ho tro 24/7</p>
+                        <p>Chính sách bảo hành</p>
+                        <p>Chính sách giao hàng</p>
+                        <p>Hướng dẫn thanh toán</p>
+                        <p>Liên hệ hỗ trợ 24/7</p>
                     </div>
                 </div>
 
                 <div>
-                    <h4 className="font-bold text-slate-900">Thong tin</h4>
+                    <h4 className="font-bold text-slate-900">Thông tin</h4>
                     <div className="mt-3 space-y-2 text-sm text-slate-600">
                         <p>Email: support@novagear.vn</p>
                         <p>Hotline: 0123 456 789</p>
-                        <p>Gio ho tro: 8:00 - 22:00 (Mon - Sun)</p>
+                        <p>Giờ hỗ trợ: 8:00 - 22:00 (Mon - Sun)</p>
                     </div>
                 </div>
             </div>

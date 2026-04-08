@@ -8,13 +8,11 @@ import uth.nhathuy.Order.exception.ResourceNotFoundException;
 import uth.nhathuy.Order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,9 +31,9 @@ public class OrderService {
 
     @Transactional
     public CheckoutResponse checkout(Long userId, String username, CheckoutRequest request, String token) {
-        CartResponseDto cart = getCartFromCartService(userId, token);
+        CartResponseDto cart = getCartFromCartService(userId, username, token);
 
-        if (cart.items() == null || cart.items().isEmpty()) {
+        if (cart == null || cart.items() == null || cart.items().isEmpty()) {
             throw new IllegalArgumentException("Giỏ hàng đang trống");
         }
 
@@ -73,7 +71,7 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        clearCart(userId, token);
+        clearCart(userId, username, token);
 
         return CheckoutResponse.builder()
                 .orderId(savedOrder.getId())
@@ -120,10 +118,12 @@ public class OrderService {
         return mapToOrderResponse(orderRepository.save(order));
     }
 
-    private CartResponseDto getCartFromCartService(Long userId, String token) {
+    private CartResponseDto getCartFromCartService(Long userId, String username, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.set("X-User-Id", String.valueOf(userId));
+        headers.set("X-Username", username);
+        headers.set("X-Role", "ROLE_USER");
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
@@ -137,10 +137,12 @@ public class OrderService {
         return response.getBody();
     }
 
-    private void clearCart(Long userId, String token) {
+    private void clearCart(Long userId, String username, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.set("X-User-Id", String.valueOf(userId));
+        headers.set("X-Username", username);
+        headers.set("X-Role", "ROLE_USER");
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
@@ -154,7 +156,6 @@ public class OrderService {
 
     private void exportInventory(CartItemDto item) {
         InventoryExportRequest request = new InventoryExportRequest(
-                item.productId(),
                 item.variantId(),
                 item.quantity(),
                 "Xuất kho cho đơn hàng"
@@ -166,7 +167,14 @@ public class OrderService {
         HttpEntity<InventoryExportRequest> entity = new HttpEntity<>(request, headers);
 
         restTemplate.exchange(
-                inventoryServiceUrl + "/api/admin/inventory/export",
+                inventoryServiceUrl + "/api/inventory/internal/reserve",
+                HttpMethod.POST,
+                entity,
+                Void.class
+        );
+
+        restTemplate.exchange(
+                inventoryServiceUrl + "/api/inventory/internal/deduct",
                 HttpMethod.POST,
                 entity,
                 Void.class

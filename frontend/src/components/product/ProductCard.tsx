@@ -1,12 +1,12 @@
-import { Link } from "react-router-dom"
-import type { Product } from "../../types/product"
-import { getFallbackImageSrc, handleImageError } from "../../utils/image"
+import {Link} from "react-router-dom"
+import type {Product} from "../../types/product"
+import {getFallbackImageSrc, handleImageError} from "../../utils/image"
 
 interface Props {
     readonly product: Product
 }
 
-export default function ProductCard({ product }: Readonly<Props>) {
+export default function ProductCard({product}: Readonly<Props>) {
     const finalPrice = product.salePrice ?? product.price
     const percentOff =
         product.salePrice != null && product.price > 0
@@ -14,7 +14,8 @@ export default function ProductCard({ product }: Readonly<Props>) {
             : 0
 
     return (
-        <div className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <div
+            className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
             <Link to={`/products/${product.slug}`}>
                 <div className="relative aspect-square bg-slate-100">
                     <img
@@ -25,7 +26,8 @@ export default function ProductCard({ product }: Readonly<Props>) {
                         onError={handleImageError}
                     />
                     {percentOff > 0 && (
-                        <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
+                        <span
+                            className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
                             -{percentOff}%
                         </span>
                     )}
@@ -55,14 +57,14 @@ export default function ProductCard({ product }: Readonly<Props>) {
                     <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${(product.stock ?? 0) > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
                     >
-                        {(product.stock ?? 0) > 0 ? "Con hang" : "Het hang"}
+                        {(product.stock ?? 0) > 0 ? "Còn hàng" : "Hết hàng"}
                     </span>
 
                     <Link
                         to={`/products/${product.slug}`}
                         className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
                     >
-                        Xem chi tiet
+                        Xem chi tiết
                     </Link>
                 </div>
             </div>
