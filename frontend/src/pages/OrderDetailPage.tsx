@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
-import { getOrderDetail } from "../api/orderApi"
+import { cancelMyOrder, getOrderDetail } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
 import { getFallbackImageSrc, handleImageError } from "../utils/image"
@@ -34,6 +34,8 @@ export default function OrderDetailPage() {
     const token = getToken()
     const [order, setOrder] = useState<Order | null>(null)
     const [loading, setLoading] = useState(Boolean(token && id))
+    const [cancelling, setCancelling] = useState(false)
+    const [actionMessage, setActionMessage] = useState("")
 
     useEffect(() => {
         if (!token || !id) return
@@ -76,6 +78,28 @@ export default function OrderDetailPage() {
 
     if (loading) return <div>Đang tải chi tiết đơn...</div>
     if (!order) return <div>Không tìm thấy đơn hàng</div>
+
+    const canCancel = order.status === "PENDING" || order.status === "CONFIRMED"
+
+    const handleCancelOrder = async () => {
+        if (!id || !canCancel) return
+
+        const ok = window.confirm("Bạn chắc chắn muốn hủy đơn hàng này?")
+        if (!ok) return
+
+        try {
+            setCancelling(true)
+            setActionMessage("")
+            const updated = await cancelMyOrder(id)
+            setOrder(updated)
+            setActionMessage("Đã hủy đơn hàng thành công.")
+        } catch (error: any) {
+            const message = error?.response?.data?.message || "Không thể hủy đơn hàng lúc này."
+            setActionMessage(message)
+        } finally {
+            setCancelling(false)
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -161,18 +185,32 @@ export default function OrderDetailPage() {
                         </span>
                     </div>
 
-                    {order.status === "PENDING" && (
+                    {(order.status === "PENDING" || order.status === "CONFIRMED") && (
                         <div className="mt-6 flex flex-col gap-3">
-                            <Link
-                                to={`/payment/${order.id}`}
-                                className="block w-full rounded-xl bg-brand-dark py-3 text-center font-semibold text-white transition-all hover:bg-opacity-90 active:scale-[0.98]"
-                            >
-                                Thanh toán ngay
-                            </Link>
+                            {order.status === "PENDING" && (
+                                <Link
+                                    to={`/payment/${order.id}`}
+                                    className="block w-full rounded-xl bg-brand-dark py-3 text-center font-semibold text-white transition-all hover:bg-opacity-90 active:scale-[0.98]"
+                                >
+                                    Thanh toán ngay
+                                </Link>
+                            )}
 
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                                Backend hiện chưa thấy endpoint hủy đơn của user, nên FE tạm ẩn nút hủy.
-                            </div>
+                            {canCancel && (
+                                <button
+                                    onClick={handleCancelOrder}
+                                    disabled={cancelling}
+                                    className="w-full rounded-xl border border-red-300 py-3 text-center font-semibold text-red-600 transition-all hover:bg-red-50 disabled:opacity-60"
+                                >
+                                    {cancelling ? "Đang hủy đơn..." : "Hủy đơn hàng"}
+                                </button>
+                            )}
+
+                            {actionMessage && (
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                                    {actionMessage}
+                                </div>
+                            )}
                         </div>
                     )}
                 </aside>

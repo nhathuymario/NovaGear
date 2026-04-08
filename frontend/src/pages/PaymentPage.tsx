@@ -16,6 +16,7 @@ export default function PaymentPage() {
     const [method, setMethod] = useState("COD")
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
+    const [message, setMessage] = useState("")
 
     const loadData = useCallback(async () => {
         if (!orderId) return
@@ -45,6 +46,7 @@ export default function PaymentPage() {
         if (!order) return
 
         try {
+            setMessage("")
             setCreating(true)
             const data = await createPayment(order.id, method)
             setPayment(data)
@@ -57,7 +59,39 @@ export default function PaymentPage() {
             navigate(`/payment/result?orderId=${order.id}&status=pending`)
         } catch (err) {
             console.error(err)
-            alert("Tạo thanh toán thất bại")
+            const status = (err as any)?.response?.status
+            const serverMessage = String((err as any)?.response?.data?.message || "")
+            if (status === 409 && order?.id) {
+                const isExistingPaymentConflict = serverMessage.toLowerCase().includes("da co payment")
+                        || serverMessage.toLowerCase().includes("ton tai")
+
+                if (!isExistingPaymentConflict) {
+                    setMessage(serverMessage || "Khong the tao thanh toan luc nay. Vui long thu lai.")
+                    return
+                }
+
+                try {
+                    const existing = await getPaymentByOrderId(order.id)
+                    if (existing) {
+                        setPayment(existing)
+                        if (existing.paymentUrl) {
+                            window.location.href = existing.paymentUrl
+                            return
+                        }
+                        setMessage("Đơn đã có thanh toán trước đó. Bạn có thể tiếp tục theo trạng thái hiện tại.")
+                        navigate(`/payment/result?orderId=${order.id}&status=${String(existing.status || "pending").toLowerCase()}`)
+                        return
+                    }
+                } catch (retryErr) {
+                    console.error(retryErr)
+                }
+            }
+            if (status === 502) {
+                setMessage(serverMessage || "Cong thanh toan tam thoi loi ket noi. Vui long thu lai sau.")
+                return
+            }
+
+            setMessage(serverMessage || "Khong the tao thanh toan luc nay. Vui long thu lai.")
         } finally {
             setCreating(false)
         }
@@ -128,6 +162,23 @@ export default function PaymentPage() {
                 >
                     {creating ? "Đang tạo thanh toán..." : "Xác nhận thanh toán"}
                 </button>
+
+                {payment?.paymentUrl && payment.status === "PENDING" && (
+                    <button
+                        onClick={() => {
+                            window.location.href = String(payment.paymentUrl)
+                        }}
+                        className="ml-3 mt-6 rounded-xl border border-brand-dark px-6 py-3 font-semibold text-brand-dark"
+                    >
+                        Tiếp tục thanh toán online
+                    </button>
+                )}
+
+                {message && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                        {message}
+                    </div>
+                )}
 
                 {/*<div className="mt-6 rounded-2xl border bg-gray-50 p-4">*/}
                 {/*    <h3 className="font-semibold">Test mock callback</h3>*/}
