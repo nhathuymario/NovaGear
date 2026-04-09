@@ -68,3 +68,13 @@ export async function getMeApi(): Promise<AuthMeResponse> {
     const res = await axiosClient.get("/auth/me")
     return (res.data?.data || res.data) as AuthMeResponse
 }
+
+export function getGoogleAuthUrl(): string {
+    const configuredUrl = import.meta.env.VITE_GOOGLE_AUTH_URL as string | undefined
+    if (configuredUrl && configuredUrl.trim().length > 0) {
+        return configuredUrl.trim()
+    }
+
+    // Gateway route phổ biến của Spring Security OAuth2 login
+    return "/api/oauth2/authorization/google"
+}
