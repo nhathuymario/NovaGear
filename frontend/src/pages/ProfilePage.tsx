@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react"
 import {useNavigate} from "react-router-dom"
+import {CircleUserRound, Mail, Phone, ShieldCheck, UserRound} from "lucide-react"
 import {getMyProfile, type UserProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
 
@@ -13,6 +14,12 @@ export default function ProfilePage() {
     const {user, loading, logout} = useAuth()
     const [profile, setProfile] = useState<UserProfile | null>(null)
     const [profileLoading, setProfileLoading] = useState(true)
+
+    const displayName = profile?.fullName || user?.fullName || user?.username || "Nguoi dung"
+    const displayEmail = profile?.email || user?.email || "Chua cap nhat"
+    const displayUsername = profile?.username || user?.username || "Chua cap nhat"
+    const displayPhone = profile?.phone || "Chua cap nhat"
+    const displayRole = user?.role || "USER"
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -48,6 +55,16 @@ export default function ProfilePage() {
                 <p className="mt-2 text-sm text-brand-gray">
                     Quản lý thông tin cá nhân và trạng thái đăng nhập.
                 </p>
+
+                <div className="mt-5 flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+                    <div className="rounded-full bg-slate-900 p-3 text-white">
+                        <CircleUserRound className="h-6 w-6"/>
+                    </div>
+                    <div>
+                        <p className="text-lg font-bold text-slate-900">{displayName}</p>
+                        <p className="text-sm text-slate-500">{displayEmail}</p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-[1fr_320px]">
@@ -56,30 +73,49 @@ export default function ProfilePage() {
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Username</p>
+                            <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
+                                <UserRound className="h-4 w-4"/>
+                                Username
+                            </p>
                             <p className="mt-1 font-semibold">
-                                {profile?.username || user?.username || "Chưa cập nhật"}
+                                {displayUsername}
                             </p>
                         </div>
 
                         <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Email</p>
+                            <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
+                                <Mail className="h-4 w-4"/>
+                                Email
+                            </p>
                             <p className="mt-1 font-semibold">
-                                {profile?.email || user?.email || "Chưa cập nhật"}
+                                {displayEmail}
                             </p>
                         </div>
 
                         <div className="rounded-2xl bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Họ và tên</p>
                             <p className="mt-1 font-semibold">
-                                {profile?.fullName || user?.fullName || "Chưa cập nhật"}
+                                {displayName}
                             </p>
                         </div>
 
                         <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Vai trò</p>
+                            <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
+                                <Phone className="h-4 w-4"/>
+                                So dien thoai
+                            </p>
                             <p className="mt-1 font-semibold">
-                                {user?.role || "USER"}
+                                {displayPhone}
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-gray-50 p-4">
+                            <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
+                                <ShieldCheck className="h-4 w-4"/>
+                                Vai tro
+                            </p>
+                            <p className="mt-1 font-semibold">
+                                {displayRole}
                             </p>
                         </div>
                     </div>

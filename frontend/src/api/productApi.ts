@@ -1,6 +1,17 @@
 import axiosClient from "./axiosClient"
 import type { Product } from "../types/product"
 
+export interface ProductQueryParams {
+    keyword?: string
+    categoryId?: string | number
+}
+
+export interface PublicCategory {
+    id: number | string
+    name: string
+    slug: string
+}
+
 export interface PublicProductVariant {
     id: number | string
     sku?: string
@@ -134,8 +145,18 @@ function mapProductDetail(item: ProductResponse): ProductDetailData {
     }
 }
 
-export async function getProducts(): Promise<Product[]> {
-    const res = await axiosClient.get("/products/public")
+export async function getProducts(params?: ProductQueryParams): Promise<Product[]> {
+    const queryParams: Record<string, string | number> = {}
+    if (params?.keyword?.trim()) {
+        queryParams.keyword = params.keyword.trim()
+    }
+    if (params?.categoryId != null && String(params.categoryId).trim() !== "") {
+        queryParams.categoryId = params.categoryId
+    }
+
+    const res = await axiosClient.get("/products/public", {
+        params: queryParams,
+    })
     const items: ProductResponse[] = Array.isArray(res.data)
         ? res.data
         : res.data?.content ?? []
@@ -154,7 +175,21 @@ export async function getProductDetailBySlug(
     return mapProductDetail(res.data)
 }
 
-export async function getPublicCategories() {
+type RawPublicCategory = {
+    id?: number | string
+    name?: string
+    slug?: string
+}
+
+export async function getPublicCategories(): Promise<PublicCategory[]> {
     const res = await axiosClient.get("/products/public/categories")
-    return res.data ?? []
+    const items: RawPublicCategory[] = Array.isArray(res.data)
+        ? res.data
+        : res.data?.content ?? []
+
+    return items.map((item) => ({
+        id: item.id ?? "",
+        name: item.name ?? "",
+        slug: item.slug ?? "",
+    }))
 }
