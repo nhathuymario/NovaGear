@@ -14,6 +14,7 @@ import OrderDetailPage from "./pages/OrderDetailPage"
 import PaymentPage from "./pages/PaymentPage"
 import PaymentResultPage from "./pages/PaymentResultPage"
 import ProfilePage from "./pages/ProfilePage"
+import OAuthCallbackPage from "./pages/OAuthCallbackPage"
 import NotFoundPage from "./pages/NotFoundPage"
 import AdminRoute from "./components/admin/AdminRoute"
 import AdminLayout from "./components/admin/AdminLayout"
@@ -34,6 +35,7 @@ export default function App() {
 
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/register" element={<RegisterPage/>}/>
+                <Route path="/oauth2/success" element={<OAuthCallbackPage/>}/>
 
                 <Route element={<AdminRoute/>}>
                     <Route path="/admin" element={<AdminLayout/>}>

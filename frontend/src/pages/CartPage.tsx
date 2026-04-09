@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import { Minus, Plus, ShoppingCart, TicketPercent, Trash2, Truck } from "lucide-react"
 import type { CartItem } from "../types/cart"
 import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
 import { getToken } from "../utils/auth"
@@ -92,7 +93,10 @@ export default function CartPage() {
     return (
         <div className="grid gap-6 md:grid-cols-[1fr_320px]">
             <section className="space-y-4">
-                <h1 className="text-2xl font-bold">Giỏ hàng</h1>
+                <h1 className="flex items-center gap-2 text-2xl font-bold">
+                    <ShoppingCart className="h-6 w-6" />
+                    Gio hang
+                </h1>
 
                 {items.length === 0 ? (
                     <div className="rounded-2xl bg-white p-6 shadow-sm">
@@ -141,26 +145,29 @@ export default function CartPage() {
 
                                     <div className="mt-3 flex items-center gap-2">
                                         <button
-                                            className="rounded-lg border px-3 py-1"
+                                            className="rounded-lg border px-2.5 py-1 text-slate-700"
                                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            aria-label="Giam so luong"
                                         >
-                                            -
+                                            <Minus className="h-4 w-4" />
                                         </button>
                                         <span className="min-w-[32px] text-center">{item.quantity}</span>
                                         <button
-                                            className="rounded-lg border px-3 py-1"
+                                            className="rounded-lg border px-2.5 py-1 text-slate-700"
                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            aria-label="Tang so luong"
                                         >
-                                            +
+                                            <Plus className="h-4 w-4" />
                                         </button>
                                     </div>
                                 </div>
 
                                 <button
-                                    className="text-sm font-semibold text-red-500"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
                                     onClick={() => removeItem(item.id)}
+                                    aria-label="Xoa san pham"
                                 >
-                                    Xóa
+                                    <Trash2 className="h-4 w-4" />
                                 </button>
                             </div>
                         )
@@ -175,7 +182,17 @@ export default function CartPage() {
                     <span>{formatCurrency(total)}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
-                    <span>Phí vận chuyển</span>
+                    <span className="inline-flex items-center gap-1">
+                        <Truck className="h-4 w-4" />
+                        Phi van chuyen
+                    </span>
+                    <span>0đ</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                    <span className="inline-flex items-center gap-1">
+                        <TicketPercent className="h-4 w-4" />
+                        Uu dai
+                    </span>
                     <span>0đ</span>
                 </div>
                 <div className="mt-4 border-t pt-4">
