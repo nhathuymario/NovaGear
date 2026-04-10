@@ -1,13 +1,9 @@
 package uth.nhathuy.Auth.security;
 
-import uth.nhathuy.Auth.entity.Role;
-import uth.nhathuy.Auth.entity.RoleName;
-import uth.nhathuy.Auth.entity.User;
-import uth.nhathuy.Auth.repository.RoleRepository;
-import uth.nhathuy.Auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.*;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +11,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final OAuth2UserAccountService oAuth2UserAccountService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -29,22 +24,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Email not found from Google");
         }
 
-        userRepository.findByEmail(email).orElseGet(() -> {
-            Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("ROLE_USER not found"));
-
-            User user = User.builder()
-                    .fullName(name != null ? name : email)
-                    .username(email.split("@")[0])
-                    .email(email)
-                    .password(null)
-                    .enabled(true)
-                    .authProvider("GOOGLE")
-                    .build();
-
-            user.getRoles().add(userRole);
-            return userRepository.save(user);
-        });
+        try {
+            oAuth2UserAccountService.resolveOrCreateUser(email, name);
+        } catch (RuntimeException ex) {
+            OAuth2Error error = new OAuth2Error("oauth2_user_provisioning_failed", ex.getMessage(), null);
+            throw new OAuth2AuthenticationException(error, ex.getMessage(), ex);
+        }
 
         return oAuth2User;
     }
