@@ -1,16 +1,5 @@
 import axiosClient from "./axiosClient"
-import type { Product } from "../types/product"
-
-export interface ProductQueryParams {
-    keyword?: string
-    categoryId?: string | number
-}
-
-export interface PublicCategory {
-    id: number | string
-    name: string
-    slug: string
-}
+import type {Product, PublicCategory} from "../types/product"
 
 export interface PublicProductVariant {
     id: number | string
@@ -106,6 +95,7 @@ function mapProduct(item: ProductResponse): Product {
                 ? Number(firstVariant.stockQuantity)
                 : 0,
         category: item.category?.name ?? "",
+        categorySlug: item.category?.slug ?? "",
         brand: item.brand ?? "",
     }
 }
@@ -145,18 +135,8 @@ function mapProductDetail(item: ProductResponse): ProductDetailData {
     }
 }
 
-export async function getProducts(params?: ProductQueryParams): Promise<Product[]> {
-    const queryParams: Record<string, string | number> = {}
-    if (params?.keyword?.trim()) {
-        queryParams.keyword = params.keyword.trim()
-    }
-    if (params?.categoryId != null && String(params.categoryId).trim() !== "") {
-        queryParams.categoryId = params.categoryId
-    }
-
-    const res = await axiosClient.get("/products/public", {
-        params: queryParams,
-    })
+export async function getProducts(): Promise<Product[]> {
+    const res = await axiosClient.get("/products/public")
     const items: ProductResponse[] = Array.isArray(res.data)
         ? res.data
         : res.data?.content ?? []
@@ -175,21 +155,7 @@ export async function getProductDetailBySlug(
     return mapProductDetail(res.data)
 }
 
-type RawPublicCategory = {
-    id?: number | string
-    name?: string
-    slug?: string
-}
-
 export async function getPublicCategories(): Promise<PublicCategory[]> {
     const res = await axiosClient.get("/products/public/categories")
-    const items: RawPublicCategory[] = Array.isArray(res.data)
-        ? res.data
-        : res.data?.content ?? []
-
-    return items.map((item) => ({
-        id: item.id ?? "",
-        name: item.name ?? "",
-        slug: item.slug ?? "",
-    }))
+    return Array.isArray(res.data) ? res.data : res.data?.content ?? []
 }

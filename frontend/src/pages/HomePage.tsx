@@ -65,19 +65,26 @@ export default function HomePage() {
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                 <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-slate-900">Danh muc noi bat</h2>
+                    <h2 className="text-lg font-bold text-slate-900">Danh mục nổi bật</h2>
                     <Link to="/products" className="text-sm font-semibold text-brand-blue">
-                        Xem them
+                        Xem thêm
                     </Link>
                 </div>
+
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                    {["Laptop", "PC", "Màn hình", "Bàn phím", "Tai nghe"].map((item) => (
+                    {[
+                        {name: "Laptop", slug: "laptop"},
+                        {name: "PC", slug: "pc"},
+                        {name: "Màn hình", slug: "man-hinh"},
+                        {name: "Bàn phím", slug: "ban-phim"},
+                        {name: "Tai nghe", slug: "tai-nghe"},
+                    ].map((item) => (
                         <Link
-                            key={item}
-                            to={`/products?keyword=${encodeURIComponent(item)}`}
+                            key={item.slug}
+                            to={`/products?category=${encodeURIComponent(item.slug)}`}
                             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-brand-blue hover:bg-blue-50 hover:text-brand-blue"
                         >
-                            {item}
+                            {item.name}
                         </Link>
                     ))}
                 </div>
