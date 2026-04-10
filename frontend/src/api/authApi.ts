@@ -75,6 +75,6 @@ export function getGoogleAuthUrl(): string {
         return configuredUrl.trim()
     }
 
-    // Gateway route phổ biến của Spring Security OAuth2 login
-    return "/api/oauth2/authorization/google"
+    // Fallback direct to Auth service to avoid local gateway route drift.
+    return "http://localhost:8081/oauth2/authorization/google"
 }

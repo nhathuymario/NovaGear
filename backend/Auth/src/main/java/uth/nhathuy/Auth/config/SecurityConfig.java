@@ -44,6 +44,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler((request, response, exception) ->
+                                response.sendRedirect("http://localhost:5173/login?error=google_auth_failed")
+                        )
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
