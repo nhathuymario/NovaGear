@@ -6,6 +6,15 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
         proxy: {
+            "/api-upload": {
+                target: "http://localhost:8083",
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api-upload/, "/api"),
+            },
+            "/api/uploads": {
+                target: "http://localhost:8083",
+                changeOrigin: true,
+            },
             "/api": {
                 target: "http://localhost:8089",
                 changeOrigin: true,

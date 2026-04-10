@@ -1,3 +1,4 @@
+import axios from "axios"
 import axiosClient from "./axiosClient"
 
 export interface UserProfile {
@@ -28,6 +29,20 @@ export async function bootstrapMyProfile() {
 export async function getMyProfile() {
     const res = await axiosClient.get("/users/me")
     return res.data as UserProfile
+}
+
+export async function getOrBootstrapMyProfile() {
+    try {
+        return await getMyProfile()
+    } catch (error) {
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined
+        if (status !== 404) {
+            throw error
+        }
+
+        await bootstrapMyProfile()
+        return await getMyProfile()
+    }
 }
 
 export async function updateMyProfile(payload: UpdateProfilePayload) {

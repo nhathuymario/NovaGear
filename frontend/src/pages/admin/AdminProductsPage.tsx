@@ -26,6 +26,7 @@ import {
 import {getInventoryByVariant, importStock} from "../../api/inventoryApi"
 import {uploadProductImage} from "../../api/uploadApi"
 import type {InventoryItem} from "../../types/inventory"
+import {getFallbackImageSrc, getImageSrc, handleImageError} from "../../utils/image"
 
 interface CategoryOption {
     id: number | string
@@ -620,8 +621,13 @@ export default function AdminProductsPage() {
                                                 <div
                                                     className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                                                     {item.thumbnail ? (
-                                                        <img src={item.thumbnail} alt={item.name}
-                                                             className="h-full w-full object-cover"/>
+                                                        <img
+                                                            src={getImageSrc(item.thumbnail, "Product")}
+                                                            alt={item.name}
+                                                            className="h-full w-full object-cover"
+                                                            data-fallback={getFallbackImageSrc("Product")}
+                                                            onError={handleImageError}
+                                                        />
                                                     ) : (
                                                         <div
                                                             className="flex h-full w-full items-center justify-center text-gray-300">
@@ -811,8 +817,13 @@ export default function AdminProductsPage() {
                                     {productForm.thumbnail ? (
                                         <div
                                             className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
-                                            <img src={productForm.thumbnail} alt="thumbnail"
-                                                 className="h-full w-full object-cover"/>
+                                            <img
+                                                src={getImageSrc(productForm.thumbnail, "Product")}
+                                                alt="thumbnail"
+                                                className="h-full w-full object-cover"
+                                                data-fallback={getFallbackImageSrc("Product")}
+                                                onError={handleImageError}
+                                            />
                                             <button
                                                 type="button"
                                                 onClick={() => setProductForm({...productForm, thumbnail: ""})}
@@ -1161,9 +1172,11 @@ export default function AdminProductsPage() {
 
                                         {variantForm.imageUrl && (
                                             <img
-                                                src={variantForm.imageUrl}
+                                                src={getImageSrc(variantForm.imageUrl, "Variant")}
                                                 alt="variant"
                                                 className="mt-2 h-16 w-16 rounded-lg object-cover"
+                                                data-fallback={getFallbackImageSrc("Variant")}
+                                                onError={handleImageError}
                                             />
                                         )}
                                     </div>
@@ -1232,8 +1245,13 @@ export default function AdminProductsPage() {
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
                                                             {v.imageUrl ? (
-                                                                <img src={v.imageUrl} alt={v.sku}
-                                                                     className="h-10 w-10 rounded-lg object-cover"/>
+                                                                <img
+                                                                    src={getImageSrc(v.imageUrl, "Variant")}
+                                                                    alt={v.sku}
+                                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                                    data-fallback={getFallbackImageSrc("Variant")}
+                                                                    onError={handleImageError}
+                                                                />
                                                             ) : (
                                                                 <div className="h-10 w-10 rounded-lg bg-gray-100"/>
                                                             )}

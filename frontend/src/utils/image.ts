@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from "react"
+import type {SyntheticEvent} from "react"
 
 const FALLBACK_SVG = (label: string) => `
 <svg width="600" height="600" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -31,8 +31,38 @@ export function getFallbackImageSrc(label = "NovaGear") {
     return encodeSvg(FALLBACK_SVG(label))
 }
 
+export function normalizeUploadImageUrl(src?: string | null): string {
+    if (!src?.trim()) return ""
+
+    const normalized = src.trim()
+    if (import.meta.env.DEV) {
+        if (normalized.startsWith("/api-upload/uploads/")) {
+            return normalized
+        }
+
+        if (
+            normalized.startsWith("http://localhost:5173/api/uploads/") ||
+            normalized.startsWith("http://localhost:8089/api/uploads/") ||
+            normalized.startsWith("http://localhost:8083/api/uploads/")
+        ) {
+            return normalized.replace(/https?:\/\/localhost:\d+\/api\/uploads\//, "/api-upload/uploads/")
+        }
+
+        if (normalized.startsWith("/api/uploads/")) {
+            return normalized.replace("/api/uploads/", "/api-upload/uploads/")
+        }
+
+        if (normalized.startsWith("/uploads/")) {
+            return normalized.replace("/uploads/", "/api-upload/uploads/")
+        }
+    }
+
+    return normalized
+}
+
 export function getImageSrc(src?: string | null, fallbackLabel = "NovaGear") {
-    return src?.trim() ? src : getFallbackImageSrc(fallbackLabel)
+    const normalized = normalizeUploadImageUrl(src)
+    return normalized || getFallbackImageSrc(fallbackLabel)
 }
 
 export function handleImageError(event: SyntheticEvent<HTMLImageElement>) {
