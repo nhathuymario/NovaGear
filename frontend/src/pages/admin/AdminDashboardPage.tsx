@@ -186,6 +186,10 @@ export default function AdminDashboardPage() {
                             <div className="admin-action-card__label">Stock</div>
                             <div className="admin-action-card__title">Quản lý tồn kho</div>
                         </Link>
+                        <Link to="/admin/policies" className="admin-action-card">
+                            <div className="admin-action-card__label">Content</div>
+                            <div className="admin-action-card__title">Quan ly chinh sach</div>
+                        </Link>
                     </div>
                 </div>
 

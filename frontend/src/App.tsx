@@ -15,6 +15,7 @@ import OrderDetailPage from "./pages/OrderDetailPage"
 import PaymentPage from "./pages/PaymentPage"
 import PaymentResultPage from "./pages/PaymentResultPage"
 import ProfilePage from "./pages/ProfilePage"
+import PolicyPage from "./pages/PolicyPage"
 import NotFoundPage from "./pages/NotFoundPage"
 import AdminRoute from "./components/admin/AdminRoute"
 import AdminLayout from "./components/admin/AdminLayout"
@@ -23,6 +24,7 @@ import AdminInventoryPage from "./pages/admin/AdminInventoryPage"
 import AdminProductsPage from "./pages/admin/AdminProductsPage"
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage"
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
+import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
 
 
 export default function App() {
@@ -36,6 +38,7 @@ export default function App() {
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/register" element={<RegisterPage/>}/>
                 <Route path="/oauth2/success" element={<OAuthCallbackPage/>}/>
+                <Route path="/policies/:slug" element={<PolicyPage/>}/>
 
                 <Route element={<AdminRoute/>}>
                     <Route path="/admin" element={<AdminLayout/>}>
@@ -44,6 +47,7 @@ export default function App() {
                         <Route path="categories" element={<AdminCategoriesPage/>}/>
                         <Route path="orders" element={<AdminOrdersPage/>}/>
                         <Route path="inventory" element={<AdminInventoryPage/>}/>
+                        <Route path="policies" element={<AdminPoliciesPage/>}/>
                     </Route>
                 </Route>
 

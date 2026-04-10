@@ -14,6 +14,7 @@ export default function AdminLayout() {
         {to: "/admin/categories", label: "Danh mục"},
         {to: "/admin/orders", label: "Đơn hàng"},
         {to: "/admin/inventory", label: "Tồn kho"},
+        {to: "/admin/policies", label: "Chinh sach"},
     ]
 
     return (
