@@ -1,44 +1,112 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
+import { getPaymentByOrderId, mockPaymentSuccess } from "../api/paymentApi"
 
 // 1. Định nghĩa interface cho cấu trúc một config
 interface StatusConfig {
-    icon: string;
-    colorClass: string;
-    title: string;
-    desc: string;
+    icon: string
+    colorClass: string
+    title: string
+    desc: string
+}
+
+type DisplayStatus = "success" | "failed" | "pending"
+
+function normalizeDisplayStatus(raw?: string | null): DisplayStatus {
+    const value = (raw ?? "").trim().toUpperCase()
+
+    if (["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED", "00"].includes(value)) {
+        return "success"
+    }
+
+    if (["FAILED", "FAIL", "ERROR", "CANCELLED", "CANCELED"].includes(value)) {
+        return "failed"
+    }
+
+    return "pending"
 }
 
 export default function PaymentResultPage() {
-    const [searchParams] = useSearchParams();
+    const [searchParams] = useSearchParams()
+    const [resolvedStatus, setResolvedStatus] = useState<DisplayStatus>("pending")
+    const [checking, setChecking] = useState(false)
 
-    const orderId = searchParams.get("orderId") || "";
-    const status = (searchParams.get("status") || "pending").toLowerCase();
+    const orderId = searchParams.get("orderId") || ""
+    const status = searchParams.get("status")
+
+    const queryStatus = useMemo(() => normalizeDisplayStatus(status), [status])
+
+    useEffect(() => {
+        let mounted = true
+
+        const resolveStatus = async () => {
+            if (!orderId) {
+                setResolvedStatus(queryStatus)
+                return
+            }
+
+            if (queryStatus === "success") {
+                // Local sandbox fallback: if webhook is not reachable, force-sync payment state.
+                try {
+                    await mockPaymentSuccess(orderId)
+                } catch (error) {
+                    console.warn("Mock payment sync skipped", error)
+                }
+            }
+
+            try {
+                setChecking(true)
+                const payment = await getPaymentByOrderId(orderId)
+                if (!mounted) return
+
+                if (payment?.status) {
+                    setResolvedStatus(normalizeDisplayStatus(payment.status))
+                    return
+                }
+
+                setResolvedStatus(queryStatus)
+            } catch (error) {
+                if (!mounted) return
+                console.error(error)
+                setResolvedStatus(queryStatus)
+            } finally {
+                if (mounted) {
+                    setChecking(false)
+                }
+            }
+        }
+
+        void resolveStatus()
+
+        return () => {
+            mounted = false
+        }
+    }, [orderId, queryStatus])
 
     // 2. Ép kiểu Record<string, StatusConfig> để TypeScript hiểu
     // rằng object này có thể truy cập bằng bất kỳ key string nào.
-    const configs: Record<string, StatusConfig> = {
+    const configs: Record<DisplayStatus, StatusConfig> = {
         success: {
             icon: "✓",
             colorClass: "bg-green-100 text-green-600",
             title: "Thanh toán thành công",
-            desc: "đã được ghi nhận thành công."
+            desc: "da duoc ghi nhan thanh cong."
         },
         failed: {
             icon: "!",
             colorClass: "bg-red-100 text-red-600",
             title: "Thanh toán thất bại",
-            desc: "chưa thể thanh toán."
+            desc: "chua the thanh toan."
         },
         pending: {
             icon: "…",
             colorClass: "bg-yellow-100 text-yellow-700",
             title: "Thanh toán đang chờ xử lý",
-            desc: "đang chờ cập nhật từ hệ thống."
+            desc: "dang cho cap nhat tu he thong."
         }
-    };
+    }
 
-    // 3. Bây giờ truy cập configs[status] sẽ không bị báo lỗi "any" nữa
-    const currentConfig = configs[status] || configs.pending;
+    const currentConfig = configs[resolvedStatus]
 
     return (
         <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 text-center shadow-sm my-10">
@@ -55,6 +123,10 @@ export default function PaymentResultPage() {
                 {orderId ? `Đơn hàng #${orderId}` : "Đơn hàng của bạn"}{" "}
                 {currentConfig.desc}
             </p>
+
+            {checking && (
+                <p className="mt-2 text-sm text-slate-500">Dang dong bo trang thai thanh toan...</p>
+            )}
 
             {/* Các nút hành động */}
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -82,5 +154,5 @@ export default function PaymentResultPage() {
                 </Link>
             </div>
         </div>
-    );
+    )
 }

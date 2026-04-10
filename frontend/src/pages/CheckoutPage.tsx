@@ -5,6 +5,15 @@ import axiosClient from "../api/axiosClient"
 import { createOrderFromCart } from "../api/orderApi"
 import { getToken } from "../utils/auth"
 
+type ApiErrorLike = {
+    response?: {
+        data?: {
+            message?: string
+            error?: string
+        }
+    }
+}
+
 export default function CheckoutPage() {
     const navigate = useNavigate()
     const token = getToken()
@@ -53,9 +62,10 @@ export default function CheckoutPage() {
             await axiosClient.delete("/cart/clear")
 
             navigate(`/payment/${order.id}`)
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err)
-            setError("Tạo đơn hàng thất bại")
+            const serverMessage = (err as ApiErrorLike).response?.data?.message || (err as ApiErrorLike).response?.data?.error
+            setError(serverMessage || "Tạo đơn hàng thất bại")
         } finally {
             setLoading(false)
         }

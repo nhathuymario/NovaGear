@@ -1,9 +1,10 @@
-import {useEffect, useState} from "react"
+import {useEffect, useMemo, useState} from "react"
 import {useNavigate} from "react-router-dom"
 
 import {CircleUserRound, Mail, Phone, ShieldCheck, UserRound} from "lucide-react"
-import {getMyProfile, type UserProfile} from "../api/userApi"
+import {getOrBootstrapMyProfile, type UserProfile, updateMyProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
+import {setStoredUser} from "../utils/auth"
 
 function isAdminRole(role?: string | null) {
     if (!role) return false
@@ -15,22 +16,50 @@ export default function ProfilePage() {
     const {user, loading, logout} = useAuth()
     const [profile, setProfile] = useState<UserProfile | null>(null)
     const [profileLoading, setProfileLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
+    const [successMessage, setSuccessMessage] = useState("")
+    const [form, setForm] = useState({
+        fullName: "",
+        phone: "",
+        gender: "",
+        dateOfBirth: "",
+    })
+    const [initialForm, setInitialForm] = useState({
+        fullName: "",
+        phone: "",
+        gender: "",
+        dateOfBirth: "",
+    })
 
     const displayName = profile?.fullName || user?.fullName || user?.username || "Nguoi dung"
     const displayEmail = profile?.email || user?.email || "Chua cap nhat"
     const displayUsername = profile?.username || user?.username || "Chua cap nhat"
-    const displayPhone = profile?.phone || "Chua cap nhat"
     const displayRole = user?.role || "USER"
+    const hasChanges = useMemo(() => JSON.stringify(form) !== JSON.stringify(initialForm), [form, initialForm])
+
+    const bindProfileToForm = (data: UserProfile | null) => {
+        const next = {
+            fullName: data?.fullName || "",
+            phone: data?.phone || "",
+            gender: data?.gender || "",
+            dateOfBirth: data?.dateOfBirth || "",
+        }
+        setForm(next)
+        setInitialForm(next)
+    }
 
     useEffect(() => {
         const loadProfile = async () => {
             try {
                 setProfileLoading(true)
-                const data = await getMyProfile()
+                const data = await getOrBootstrapMyProfile()
                 setProfile(data)
+                bindProfileToForm(data)
             } catch (err) {
                 console.error(err)
                 setProfile(null)
+                bindProfileToForm(null)
             } finally {
                 setProfileLoading(false)
             }
@@ -39,10 +68,58 @@ export default function ProfilePage() {
         loadProfile()
     }, [])
 
+    const handleInputChange = (field: keyof typeof form, value: string) => {
+        setErrorMessage("")
+        setSuccessMessage("")
+        setForm((prev) => ({...prev, [field]: value}))
+    }
+
+    const handleUpdateProfile = async () => {
+        if (!hasChanges || saving) return
+
+        try {
+            setSaving(true)
+            setErrorMessage("")
+            setSuccessMessage("")
+
+            const payload = {
+                fullName: form.fullName.trim(),
+                phone: form.phone.trim(),
+                gender: form.gender.trim(),
+                dateOfBirth: form.dateOfBirth || undefined,
+            }
+
+            let updated: UserProfile
+            try {
+                updated = await updateMyProfile(payload)
+            } catch {
+                // Self-heal old accounts that do not have a profile row yet.
+                await getOrBootstrapMyProfile()
+                updated = await updateMyProfile(payload)
+            }
+
+            setProfile(updated)
+            bindProfileToForm(updated)
+            setStoredUser({
+                id: user?.id,
+                username: updated?.username || user?.username,
+                email: updated?.email || user?.email,
+                fullName: updated?.fullName || user?.fullName,
+                role: user?.role,
+            })
+            setSuccessMessage("Cap nhat tai khoan thanh cong")
+        } catch (error) {
+            console.error(error)
+            setErrorMessage("Khong the cap nhat tai khoan. Vui long thu lai.")
+        } finally {
+            setSaving(false)
+        }
+    }
+
     const handleLogout = () => {
         logout()
         navigate("/")
-        window.location.reload()
+        globalThis.location.reload()
     }
 
     if (loading || profileLoading) {
@@ -50,8 +127,8 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="mx-auto max-w-4xl space-y-6">
-            <div className="rounded-3xl bg-white p-6 shadow-sm">
+        <div className="mx-auto max-w-5xl space-y-6">
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                 <h1 className="text-3xl font-bold">Tài khoản của tôi</h1>
                 <p className="mt-2 text-sm text-brand-gray">
                     Quản lý thông tin cá nhân và trạng thái đăng nhập.
@@ -68,9 +145,24 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-                <section className="rounded-3xl bg-white p-6 shadow-sm">
-                    <h2 className="text-xl font-bold">Thông tin cá nhân</h2>
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <section className="space-y-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 className="text-xl font-bold">Thông tin cá nhân</h2>
+                        <button
+                            type="button"
+                            onClick={handleUpdateProfile}
+                            disabled={!hasChanges || saving}
+                            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-400"
+                        >
+                            {saving ? "Dang luu..." : "Luu thay doi"}
+                        </button>
+                    </div>
+
+                    <p className="text-sm text-slate-500">Chinh sua truc tiep cac truong ben duoi, sau do bam Luu thay doi.</p>
+
+                    {errorMessage ? <p className="text-sm font-medium text-red-600">{errorMessage}</p> : null}
+                    {successMessage ? <p className="text-sm font-medium text-emerald-600">{successMessage}</p> : null}
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl bg-gray-50 p-4">
@@ -93,22 +185,51 @@ export default function ProfilePage() {
                             </p>
                         </div>
 
-                        <div className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Họ và tên</p>
-                            <p className="mt-1 font-semibold">
-                                {displayName}
-                            </p>
-                        </div>
+                        <label className="rounded-2xl bg-gray-50 p-4">
+                            <p className="text-sm text-brand-gray">Ho va ten</p>
+                            <input
+                                type="text"
+                                value={form.fullName}
+                                onChange={(event) => handleInputChange("fullName", event.target.value)}
+                                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
+                                placeholder="Nhap ho va ten"
+                            />
+                        </label>
 
-                        <div className="rounded-2xl bg-gray-50 p-4">
+                        <label className="rounded-2xl bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <Phone className="h-4 w-4"/>
                                 So dien thoai
                             </p>
-                            <p className="mt-1 font-semibold">
-                                {displayPhone}
-                            </p>
-                        </div>
+                            <input
+                                type="text"
+                                value={form.phone}
+                                onChange={(event) => handleInputChange("phone", event.target.value)}
+                                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
+                                placeholder="Nhap so dien thoai"
+                            />
+                        </label>
+
+                        <label className="rounded-2xl bg-gray-50 p-4">
+                            <p className="text-sm text-brand-gray">Gioi tinh</p>
+                            <input
+                                type="text"
+                                value={form.gender}
+                                onChange={(event) => handleInputChange("gender", event.target.value)}
+                                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
+                                placeholder="VD: Nam / Nu"
+                            />
+                        </label>
+
+                        <label className="rounded-2xl bg-gray-50 p-4">
+                            <p className="text-sm text-brand-gray">Ngay sinh</p>
+                            <input
+                                type="date"
+                                value={form.dateOfBirth}
+                                onChange={(event) => handleInputChange("dateOfBirth", event.target.value)}
+                                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
+                            />
+                        </label>
 
                         <div className="rounded-2xl bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
@@ -122,7 +243,7 @@ export default function ProfilePage() {
                     </div>
                 </section>
 
-                <aside className="h-fit rounded-3xl bg-white p-6 shadow-sm">
+                <aside className="h-fit rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                     <h2 className="text-xl font-bold">Thao tác nhanh</h2>
 
                     <div className="mt-4 space-y-3">

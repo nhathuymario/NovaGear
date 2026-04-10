@@ -30,6 +30,7 @@ export interface Order {
     id: number | string
     orderCode: string
     status: OrderStatus
+    paymentStatus?: string
     totalAmount: number
     shippingAddress: string
     receiverName: string

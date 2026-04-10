@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { getMyOrders } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
+
+type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "PENDING" | "FAILED" | "REFUNDED"
 
 function getStatusText(status: Order["status"]) {
     switch (status) {
@@ -23,6 +25,42 @@ function getStatusText(status: Order["status"]) {
     }
 }
 
+function getPaymentStatusText(status: string | null | undefined) {
+    const paymentStatus = String(status ?? "UNPAID").toUpperCase()
+    switch (paymentStatus) {
+        case "PAID":
+            return "Đã thanh toán"
+        case "UNPAID":
+            return "Chưa thanh toán"
+        case "PENDING":
+            return "Đang xử lý"
+        case "FAILED":
+            return "Thanh toán thất bại"
+        case "REFUNDED":
+            return "Đã hoàn tiền"
+        default:
+            return paymentStatus
+    }
+}
+
+function getPaymentStatusColor(status: string | null | undefined) {
+    const paymentStatus = String(status ?? "UNPAID").toUpperCase()
+    switch (paymentStatus) {
+        case "PAID":
+            return "bg-green-100 text-green-800 border-green-300"
+        case "UNPAID":
+            return "bg-yellow-100 text-yellow-800 border-yellow-300"
+        case "PENDING":
+            return "bg-blue-100 text-blue-800 border-blue-300"
+        case "FAILED":
+            return "bg-red-100 text-red-800 border-red-300"
+        case "REFUNDED":
+            return "bg-purple-100 text-purple-800 border-purple-300"
+        default:
+            return "bg-gray-100 text-gray-800 border-gray-300"
+    }
+}
+
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
 }
@@ -31,7 +69,13 @@ export default function OrdersPage() {
     const navigate = useNavigate()
     const token = getToken()
     const [items, setItems] = useState<Order[]>([])
+    const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL")
     const [loading, setLoading] = useState(Boolean(token))
+
+    const filteredItems = useMemo(() => {
+        if (paymentFilter === "ALL") return items
+        return items.filter((item) => String(item.paymentStatus ?? "UNPAID").toUpperCase() === paymentFilter)
+    }, [items, paymentFilter])
 
     useEffect(() => {
         if (!token) return
@@ -78,14 +122,35 @@ export default function OrdersPage() {
         <div className="space-y-4">
             <div className="rounded-2xl bg-white p-5 shadow-sm">
                 <h1 className="text-2xl font-bold">Đơn hàng của tôi</h1>
+                <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-medium text-slate-600">Lọc theo thanh toán:</span>
+                    {(["ALL", "PAID", "UNPAID", "PENDING", "FAILED", "REFUNDED"] as PaymentFilter[]).map((value) => {
+                        const active = paymentFilter === value
+                        const displayText = value === "ALL" ? "Tất cả" : getPaymentStatusText(value)
+                        return (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => setPaymentFilter(value)}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                    active
+                                        ? "border-slate-900 bg-slate-900 text-white"
+                                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                                }`}
+                            >
+                                {displayText}
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
-            {items.length === 0 ? (
+            {filteredItems.length === 0 ? (
                 <div className="rounded-2xl bg-white p-6 shadow-sm">
-                    Bạn chưa có đơn hàng nào.
+                    {items.length === 0 ? "Bạn chưa có đơn hàng nào." : "Không có đơn hàng phù hợp với bộ lọc thanh toán."}
                 </div>
             ) : (
-                items.map((order) => (
+                filteredItems.map((order) => (
                     <Link
                         key={order.id}
                         to={`/orders/${order.id}`}
@@ -103,10 +168,17 @@ export default function OrdersPage() {
                             </div>
 
                             <div>
-                                <p className="text-sm text-brand-gray">Trạng thái</p>
+                                <p className="text-sm text-brand-gray">Trạng thái đơn hàng</p>
                                 <p className="font-semibold text-brand-dark">
                                     {getStatusText(order.status)}
                                 </p>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-brand-gray">Thanh toán</p>
+                                <span className={`mt-1 inline-block rounded-full border px-3 py-1 text-sm font-semibold ${getPaymentStatusColor(order.paymentStatus)}`}>
+                                    {getPaymentStatusText(order.paymentStatus)}
+                                </span>
                             </div>
 
                             <div>

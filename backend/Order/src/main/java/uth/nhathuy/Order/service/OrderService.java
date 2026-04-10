@@ -38,6 +38,13 @@ public class OrderService {
         }
 
         for (CartItemDto item : cart.items()) {
+            if (item.variantId() == null) {
+                throw new IllegalArgumentException("Co san pham trong gio hang chua co variant hop le");
+            }
+
+            if (item.quantity() == null || item.quantity() <= 0) {
+                throw new IllegalArgumentException("So luong san pham trong gio hang khong hop le");
+            }
             exportInventory(item);
         }
 

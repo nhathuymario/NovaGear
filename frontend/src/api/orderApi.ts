@@ -36,6 +36,7 @@ type RawOrder = {
     id?: number | string
     orderCode?: string
     status?: string
+    paymentStatus?: string
     totalAmount?: number
     shippingAddress?: string
     receiverName?: string
@@ -82,6 +83,7 @@ function mapOrder(raw: RawOrder): Order {
         id: raw.id ?? "",
         orderCode: raw.orderCode ?? "",
         status: (raw.status as Order["status"]) ?? "PENDING",
+        paymentStatus: raw.paymentStatus ?? "UNPAID",
         totalAmount: Number(raw.totalAmount ?? 0),
         shippingAddress: raw.shippingAddress ?? raw.address ?? "",
         receiverName: raw.receiverName ?? raw.customerName ?? "",
@@ -134,6 +136,7 @@ function mapCheckoutResponse(raw: RawCheckoutResponse): Order {
         id: raw.orderId ?? raw.id ?? raw?.data?.orderId ?? raw?.data?.id ?? "",
         orderCode: raw.orderCode ?? raw?.data?.orderCode ?? "",
         status: (raw.status as Order["status"]) ?? (raw?.data?.status as Order["status"]) ?? "PENDING",
+        paymentStatus: "UNPAID",
         totalAmount: Number(raw.totalAmount ?? raw?.data?.totalAmount ?? 0),
         shippingAddress: "",
         receiverName: "",

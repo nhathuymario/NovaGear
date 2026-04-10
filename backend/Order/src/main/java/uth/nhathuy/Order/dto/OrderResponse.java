@@ -17,6 +17,7 @@ public record OrderResponse(
         String address,
         String note,
         OrderStatus status,
+        String paymentStatus,
         BigDecimal totalAmount,
         LocalDateTime createdAt,
         List<OrderItemResponse> items

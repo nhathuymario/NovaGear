@@ -75,6 +75,6 @@ export function getGoogleAuthUrl(): string {
         return configuredUrl.trim()
     }
 
-    // Fallback direct to Auth service to avoid local gateway route drift.
-    return "http://localhost:8081/oauth2/authorization/google"
+    // Default through Gateway so OAuth path stays aligned with FE -> Gateway flow.
+    return "http://localhost:8089/api/oauth2/authorization/google"
 }
