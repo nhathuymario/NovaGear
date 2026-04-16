@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
+:root {
+    --color-white: #ffffff;
+    --color-black: #000000;
+}
+
 @theme {
+    --color-white: #ffffff;
     --color-brand-yellow: #ffd400;
     --color-brand-dark: #1f2937;
     --color-brand-red: #dc2626;
@@ -15,10 +21,9 @@
 body {
     margin: 0;
     min-width: 320px;
-    background:
-        radial-gradient(circle at 0% 0%, #fff5bf 0, rgba(255, 245, 191, 0) 28%),
-        radial-gradient(circle at 100% 0%, #dbeafe 0, rgba(219, 234, 254, 0) 24%),
-        var(--color-brand-bg);
+    background: radial-gradient(circle at 0% 0%, #fff5bf 0, rgba(255, 245, 191, 0) 28%),
+    radial-gradient(circle at 100% 0%, #dbeafe 0, rgba(219, 234, 254, 0) 24%),
+    var(--color-brand-bg);
     color: #111827;
     font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
     line-height: 1.5;
