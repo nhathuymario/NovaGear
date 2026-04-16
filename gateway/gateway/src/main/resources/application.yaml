@@ -29,10 +29,15 @@ spring:
           filters:
             - RewritePath=/api/oauth2/(?<segment>.*), /oauth2/$\{segment}
 
+        - id: auth-service-admin-users
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/admin/users/*/status
+
         - id: user-service
           uri: http://localhost:8082
           predicates:
-            - Path=/api/users/**,/api/admin/users/**
+            - Path=/api/users/**,/api/admin/users
 
         - id: product-service-public
           uri: http://localhost:8083

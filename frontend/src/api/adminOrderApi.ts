@@ -17,6 +17,7 @@ type RawOrder = {
     id?: number | string
     orderCode?: string
     status?: string
+    paymentStatus?: string
     totalAmount?: number
     shippingAddress?: string
     receiverName?: string
@@ -34,6 +35,7 @@ function mapOrder(raw: RawOrder): Order {
         id: raw.id ?? "",
         orderCode: raw.orderCode ?? "",
         status: (raw.status as Order["status"]) ?? "PENDING",
+        paymentStatus: raw.paymentStatus ?? "",
         totalAmount: Number(raw.totalAmount ?? 0),
         shippingAddress: raw.shippingAddress ?? raw.address ?? "",
         receiverName: raw.receiverName ?? raw.customerName ?? "",
@@ -48,7 +50,7 @@ function mapOrder(raw: RawOrder): Order {
             quantity: Number(item.quantity ?? 0),
             price: Number(item.price ?? 0),
             salePrice:
-                item.salePrice != null ? Number(item.salePrice) : undefined,
+                item.salePrice == null ? undefined : Number(item.salePrice),
             variantLabel: item.variantName ?? "",
         })),
     }
