@@ -10,10 +10,21 @@ import uth.nhathuy.User.exception.ResourceNotFoundException;
 import uth.nhathuy.User.repository.AddressRepository;
 import uth.nhathuy.User.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +32,10 @@ public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
     private final AddressRepository addressRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${auth-service.base-url:http://localhost:8081}")
+    private String authServiceBaseUrl;
 
     @Transactional
     public UserProfile bootstrapIfMissing(Long authUserId, String email, String username, String role) {
@@ -139,18 +154,142 @@ public class UserProfileService {
         return addressRepository.save(address);
     }
 
-    public List<UserSummaryResponse> getAllUsers() {
-        return userProfileRepository.findAll().stream()
-                .map(u -> UserSummaryResponse.builder()
-                        .authUserId(u.getAuthUserId())
-                        .email(u.getEmail())
-                        .username(u.getUsername())
-                        .fullName(u.getFullName())
-                        .phone(u.getPhone())
-                        .status(u.getStatus())
-                        .role(u.getRole())
-                        .build())
+    public List<UserSummaryResponse> getAllUsers(String authorizationHeader) {
+        Map<Long, UserProfile> profilesByAuthId = userProfileRepository.findAll().stream()
+                .filter(profile -> profile.getAuthUserId() != null)
+                .collect(HashMap::new, (map, profile) -> map.put(profile.getAuthUserId(), profile), HashMap::putAll);
+
+        // Pick one phone per user, prefer default address then latest address.
+        Map<Long, String> addressPhoneByAuthId = new HashMap<>();
+        for (Address address : addressRepository.findAllByOrderByAuthUserIdAscIsDefaultDescIdDesc()) {
+            if (address.getAuthUserId() == null) {
+                continue;
+            }
+            addressPhoneByAuthId.putIfAbsent(address.getAuthUserId(), firstNonBlank(address.getReceiverPhone()));
+        }
+
+        Map<Long, AuthUserSummary> authUsersById = getAuthUsers(authorizationHeader);
+
+        return Stream.concat(profilesByAuthId.keySet().stream(), authUsersById.keySet().stream())
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .map(id -> {
+                    UserProfile profile = profilesByAuthId.get(id);
+                    AuthUserSummary authUser = authUsersById.get(id);
+
+                    String email = firstNonBlank(
+                            authUser == null ? null : authUser.email,
+                            profile == null ? null : profile.getEmail()
+                    );
+                    String username = firstNonBlank(
+                            authUser == null ? null : authUser.username,
+                            profile == null ? null : profile.getUsername()
+                    );
+                    String fullName = firstNonBlank(
+                            profile == null ? null : profile.getFullName(),
+                            authUser == null ? null : authUser.fullName,
+                            username
+                    );
+                    String phone = firstNonBlank(
+                            profile == null ? null : profile.getPhone(),
+                            addressPhoneByAuthId.get(id)
+                    );
+                    String status = authUser == null
+                            ? normalizeStatus(profile == null ? null : profile.getStatus())
+                            : (Boolean.TRUE.equals(authUser.enabled) ? "ACTIVE" : "INACTIVE");
+                    String role = normalizeRole(firstNonBlank(
+                            authUser == null ? null : authUser.role,
+                            profile == null ? null : profile.getRole()
+                    ));
+
+                    return UserSummaryResponse.builder()
+                            .authUserId(id)
+                            .email(email)
+                            .username(username)
+                            .fullName(fullName)
+                            .phone(phone)
+                            .status(status)
+                            .role(role)
+                            .build();
+                })
                 .toList();
+    }
+
+    private Map<Long, AuthUserSummary> getAuthUsers(String authorizationHeader) {
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            return Map.of();
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", authorizationHeader);
+
+            ResponseEntity<List<AuthUserSummary>> response = restTemplate.exchange(
+                    authServiceBaseUrl + "/api/admin/users/auth-summaries",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<>() {}
+            );
+
+            List<AuthUserSummary> items = response.getBody();
+            if (items == null || items.isEmpty()) {
+                return Map.of();
+            }
+
+            Map<Long, AuthUserSummary> map = new HashMap<>();
+            for (AuthUserSummary item : items) {
+                if (item.userId != null) {
+                    map.put(item.userId, item);
+                }
+            }
+            return map;
+        } catch (Exception ex) {
+            // Fallback to profile data if auth-service is unavailable.
+            return Map.of();
+        }
+    }
+
+    private String normalizeRole(String rawRole) {
+        if (rawRole == null || rawRole.isBlank()) {
+            return "USER";
+        }
+
+        String cleaned = rawRole.replace("[", "").replace("]", "").trim();
+        if (cleaned.startsWith("ROLE_")) {
+            cleaned = cleaned.substring(5);
+        }
+
+        int commaIndex = cleaned.indexOf(',');
+        if (commaIndex >= 0) {
+            cleaned = cleaned.substring(0, commaIndex).trim();
+        }
+
+        return cleaned.isBlank() ? "USER" : cleaned.toUpperCase();
+    }
+
+    private String normalizeStatus(String rawStatus) {
+        if (rawStatus == null || rawStatus.isBlank()) {
+            return "ACTIVE";
+        }
+        return rawStatus.trim().toUpperCase();
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
+
+    private static class AuthUserSummary {
+        public Long userId;
+        public String email;
+        public String username;
+        public String fullName;
+        public Boolean enabled;
+        public String role;
     }
 
     private void clearDefaultAddress(Long authUserId) {
