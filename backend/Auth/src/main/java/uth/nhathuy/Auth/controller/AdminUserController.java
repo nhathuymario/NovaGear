@@ -1,5 +1,6 @@
 package uth.nhathuy.Auth.controller;
 
+import uth.nhathuy.Auth.dto.AdminUserAuthSummaryResponse;
 import uth.nhathuy.Auth.dto.UserStatusUpdateRequest;
 import uth.nhathuy.Auth.service.UserAdminService;
 import jakarta.validation.Valid;
@@ -15,6 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class AdminUserController {
 
     private final UserAdminService userAdminService;
+
+    @GetMapping("/auth-summaries")
+    public ResponseEntity<java.util.List<AdminUserAuthSummaryResponse>> getAuthUserSummaries() {
+        return ResponseEntity.ok(userAdminService.getAllUserSummaries());
+    }
 
     @PutMapping("/{userId}/status")
     public ResponseEntity<String> updateStatus(
