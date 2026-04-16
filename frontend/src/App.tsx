@@ -25,11 +25,24 @@ import AdminProductsPage from "./pages/admin/AdminProductsPage"
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage"
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
 import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
+import AdminUsersPage from "./pages/admin/AdminUsersPage"
 
 
 export default function App() {
     return (
         <Routes>
+            <Route element={<AdminRoute/>}>
+                <Route path="/admin" element={<AdminLayout/>}>
+                    <Route index element={<AdminDashboardPage/>}/>
+                    <Route path="products" element={<AdminProductsPage/>}/>
+                    <Route path="categories" element={<AdminCategoriesPage/>}/>
+                    <Route path="orders" element={<AdminOrdersPage/>}/>
+                    <Route path="inventory" element={<AdminInventoryPage/>}/>
+                    <Route path="users" element={<AdminUsersPage/>}/>
+                    <Route path="policies" element={<AdminPoliciesPage/>}/>
+                </Route>
+            </Route>
+
             <Route element={<MainLayout/>}>
                 <Route path="/" element={<HomePage/>}/>
                 <Route path="/products" element={<ProductListPage/>}/>
@@ -39,17 +52,6 @@ export default function App() {
                 <Route path="/register" element={<RegisterPage/>}/>
                 <Route path="/oauth2/success" element={<OAuthCallbackPage/>}/>
                 <Route path="/policies/:slug" element={<PolicyPage/>}/>
-
-                <Route element={<AdminRoute/>}>
-                    <Route path="/admin" element={<AdminLayout/>}>
-                        <Route index element={<AdminDashboardPage/>}/>
-                        <Route path="products" element={<AdminProductsPage/>}/>
-                        <Route path="categories" element={<AdminCategoriesPage/>}/>
-                        <Route path="orders" element={<AdminOrdersPage/>}/>
-                        <Route path="inventory" element={<AdminInventoryPage/>}/>
-                        <Route path="policies" element={<AdminPoliciesPage/>}/>
-                    </Route>
-                </Route>
 
                 <Route path="*" element={<NotFoundPage/>}/>
                 <Route element={<ProtectedRoute/>}>
