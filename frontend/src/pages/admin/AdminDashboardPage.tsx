@@ -1,17 +1,8 @@
 import {useCallback, useEffect, useMemo, useState} from "react"
 import {Link} from "react-router-dom"
-import {
-    AlertTriangle,
-    CircleDollarSign,
-    Clock3,
-    FileText,
-    Package,
-    ShoppingCart,
-    Tags,
-    Warehouse,
-} from "lucide-react"
-import {getAdminProducts, type AdminProductItem} from "../../api/adminProductApi"
-import {getAdminCategories, type AdminCategoryItem} from "../../api/adminCategoryApi"
+import {AlertTriangle, CircleDollarSign, Clock3, FileText, Package, ShoppingCart, Tags, Warehouse,} from "lucide-react"
+import {type AdminProductItem, getAdminProducts} from "../../api/adminProductApi"
+import {type AdminCategoryItem, getAdminCategories} from "../../api/adminCategoryApi"
 import {getAdminOrders} from "../../api/adminOrderApi"
 import {getAllInventory, type InventoryItem} from "../../api/inventoryApi"
 import type {Order} from "../../types/order"
@@ -91,7 +82,7 @@ export default function AdminDashboardPage() {
             setCategories([])
             setOrders([])
             setInventoryItems([])
-            setError("Khong tai duoc dashboard. Hay thu tai lai.")
+            setError("Không tải được dashboard. Hãy thử tải lại.")
         } finally {
             setLoading(false)
         }
@@ -178,10 +169,10 @@ export default function AdminDashboardPage() {
         const other = Math.max(0, orders.length - paid - pending - failed)
 
         return [
-            {label: "Da thanh toan", value: paid, color: "#10b981"},
-            {label: "Cho thanh toan", value: pending, color: "#f59e0b"},
-            {label: "That bai", value: failed, color: "#f43f5e"},
-            {label: "Khac", value: other, color: "#64748b"},
+            {label: "Đã thanh toán", value: paid, color: "#10b981"},
+            {label: "Chờ thanh toán", value: pending, color: "#f59e0b"},
+            {label: "Thất bại", value: failed, color: "#f43f5e"},
+            {label: "Khác", value: other, color: "#64748b"},
         ]
     }, [orders])
 
@@ -191,17 +182,18 @@ export default function AdminDashboardPage() {
         const healthyCount = inventoryItems.filter((item) => item.availableQuantity > 5).length
 
         return [
-            {label: "On dinh", value: healthyCount, color: "#2563eb"},
-            {label: "Sap het", value: lowStockCount, color: "#f97316"},
-            {label: "Het hang", value: outOfStockCount, color: "#ef4444"},
+            {label: "Ổn định", value: healthyCount, color: "#2563eb"},
+            {label: "Sắp hết", value: lowStockCount, color: "#f97316"},
+            {label: "Hết hàng", value: outOfStockCount, color: "#ef4444"},
         ]
     }, [inventoryItems])
 
     if (loading) {
         return (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
-                    Dang tai dashboard admin...
+                <div
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
+                    Đang tải dashboard admin...
                 </div>
             </div>
         )
@@ -214,68 +206,79 @@ export default function AdminDashboardPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">Admin overview</p>
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-extrabold tracking-tight">Dashboard quan tri NovaGear</h1>
-                            <p className="mt-2 max-w-3xl text-sm text-blue-100">
-                                Layout theo huong Flowbite admin, nhung toan bo duoc viet lai bang component TSX/Tailwind cua du an.
-                            </p>
+                            <h1 className="text-2xl font-extrabold tracking-tight">Dashboard quản trị NovaGear</h1>
                         </div>
                         <button
                             onClick={() => void loadData()}
                             className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
-                            Lam moi
+                            Làm mới
                         </button>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 p-4">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{products.length} san pham</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{categories.length} danh muc</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{orders.length} don hang</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{inventoryItems.length} SKU ton kho</span>
+                    <span
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{products.length} Sản phẩm</span>
+                    <span
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{categories.length} Danh mục</span>
+                    <span
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{orders.length} Đơn hàng</span>
+                    <span
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{inventoryItems.length} SKU tồn kho</span>
                 </div>
             </section>
 
             {error ? (
-                <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                <div
+                    className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <AlertTriangle size={18} className="mt-0.5 shrink-0"/>
                     <div>{error}</div>
                 </div>
             ) : null}
 
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard title="San pham" value={`${products.length}`} hint="Tong so san pham dang hoat dong" icon={Package}/>
-                <MetricCard title="Don cho xu ly" value={`${pendingOrders}`} hint="Can xac nhan trong ngay" icon={Clock3}/>
-                <MetricCard title="Doanh thu" value={formatCurrency(totalRevenue)} hint="Tong gia tri don khong huy" icon={CircleDollarSign}/>
-                <MetricCard title="Ton kho kha dung" value={`${stockCoverage}%`} hint={`${activeInventoryCount}/${inventoryItems.length} SKU con hang`} icon={Warehouse}/>
+                <MetricCard title="Sản phẩm" value={`${products.length}`} hint="Tổng số sản phẩm đang hoạt động"
+                            icon={Package}/>
+                <MetricCard title="Đơn chờ xử lý" value={`${pendingOrders}`} hint="Cần xác nhận trong ngày"
+                            icon={Clock3}/>
+                <MetricCard title="Doanh thu" value={formatCurrency(totalRevenue)} hint="Tổng giá trị đơn hàng"
+                            icon={CircleDollarSign}/>
+                <MetricCard title="Tồn kho khả dụng" value={`${stockCoverage}%`}
+                            hint={`${activeInventoryCount}/${inventoryItems.length} SKU còn hàng`} icon={Warehouse}/>
             </section>
 
             <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
                 <SectionCard
-                    title="Loi tat quan tri"
-                    description="Di chuyen nhanh den cac module chinh"
-                    action={<Link to="/admin/orders" className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mo don hang</Link>}
+                    title="Lối tắt quản trị"
+                    description="Di chuyển nhanh đến các module chính"
+                    action={<Link to="/admin/orders"
+                                  className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mở đơn
+                        hàng</Link>}
                 >
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        <QuickActionTile to="/admin/products" label="Catalog" title="Quan ly san pham" icon={Package}/>
-                        <QuickActionTile to="/admin/categories" label="Catalog" title="Quan ly danh muc" icon={Tags}/>
-                        <QuickActionTile to="/admin/orders" label="Sales" title="Quan ly don hang" icon={ShoppingCart}/>
-                        <QuickActionTile to="/admin/inventory" label="Stock" title="Quan ly ton kho" icon={Warehouse}/>
-                        <QuickActionTile to="/admin/policies" label="Content" title="Quan ly chinh sach" icon={FileText}/>
+                        <QuickActionTile to="/admin/products" label="Catalog" title="Quản lí sản phẩm" icon={Package}/>
+                        <QuickActionTile to="/admin/categories" label="Catalog" title="Quản lí danh mục" icon={Tags}/>
+                        <QuickActionTile to="/admin/orders" label="Sales" title="Quản lí đơn hàng" icon={ShoppingCart}/>
+                        <QuickActionTile to="/admin/inventory" label="Stock" title="Quản lí tồn kho" icon={Warehouse}/>
+                        <QuickActionTile to="/admin/policies" label="Content" title="Quản lí chính sách"
+                                         icon={FileText}/>
                     </div>
 
                     <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
                         <div className="flex items-center justify-between text-sm">
-                            <span className="font-semibold text-slate-700">Trang thai xu ly don hang</span>
-                            <span className="font-medium text-slate-500">Da thanh toan: {paidOrders}</span>
+                            <span className="font-semibold text-slate-700">Trạng thái xử lí đơn hàng</span>
+                            <span className="font-medium text-slate-500">Đã thanh toán: {paidOrders}</span>
                         </div>
                         <div className="mt-3 space-y-2">
                             {orderStatusDistribution.map((stage) => (
                                 <div key={stage.stage} className="flex items-center gap-3">
                                     <div className="w-24 text-xs font-semibold text-slate-500">{stage.stage}</div>
                                     <div className="h-2 flex-1 rounded-full bg-slate-200">
-                                        <div className="h-2 rounded-full bg-blue-600" style={{width: `${stage.width}%`}}/>
+                                        <div className="h-2 rounded-full bg-blue-600"
+                                             style={{width: `${stage.width}%`}}/>
                                     </div>
-                                    <div className="w-8 text-right text-xs font-semibold text-slate-700">{stage.count}</div>
+                                    <div
+                                        className="w-8 text-right text-xs font-semibold text-slate-700">{stage.count}</div>
                                 </div>
                             ))}
                         </div>
@@ -283,29 +286,33 @@ export default function AdminDashboardPage() {
                 </SectionCard>
 
                 <SectionCard
-                    title="Canh bao ton kho"
-                    description={`${lowStockItems.length} SKU can theo doi`}
-                    action={<Link to="/admin/inventory" className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mo ton kho</Link>}
+                    title="Cảnh báo tồn kho"
+                    description={`${lowStockItems.length} SKU cần theo dõi`}
+                    action={<Link to="/admin/inventory"
+                                  className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mở tồn kho</Link>}
                 >
                     <div className="space-y-3">
                         {lowStockItems.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
-                                Chua co variant nao sap het hang.
+                            <div
+                                className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
+                                Chưa có variant nào sắp hết hàng.
                             </div>
                         ) : (
                             lowStockItems.map((item) => {
                                 const value = Math.max(0, Math.min(100, item.availableQuantity * 10))
                                 const variantInfo = [item.color, item.ram, item.storage].filter(Boolean).join(" / ")
                                 return (
-                                    <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                                    <article key={item.id}
+                                             className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-slate-900">{item.productName || "San pham"}</p>
+                                                <p className="truncate text-sm font-semibold text-slate-900">{item.productName || "Sản phẩm"}</p>
                                                 <p className="mt-0.5 truncate text-xs text-slate-500">
                                                     {item.sku || "--"}{variantInfo ? ` · ${variantInfo}` : ""}
                                                 </p>
                                             </div>
-                                            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                                            <span
+                                                className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
                                                 {item.availableQuantity}
                                             </span>
                                         </div>
@@ -322,8 +329,8 @@ export default function AdminDashboardPage() {
 
             <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
                 <SectionCard
-                    title="Bieu do doanh thu 7 ngay"
-                    description="Tong gia tri don hang khong huy theo ngay"
+                    title="Biểu đồ doanh thu 7 ngày"
+                    description="Tổng giá trị đơn hàng không hủy theo ngày"
                 >
                     <SimpleAreaChart
                         data={revenueByRecentDays}
@@ -332,35 +339,48 @@ export default function AdminDashboardPage() {
                 </SectionCard>
 
                 <SectionCard
-                    title="Bieu do thanh toan"
-                    description="Phan bo trang thai thanh toan"
+                    title="Biểu đồ thanh toán"
+                    description="Phân bố trạng thái thanh toán"
                 >
                     <SimpleDonutChart data={paymentDonutData}/>
                 </SectionCard>
             </section>
 
             <SectionCard
-                title="Bieu do suc khoe ton kho"
-                description="Ty le SKU on dinh / sap het / het hang"
+                title="Biểu đồ tồn kho"
+                description="Tỷ lệ SKU ổn định / sắp hết / hết hàng"
             >
                 <SimpleDonutChart data={inventoryDonutData}/>
             </SectionCard>
 
             <SectionCard
-                title="Don hang gan day"
-                description="Theo doi nhanh trang thai va thanh toan"
-                action={<Link to="/admin/orders" className="text-sm font-semibold text-blue-700 hover:text-blue-800">Xem tat ca</Link>}
+                title="Đơn hàng gần đây"
+                description="Theo dõi nhanh trạng thái và thanh toán"
+                action={<Link to="/admin/orders" className="text-sm font-semibold text-blue-700 hover:text-blue-800">Xem
+                    tất cả</Link>}
             >
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                         <thead className="bg-slate-50">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ma don</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Khach hang</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Tong tien</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ngay tao</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Trang thai</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Thanh toan</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mã
+                                đơn
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Khách
+                                hàng
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Tổng
+                                tiền
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ngày
+                                tạo
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Trạng
+                                thái
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Thanh
+                                toán
+                            </th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -372,7 +392,8 @@ export default function AdminDashboardPage() {
                                 <td className="px-4 py-3 text-slate-600">{formatDate(order.createdAt)}</td>
                                 <td className="px-4 py-3"><OrderStatusBadge status={order.status}/></td>
                                 <td className="px-4 py-3">
-                                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${paymentStatusClass(order.paymentStatus)}`}>
+                                    <span
+                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${paymentStatusClass(order.paymentStatus)}`}>
                                         {paymentStatusText(order.paymentStatus)}
                                     </span>
                                 </td>
@@ -381,8 +402,9 @@ export default function AdminDashboardPage() {
                         {recentOrders.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-4 py-6">
-                                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
-                                        Chua co don hang nao.
+                                    <div
+                                        className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
+                                        Chưa có đơn hàng nào.
                                     </div>
                                 </td>
                             </tr>

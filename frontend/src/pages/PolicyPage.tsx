@@ -8,10 +8,11 @@ export default function PolicyPage() {
     if (!policy) {
         return (
             <div className="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-sm">
-                <h1 className="text-2xl font-bold text-slate-900">Khong tim thay chinh sach</h1>
-                <p className="mt-2 text-sm text-slate-600">Noi dung ban yeu cau hien khong ton tai.</p>
-                <Link to="/" className="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                    Quay ve trang chu
+                <h1 className="text-2xl font-bold text-slate-900">Không tìm thấy chính sách</h1>
+                <p className="mt-2 text-sm text-slate-600">Nội dung bạn yêu cầu hiện không tồn tại.</p>
+                <Link to="/"
+                      className="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+                    Quay về trang chủ
                 </Link>
             </div>
         )
