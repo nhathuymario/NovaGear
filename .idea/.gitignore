@@ -24,3 +24,4 @@ src/main/resources/application-dev.yaml
 
 # 3. KHÔNG nên ignore application.yaml nếu nó là file cấu hình chính.
 # Thay vào đó, hãy dùng file -local để ghi đè (override) nó.
+**/application.yaml
