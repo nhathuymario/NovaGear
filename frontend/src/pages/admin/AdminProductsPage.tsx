@@ -10,16 +10,22 @@ import {
     updateAdminProduct,
 } from "../../api/adminProductApi"
 import {
+    addProductImage,
     addProductSpecification,
     addProductVariant,
+    type AdminProductImageItem,
+    type AdminProductImagePayload,
     type AdminSpecificationItem,
     type AdminSpecificationPayload,
     type AdminVariantItem,
     type AdminVariantPayload,
+    deleteProductImage,
+    getProductImages,
     deleteProductSpecification,
     deleteProductVariant,
     getProductSpecifications,
     getProductVariants,
+    updateProductImage,
     updateProductSpecification,
     updateProductVariant,
 } from "../../api/adminProductDetailApi"
@@ -34,7 +40,7 @@ interface CategoryOption {
 }
 
 type Tab = "list" | "form" | "detail"
-type DetailTab = "variants" | "specs"
+type DetailTab = "variants" | "images" | "specs"
 
 type VariantImportForm = {
     quantity: number
@@ -130,6 +136,7 @@ export default function AdminProductsPage() {
     const [selectedProduct, setSelectedProduct] = useState<AdminProductItem | null>(null)
     const [detailTab, setDetailTab] = useState<DetailTab>("variants")
     const [variants, setVariants] = useState<AdminVariantItem[]>([])
+    const [productImages, setProductImages] = useState<AdminProductImageItem[]>([])
     const [specs, setSpecs] = useState<AdminSpecificationItem[]>([])
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
     const [detailLoading, setDetailLoading] = useState(false)
@@ -139,6 +146,8 @@ export default function AdminProductsPage() {
     const [showVariantForm, setShowVariantForm] = useState(false)
     const [submittingVariant, setSubmittingVariant] = useState(false)
     const [variantImgUploading, setVariantImgUploading] = useState(false)
+    const [galleryUploading, setGalleryUploading] = useState(false)
+    const [gallerySaving, setGallerySaving] = useState(false)
 
     const [editingSpec, setEditingSpec] = useState<AdminSpecificationItem | null>(null)
     const [specForm, setSpecForm] = useState<AdminSpecificationPayload>(INITIAL_SPEC_FORM)
@@ -200,13 +209,15 @@ export default function AdminProductsPage() {
         try {
             setDetailLoading(true)
 
-            const [variantData, specificationData] = await Promise.all([
+            const [variantData, specificationData, imageData] = await Promise.all([
                 getProductVariants(productId),
                 getProductSpecifications(productId),
+                getProductImages(productId),
             ])
 
             setVariants(variantData)
             setSpecs(specificationData)
+            setProductImages(imageData)
             setInlineImportForms({})
             setInlineImportMessages({})
 
@@ -215,6 +226,7 @@ export default function AdminProductsPage() {
             console.error(err)
             setVariants([])
             setSpecs([])
+            setProductImages([])
             setInventoryItems([])
         } finally {
             setDetailLoading(false)
@@ -265,6 +277,7 @@ export default function AdminProductsPage() {
         setDetailTab("variants")
         setShowVariantForm(false)
         setShowSpecForm(false)
+        setProductImages([])
         setTab("detail")
         loadDetail(item.id)
     }
@@ -379,7 +392,17 @@ export default function AdminProductsPage() {
             if (editingVariant) {
                 await updateProductVariant(editingVariant.id, variantForm)
             } else {
-                await addProductVariant(selectedProduct.id, variantForm)
+                const createdVariant = await addProductVariant(selectedProduct.id, variantForm)
+                const initialStock = Number(variantForm.stockQuantity ?? 0)
+
+                if (createdVariant?.id && initialStock > 0) {
+                    await importStock({
+                        productId: selectedProduct.id,
+                        variantId: createdVariant.id,
+                        quantity: initialStock,
+                        note: `Khoi tao ton kho cho ${variantForm.sku}`,
+                    })
+                }
             }
 
             await loadDetail(selectedProduct.id)
@@ -463,6 +486,81 @@ export default function AdminProductsPage() {
         } catch (err) {
             console.error(err)
             alert("Xóa thông số thất bại")
+        }
+    }
+
+    const handleUploadProductGallery = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? [])
+        if (!selectedProduct || files.length === 0) return
+
+        try {
+            setGalleryUploading(true)
+            const uploadedUrls: string[] = []
+
+            for (const file of files) {
+                const url = await uploadProductImage(file)
+                uploadedUrls.push(url)
+            }
+
+            let sortOrderBase = productImages.length
+            for (const url of uploadedUrls) {
+                const payload: AdminProductImagePayload = {
+                    imageUrl: url,
+                    thumbnail: productImages.length === 0 && sortOrderBase === 0,
+                    sortOrder: sortOrderBase,
+                }
+                await addProductImage(selectedProduct.id, payload)
+                sortOrderBase += 1
+            }
+
+            await loadDetail(selectedProduct.id)
+            await loadProducts()
+            alert("Đã upload ảnh sản phẩm")
+        } catch (error) {
+            console.error(error)
+            alert("Upload ảnh thất bại")
+        } finally {
+            setGalleryUploading(false)
+            e.target.value = ""
+        }
+    }
+
+    const handleSetProductThumbnail = async (image: AdminProductImageItem) => {
+        if (!selectedProduct) return
+
+        try {
+            setGallerySaving(true)
+            await updateProductImage(image.id, {
+                imageUrl: image.imageUrl,
+                thumbnail: true,
+                sortOrder: image.sortOrder,
+            })
+            await loadDetail(selectedProduct.id)
+            await loadProducts()
+            alert("Đã đặt ảnh đại diện")
+        } catch (error) {
+            console.error(error)
+            alert("Không thể cập nhật ảnh đại diện")
+        } finally {
+            setGallerySaving(false)
+        }
+    }
+
+    const handleDeleteProductImage = async (imageId: number | string) => {
+        if (!selectedProduct) return
+        if (!window.confirm("Xóa ảnh sản phẩm này?")) return
+
+        try {
+            setGallerySaving(true)
+            await deleteProductImage(imageId)
+            await loadDetail(selectedProduct.id)
+            await loadProducts()
+            alert("Đã xóa ảnh")
+        } catch (error) {
+            console.error(error)
+            alert("Xóa ảnh thất bại")
+        } finally {
+            setGallerySaving(false)
         }
     }
 
@@ -973,6 +1071,18 @@ export default function AdminProductsPage() {
                     </button>
                     <button
                         onClick={() => {
+                            setDetailTab("images")
+                            setShowSpecForm(false)
+                            setShowVariantForm(false)
+                        }}
+                        className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                            detailTab === "images" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                    >
+                        Ảnh ({productImages.length})
+                    </button>
+                    <button
+                        onClick={() => {
                             setDetailTab("specs")
                             setShowSpecForm(false)
                             setShowVariantForm(false)
@@ -1361,6 +1471,74 @@ export default function AdminProductsPage() {
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                ) : detailTab === "images" ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="font-semibold text-gray-800">Thư viện ảnh sản phẩm</h2>
+                            <label className="cursor-pointer">
+                                <span className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700">
+                                    {galleryUploading ? "Đang upload..." : "Upload nhiều ảnh"}
+                                </span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleUploadProductGallery}
+                                    disabled={galleryUploading || gallerySaving}
+                                />
+                            </label>
+                        </div>
+
+                        {productImages.length === 0 ? (
+                            <div className="rounded-2xl bg-white py-12 text-center text-sm text-gray-400 shadow-sm">
+                                Chưa có ảnh nào. Hãy upload để tạo menu ảnh cho trang chi tiết sản phẩm.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                                {productImages
+                                    .slice()
+                                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                                    .map((image, index) => (
+                                        <div key={image.id} className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+                                            <div className="relative overflow-hidden rounded-xl bg-gray-100">
+                                                <img
+                                                    src={getImageSrc(image.imageUrl, "Product")}
+                                                    alt={`product-image-${index}`}
+                                                    className="h-32 w-full object-cover"
+                                                    data-fallback={getFallbackImageSrc("Product")}
+                                                    onError={handleImageError}
+                                                />
+                                                {image.thumbnail && (
+                                                    <span className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                                        Thumbnail
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-3 flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSetProductThumbnail(image)}
+                                                    disabled={gallerySaving || image.thumbnail}
+                                                    className="flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
+                                                >
+                                                    Đặt đại diện
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteProductImage(image.id)}
+                                                    disabled={gallerySaving}
+                                                    className="rounded-lg border border-red-200 px-2 py-1.5 text-xs font-medium text-red-500 disabled:opacity-50"
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                             </div>
                         )}
                     </div>

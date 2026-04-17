@@ -23,6 +23,7 @@ export default function ProductDetailPage() {
     const [product, setProduct] = useState<ProductDetailData | null>(null)
     const [selectedVariantId, setSelectedVariantId] = useState<number | string | null>(null)
     const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null)
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
     const [loading, setLoading] = useState(true)
     const [inventoryLoading, setInventoryLoading] = useState(false)
@@ -92,18 +93,34 @@ export default function ProductDetailPage() {
         loadInventory()
     }, [selectedVariant?.id])
 
-    const galleryImage = useMemo(() => {
-        if (selectedVariant?.imageUrl) return selectedVariant.imageUrl
-        if (product?.thumbnail) return product.thumbnail
+    const galleryImages = useMemo(() => {
+        const candidates = [
+            selectedVariant?.imageUrl,
+            product?.thumbnail,
+            ...(product?.images ?? []).map((img) => img.imageUrl),
+        ]
 
-        const thumbImage = product?.images.find((img) => img.thumbnail)?.imageUrl
-        if (thumbImage) return thumbImage
+        const normalized = candidates
+            .map((item) => String(item ?? "").trim())
+            .filter(Boolean)
 
-        return (
-            product?.images[0]?.imageUrl ||
-            getFallbackImageSrc("NovaGear")
-        )
+        const unique = Array.from(new Set(normalized))
+        return unique.length > 0 ? unique : [getFallbackImageSrc("NovaGear")]
     }, [product, selectedVariant])
+
+    const galleryImage = galleryImages[selectedImageIndex] ?? galleryImages[0]
+
+    useEffect(() => {
+        setSelectedImageIndex(0)
+    }, [selectedVariant?.id, product?.id])
+
+    const handlePrevImage = () => {
+        setSelectedImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length)
+    }
+
+    const handleNextImage = () => {
+        setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length)
+    }
 
     const finalPrice = selectedVariant
         ? selectedVariant.salePrice ?? selectedVariant.price
@@ -205,29 +222,57 @@ export default function ProductDetailPage() {
         <div className="grid gap-6 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-2">
             <div className="space-y-4">
                 <div className="overflow-hidden rounded-2xl bg-gray-100">
-                    <img
-                        src={galleryImage}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                        data-fallback={getFallbackImageSrc("NovaGear")}
-                        onError={handleImageError}
-                    />
+                    <div className="relative">
+                        <img
+                            src={galleryImage}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                            data-fallback={getFallbackImageSrc("NovaGear")}
+                            onError={handleImageError}
+                        />
+
+                        {galleryImages.length > 1 && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handlePrevImage}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
+                                >
+                                    ‹
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleNextImage}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
+                                >
+                                    ›
+                                </button>
+                                <span className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
+                                    {selectedImageIndex + 1}/{galleryImages.length}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                {product.images.length > 1 && (
+                {galleryImages.length > 1 && (
                     <div className="grid grid-cols-4 gap-3">
-                        {product.images.slice(0, 4).map((img, index) => (
+                        {galleryImages.slice(0, 8).map((imageUrl, index) => (
                             <div
-                                key={img.id ?? index}
-                                className="overflow-hidden rounded-xl border bg-gray-50"
+                                key={`${imageUrl}-${index}`}
+                                className={`overflow-hidden rounded-xl border bg-gray-50 ${
+                                    index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
+                                }`}
                             >
-                                <img
-                                    src={img.imageUrl || getFallbackImageSrc("NovaGear")}
-                                    alt={`${product.name}-${index}`}
-                                    className="h-24 w-full object-cover"
-                                    data-fallback={getFallbackImageSrc("NovaGear")}
-                                    onError={handleImageError}
-                                />
+                                <button type="button" onClick={() => setSelectedImageIndex(index)} className="w-full">
+                                    <img
+                                        src={imageUrl || getFallbackImageSrc("NovaGear")}
+                                        alt={`${product.name}-${index}`}
+                                        className="h-24 w-full object-cover"
+                                        data-fallback={getFallbackImageSrc("NovaGear")}
+                                        onError={handleImageError}
+                                    />
+                                </button>
                             </div>
                         ))}
                     </div>

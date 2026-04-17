@@ -3,10 +3,12 @@ import {Link} from "react-router-dom"
 import {getProducts} from "../api/productApi"
 import type {Product} from "../types/product"
 import ProductCard from "../components/product/ProductCard"
+import {getSiteContent} from "../utils/siteContent"
 
 export default function HomePage() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
+    const homeFlashSaleText = getSiteContent("homeFlashSaleText")
 
     useEffect(() => {
         getProducts()
@@ -93,7 +95,7 @@ export default function HomePage() {
             <section
                 className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 md:p-5">
                 <p className="text-sm font-semibold text-amber-800">
-                    Flash dead cuối tuần - Giảm đến 20% cho nhiều dòng laptop và phụ kiện.
+                    {homeFlashSaleText}
                 </p>
             </section>
 

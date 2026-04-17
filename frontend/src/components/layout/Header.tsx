@@ -2,6 +2,7 @@ import {Link, useNavigate} from "react-router-dom"
 import {type SyntheticEvent, useState} from "react"
 import {LayoutGrid, Package, ShoppingCart, UserRound} from "lucide-react"
 import {useAuth} from "../../hooks/useAuth"
+import {getSiteContent} from "../../utils/siteContent"
 
 export default function Header() {
     const [keyword, setKeyword] = useState("")
@@ -18,12 +19,15 @@ export default function Header() {
         navigate("/")
     }
 
+    const headerTopText = getSiteContent("headerTopText")
+    const headerHotlineText = getSiteContent("headerHotlineText")
+
     return (
         <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
             <div className="border-b border-slate-100 bg-slate-50/80">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs text-slate-600">
-                    <p>Giá tốt mỗi ngày - Hỗ trợ đổi trả linh hoạt</p>
-                    <p className="hidden md:block">Hotline: 0123 456 789</p>
+                    <p>{headerTopText}</p>
+                    <p className="hidden md:block">{headerHotlineText}</p>
                 </div>
             </div>
 

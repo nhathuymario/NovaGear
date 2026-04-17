@@ -20,6 +20,12 @@ export interface AdminSpecificationPayload {
     sortOrder?: number
 }
 
+export interface AdminProductImagePayload {
+    imageUrl: string
+    thumbnail?: boolean
+    sortOrder?: number
+}
+
 export interface AdminVariantItem {
     id: number | string
     sku: string
@@ -42,6 +48,13 @@ export interface AdminSpecificationItem {
     sortOrder?: number
 }
 
+export interface AdminProductImageItem {
+    id: number | string
+    imageUrl: string
+    thumbnail: boolean
+    sortOrder: number
+}
+
 type RawVariant = {
     id?: number | string
     sku?: string
@@ -62,6 +75,18 @@ type RawSpecification = {
     specKey?: string
     specValue?: string
     sortOrder?: number
+}
+
+type RawProductImage = {
+    id?: number | string
+    imageUrl?: string
+    thumbnail?: boolean
+    sortOrder?: number
+}
+
+function unwrapApiData<T>(data: unknown): T {
+    const wrapped = data as { data?: T }
+    return (wrapped?.data ?? data) as T
 }
 
 function mapVariant(raw: RawVariant): AdminVariantItem {
@@ -90,6 +115,15 @@ function mapSpecification(raw: RawSpecification): AdminSpecificationItem {
     }
 }
 
+function mapProductImage(raw: RawProductImage): AdminProductImageItem {
+    return {
+        id: raw.id ?? "",
+        imageUrl: raw.imageUrl ?? "",
+        thumbnail: Boolean(raw.thumbnail),
+        sortOrder: Number(raw.sortOrder ?? 0),
+    }
+}
+
 export async function getProductVariants(productId: number | string): Promise<AdminVariantItem[]> {
     const res = await axiosClient.get(`/admin/products/${productId}`)
     return (res.data?.variants ?? []).map(mapVariant)
@@ -102,12 +136,17 @@ export async function getProductSpecifications(
     return (res.data?.specifications ?? []).map(mapSpecification)
 }
 
+export async function getProductImages(productId: number | string): Promise<AdminProductImageItem[]> {
+    const res = await axiosClient.get(`/admin/products/${productId}`)
+    return (res.data?.images ?? []).map(mapProductImage)
+}
+
 export async function addProductVariant(
     productId: number | string,
     payload: AdminVariantPayload
 ) {
     const res = await axiosClient.post(`/admin/products/${productId}/variants`, payload)
-    return res.data
+    return unwrapApiData<AdminVariantItem>(res.data)
 }
 
 export async function updateProductVariant(
@@ -115,12 +154,12 @@ export async function updateProductVariant(
     payload: AdminVariantPayload
 ) {
     const res = await axiosClient.put(`/admin/products/variants/${variantId}`, payload)
-    return res.data
+    return unwrapApiData<AdminVariantItem>(res.data)
 }
 
 export async function deleteProductVariant(variantId: number | string) {
     const res = await axiosClient.delete(`/admin/products/variants/${variantId}`)
-    return res.data
+    return unwrapApiData<unknown>(res.data)
 }
 
 export async function addProductSpecification(
@@ -128,7 +167,7 @@ export async function addProductSpecification(
     payload: AdminSpecificationPayload
 ) {
     const res = await axiosClient.post(`/admin/products/${productId}/specifications`, payload)
-    return res.data
+    return unwrapApiData<AdminSpecificationItem>(res.data)
 }
 
 export async function updateProductSpecification(
@@ -139,12 +178,33 @@ export async function updateProductSpecification(
         `/admin/products/specifications/${specificationId}`,
         payload
     )
-    return res.data
+    return unwrapApiData<AdminSpecificationItem>(res.data)
 }
 
 export async function deleteProductSpecification(specificationId: number | string) {
     const res = await axiosClient.delete(
         `/admin/products/specifications/${specificationId}`
     )
-    return res.data
+    return unwrapApiData<unknown>(res.data)
+}
+
+export async function addProductImage(
+    productId: number | string,
+    payload: AdminProductImagePayload
+) {
+    const res = await axiosClient.post(`/admin/products/${productId}/images`, payload)
+    return unwrapApiData<AdminProductImageItem>(res.data)
+}
+
+export async function updateProductImage(
+    imageId: number | string,
+    payload: AdminProductImagePayload
+) {
+    const res = await axiosClient.put(`/admin/products/images/${imageId}`, payload)
+    return unwrapApiData<AdminProductImageItem>(res.data)
+}
+
+export async function deleteProductImage(imageId: number | string) {
+    const res = await axiosClient.delete(`/admin/products/images/${imageId}`)
+    return unwrapApiData<unknown>(res.data)
 }
