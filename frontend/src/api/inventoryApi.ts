@@ -53,6 +53,54 @@ export interface StockAdjustmentPayload {
     note?: string
 }
 
+function normalizeStockImportPayload(payload: StockImportPayload): StockImportPayload {
+    return {
+        ...payload,
+        productId: Number(payload.productId),
+        variantId: Number(payload.variantId),
+    }
+}
+
+function normalizeStockAdjustmentPayload(payload: StockAdjustmentPayload): StockAdjustmentPayload {
+    return {
+        ...payload,
+        variantId: Number(payload.variantId),
+    }
+}
+
+function validateStockImportPayload(payload: StockImportPayload): string | null {
+    const productId = Number(payload.productId)
+    const variantId = Number(payload.variantId)
+    const quantity = Number(payload.quantity)
+
+    if (!Number.isFinite(productId) || productId <= 0) {
+        return "productId phải là số dương"
+    }
+    if (!Number.isFinite(variantId) || variantId <= 0) {
+        return "variantId phải là số dương"
+    }
+    if (!Number.isFinite(quantity) || quantity < 1) {
+        return "quantity phải là số >= 1"
+    }
+    return null
+}
+
+function validateStockAdjustmentPayload(payload: StockAdjustmentPayload): string | null {
+    const variantId = Number(payload.variantId)
+    const availableQuantity = Number(payload.availableQuantity)
+    const reservedQuantity = Number(payload.reservedQuantity)
+
+    if (!Number.isFinite(variantId) || variantId <= 0) {
+        return "variantId phải là số dương"
+    }
+    if (!Number.isFinite(availableQuantity) || availableQuantity < 0) {
+        return "availableQuantity phải là số >= 0"
+    }
+    if (!Number.isFinite(reservedQuantity) || reservedQuantity < 0) {
+        return "reservedQuantity phải là số >= 0"
+    }
+    return null
+}
 type RawInventoryItem = {
     id?: number | string
     productId?: number | string
@@ -161,12 +209,20 @@ export async function getPublicInventoryByVariant(
 }
 
 export async function importStock(payload: StockImportPayload) {
-    const res = await axiosClient.post("/admin/inventory/import", payload)
+    const validationError = validateStockImportPayload(payload)
+    if (validationError) {
+        throw new Error(validationError)
+    }
+    const res = await axiosClient.post("/admin/inventory/import", normalizeStockImportPayload(payload))
     return res.data?.data ? mapInventoryItem(res.data.data) : res.data
 }
 
 export async function adjustStock(payload: StockAdjustmentPayload) {
-    const res = await axiosClient.put("/admin/inventory/adjust", payload)
+    const validationError = validateStockAdjustmentPayload(payload)
+    if (validationError) {
+        throw new Error(validationError)
+    }
+    const res = await axiosClient.put("/admin/inventory/adjust", normalizeStockAdjustmentPayload(payload))
     return res.data?.data ? mapInventoryItem(res.data.data) : res.data
 }
 

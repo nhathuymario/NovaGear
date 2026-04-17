@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {type FormEvent, useCallback, useEffect, useMemo, useState} from "react"
 import {
     adjustStock,
     getAllInventory,
@@ -7,7 +7,8 @@ import {
     type InventoryItem,
     type InventoryTransaction,
 } from "../../api/inventoryApi"
-import { getAdminProductDetail } from "../../api/adminProductApi"
+import {type AdminProductItem, getAdminProductDetail, getAdminProducts,} from "../../api/adminProductApi"
+import {type AdminVariantItem, getProductVariants} from "../../api/adminProductDetailApi"
 
 type ProductVariantLookup = {
     productName?: string
@@ -22,14 +23,26 @@ export default function AdminInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([])
     const [transactions, setTransactions] = useState<InventoryTransaction[]>([])
     const [loading, setLoading] = useState(true)
+    const [optionLoading, setOptionLoading] = useState(true)
+    const [variantLoading, setVariantLoading] = useState(false)
+    const [isImporting, setIsImporting] = useState(false)
+    const [isAdjusting, setIsAdjusting] = useState(false)
 
     const [keyword, setKeyword] = useState("")
     const [selectedVariantId, setSelectedVariantId] = useState<number | string | null>(null)
+    const [selectedAdjustItem, setSelectedAdjustItem] = useState<InventoryItem | null>(null)
+    const [products, setProducts] = useState<AdminProductItem[]>([])
+    const [variants, setVariants] = useState<AdminVariantItem[]>([])
 
-    const [form, setForm] = useState({
+    const [importForm, setImportForm] = useState({
         productId: "",
         variantId: "",
         quantity: 1,
+        note: "",
+    })
+
+    const [adjustForm, setAdjustForm] = useState({
+        variantId: "",
         availableQuantity: 0,
         reservedQuantity: 0,
         note: "",
@@ -37,7 +50,7 @@ export default function AdminInventoryPage() {
 
     const enrichInventoryItems = useCallback(async (rows: InventoryItem[]): Promise<InventoryItem[]> => {
         const missingVariantRows = rows.filter(
-            (item) => item.variantId && (!item.productName || !item.sku)
+            (item) => item.variantId && item.productId && Number(item.productId) > 0 && (!item.productName || !item.sku)
         )
 
         if (missingVariantRows.length === 0) {
@@ -124,9 +137,47 @@ export default function AdminInventoryPage() {
         }
     }, [enrichInventoryItems, keyword])
 
+    const loadProducts = useCallback(async () => {
+        try {
+            setOptionLoading(true)
+            const data = await getAdminProducts()
+            setProducts(data)
+        } catch (error) {
+            console.error(error)
+            setProducts([])
+            alert("Không tải được danh sách sản phẩm")
+        } finally {
+            setOptionLoading(false)
+        }
+    }, [])
+
+    const loadVariantsByProduct = useCallback(async (productId: string) => {
+        const normalized = String(productId ?? "").trim()
+        if (!normalized) {
+            setVariants([])
+            return
+        }
+
+        try {
+            setVariantLoading(true)
+            const data = await getProductVariants(normalized)
+            setVariants(data)
+        } catch (error) {
+            console.error(error)
+            setVariants([])
+            alert("Không tải được danh sách biến thể")
+        } finally {
+            setVariantLoading(false)
+        }
+    }, [])
+
     useEffect(() => {
         loadData("")
     }, [loadData])
+
+    useEffect(() => {
+        loadProducts()
+    }, [loadProducts])
 
     const filteredItems = useMemo(() => {
         const q = keyword.trim().toLowerCase()
@@ -162,51 +213,140 @@ export default function AdminInventoryPage() {
         }
     }
 
-    const handleImportStock = async (e: React.FormEvent) => {
+    const handleSelectInventoryItem = async (item: InventoryItem) => {
+        setSelectedAdjustItem(item)
+        setAdjustForm({
+            variantId: String(item.variantId ?? ""),
+            availableQuantity: Number(item.availableQuantity ?? Math.max(Number(item.stockQuantity ?? 0) - Number(item.reservedQuantity ?? 0), 0)),
+            reservedQuantity: Number(item.reservedQuantity ?? 0),
+            note: "",
+        })
+
+        if (item.variantId) {
+            await handleOpenTransactions(item.variantId)
+        }
+    }
+
+    const handleChangeImportProduct = async (productId: string) => {
+        setImportForm((prev) => ({
+            ...prev,
+            productId,
+            variantId: "",
+        }))
+        await loadVariantsByProduct(productId)
+    }
+
+    const handleChangeImportVariant = (variantId: string) => {
+        setImportForm((prev) => ({
+            ...prev,
+            variantId,
+        }))
+    }
+
+    const handleImportStock = async (e: FormEvent) => {
         e.preventDefault()
 
+        if (!importForm.productId || !importForm.variantId) {
+            alert("Vui lòng chọn sản phẩm và biến thể")
+            return
+        }
+
+        if (Number(importForm.quantity) < 1) {
+            alert("Số lượng nhập phải lớn hơn 0")
+            return
+        }
+
         try {
+            setIsImporting(true)
             await importStock({
-                productId: form.productId,
-                variantId: form.variantId,
-                quantity: Number(form.quantity),
-                note: form.note,
+                productId: importForm.productId,
+                variantId: importForm.variantId,
+                quantity: Number(importForm.quantity),
+                note: importForm.note,
             })
 
             await loadData()
-            if (form.variantId) {
-                await handleOpenTransactions(form.variantId)
+            if (importForm.variantId) {
+                await handleOpenTransactions(importForm.variantId)
             }
+
+            setImportForm((prev) => ({
+                ...prev,
+                quantity: 1,
+                note: "",
+            }))
 
             alert("Nhập kho thành công")
         } catch (error) {
             console.error(error)
             alert("Nhập kho thất bại")
+        } finally {
+            setIsImporting(false)
         }
     }
 
-    const handleAdjustStock = async (e: React.FormEvent) => {
+    const handleAdjustStock = async (e: FormEvent) => {
         e.preventDefault()
 
+        if (!adjustForm.variantId) {
+            alert("Vui lòng chọn một dòng tồn kho từ bảng hoặc nhập Variant ID để điều chỉnh")
+            return
+        }
+
         try {
+            setIsAdjusting(true)
             await adjustStock({
-                variantId: form.variantId,
-                availableQuantity: Number(form.availableQuantity),
-                reservedQuantity: Number(form.reservedQuantity),
-                note: form.note,
+                variantId: adjustForm.variantId,
+                availableQuantity: Number(adjustForm.availableQuantity),
+                reservedQuantity: Number(adjustForm.reservedQuantity),
+                note: adjustForm.note,
             })
 
             await loadData()
-            if (form.variantId) {
-                await handleOpenTransactions(form.variantId)
+            if (adjustForm.variantId) {
+                await handleOpenTransactions(adjustForm.variantId)
             }
 
             alert("Điều chỉnh kho thành công")
         } catch (error) {
             console.error(error)
             alert("Điều chỉnh kho thất bại")
+        } finally {
+            setIsAdjusting(false)
         }
     }
+
+    const selectedImportVariant = useMemo(() => {
+        const key = importForm.variantId.trim()
+        if (!key) return null
+        return variants.find((variant) => String(variant.id) === key) ?? null
+    }, [importForm.variantId, variants])
+
+    const importVariantPlaceholder = useMemo(() => {
+        if (!importForm.productId) {
+            return "Chọn sản phẩm trước"
+        }
+
+        if (variantLoading) {
+            return "Đang tải biến thể..."
+        }
+
+        return "Chọn biến thể"
+    }, [importForm.productId, variantLoading])
+
+    const importSubmitDisabled =
+        isImporting ||
+        optionLoading ||
+        variantLoading ||
+        !importForm.productId ||
+        !importForm.variantId ||
+        Number(importForm.quantity) < 1
+
+    const adjustSubmitDisabled =
+        isAdjusting ||
+        !adjustForm.variantId ||
+        Number(adjustForm.availableQuantity) < 0 ||
+        Number(adjustForm.reservedQuantity) < 0
 
     if (loading) return <div>Đang tải tồn kho...</div>
 
@@ -215,7 +355,7 @@ export default function AdminInventoryPage() {
             <div className="rounded-2xl bg-white p-5 shadow-sm">
                 <h1 className="text-2xl font-bold">Quản lý tồn kho</h1>
                 <p className="mt-1 text-sm text-brand-gray">
-                    Backend inventory hiện chạy theo variant, nên thao tác kho nên dùng Variant ID.
+                    Chọn sản phẩm và biến thể để nhập kho nhanh, không cần nhớ Variant ID.
                 </p>
             </div>
 
@@ -276,6 +416,12 @@ export default function AdminInventoryPage() {
                                             >
                                                 Xem lịch sử
                                             </button>
+                                            <button
+                                                onClick={() => void handleSelectInventoryItem(item)}
+                                                className="ml-2 rounded-lg border border-brand-dark px-3 py-1 font-medium text-brand-dark"
+                                            >
+                                                Điều chỉnh
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -332,40 +478,96 @@ export default function AdminInventoryPage() {
                         className="rounded-2xl bg-white p-5 shadow-sm"
                     >
                         <h2 className="text-lg font-bold">Nhập kho</h2>
+                        <p className="mt-1 text-sm text-brand-gray">
+                            Chọn sản phẩm trước, sau đó chọn biến thể cần nhập kho. Lưu ý: nhập kho chỉ cộng
+                            vào <b>availableQuantity</b>.
+                        </p>
 
                         <div className="mt-4 space-y-3">
-                            <input
-                                type="text"
-                                placeholder="Product ID"
+                            <select
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.productId}
-                                onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Variant ID"
+                                value={importForm.productId}
+                                onChange={(e) => {
+                                    void handleChangeImportProduct(e.target.value)
+                                }}
+                                disabled={optionLoading || isImporting}
+                            >
+                                <option value="">
+                                    {optionLoading ? "Đang tải sản phẩm..." : "Chọn sản phẩm"}
+                                </option>
+                                {products.map((product) => (
+                                    <option key={product.id} value={String(product.id)}>
+                                        {product.name} ({product.brand || "N/A"})
+                                    </option>
+                                ))}
+                            </select>
+
+                            <select
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.variantId}
-                                onChange={(e) => setForm({ ...form, variantId: e.target.value })}
-                            />
+                                value={importForm.variantId}
+                                onChange={(e) => handleChangeImportVariant(e.target.value)}
+                                disabled={!importForm.productId || variantLoading || isImporting}
+                            >
+                                <option value="">{importVariantPlaceholder}</option>
+                                {variants.map((variant) => {
+                                    const variantName = [variant.color, variant.ram, variant.storage, variant.versionName]
+                                        .filter(Boolean)
+                                        .join(" / ")
+
+                                    return (
+                                        <option key={variant.id} value={String(variant.id)}>
+                                            SKU: {variant.sku || "N/A"}
+                                            {variantName ? ` - ${variantName}` : ""}
+                                        </option>
+                                    )
+                                })}
+                            </select>
+
+                            {selectedImportVariant && (
+                                <div className="rounded-xl border border-dashed px-4 py-3 text-sm text-brand-gray">
+                                    <p>
+                                        <span className="font-semibold text-brand-dark">Variant ID:</span>{" "}
+                                        {selectedImportVariant.id}
+                                    </p>
+                                    <p>
+                                        <span className="font-semibold text-brand-dark">SKU:</span>{" "}
+                                        {selectedImportVariant.sku || "N/A"}
+                                    </p>
+                                </div>
+                            )}
+
                             <input
                                 type="number"
                                 min={1}
                                 placeholder="Số lượng"
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.quantity}
-                                onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })}
+                                value={importForm.quantity}
+                                onChange={(e) => setImportForm({...importForm, quantity: Number(e.target.value)})}
+                                disabled={isImporting}
                             />
                             <textarea
                                 placeholder="Ghi chú"
                                 className="min-h-[100px] w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.note}
-                                onChange={(e) => setForm({ ...form, note: e.target.value })}
+                                value={importForm.note}
+                                onChange={(e) => setImportForm({...importForm, note: e.target.value})}
+                                disabled={isImporting}
                             />
+                            <div
+                                className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <p className="font-semibold">Số đang giữ là gì?</p>
+                                <p className="mt-1 text-xs leading-5">
+                                    Là số lượng đang bị giữ cho đơn hàng chờ xử lý / chờ thanh toán.
+                                    Thông thường hệ thống tự tăng/giảm ở luồng đặt hàng, nếu cần đối soát thủ công thì
+                                    dùng khối <b>Điều chỉnh kho</b> bên dưới.
+                                </p>
+                            </div>
                         </div>
 
-                        <button className="mt-4 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white">
-                            Xác nhận nhập kho
+                        <button
+                            disabled={importSubmitDisabled}
+                            className="mt-4 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isImporting ? "Đang nhập kho..." : "Xác nhận nhập kho"}
                         </button>
                     </form>
 
@@ -375,37 +577,74 @@ export default function AdminInventoryPage() {
                     >
                         <h2 className="text-lg font-bold">Điều chỉnh kho</h2>
                         <p className="mt-1 text-sm text-brand-gray">
-                            Dùng Variant ID và số lượng điều chỉnh theo backend inventory hiện tại.
+                            Chọn dòng tồn kho ở bảng bên trái để nạp sẵn Variant, rồi
+                            chỉnh <b>available</b> và <b>reserved</b> khi cần đối soát.
                         </p>
+
+                        {selectedAdjustItem && (
+                            <div
+                                className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                                <p className="font-semibold text-brand-dark">
+                                    {selectedAdjustItem.productName || "—"}
+                                </p>
+                                <p className="mt-1 text-xs">
+                                    Variant ID: {selectedAdjustItem.variantId || "—"} ·
+                                    SKU: {selectedAdjustItem.sku || "—"}
+                                </p>
+                                <p className="mt-1 text-xs">
+                                    Tổng: {selectedAdjustItem.stockQuantity} · Khả
+                                    dụng: {selectedAdjustItem.availableQuantity} · Đang
+                                    giữ: {selectedAdjustItem.reservedQuantity}
+                                </p>
+                            </div>
+                        )}
 
                         <div className="mt-4 space-y-3">
                             <input
                                 type="text"
-                                placeholder="Variant ID"
-                                className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.variantId}
-                                onChange={(e) => setForm({ ...form, variantId: e.target.value })}
+                                readOnly
+                                placeholder="Chọn một dòng trong bảng để tự điền Variant"
+                                className="w-full rounded-xl border px-4 py-3 outline-none bg-slate-50"
+                                value={adjustForm.variantId}
                             />
                             <input
                                 type="number"
                                 min={0}
                                 placeholder="Available quantity"
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.availableQuantity}
-                                onChange={(e) => setForm({ ...form, availableQuantity: Number(e.target.value) })}
+                                value={adjustForm.availableQuantity}
+                                onChange={(e) => setAdjustForm({
+                                    ...adjustForm,
+                                    availableQuantity: Number(e.target.value)
+                                })}
+                                disabled={isAdjusting}
                             />
                             <input
                                 type="number"
                                 min={0}
                                 placeholder="Reserved quantity"
                                 className="w-full rounded-xl border px-4 py-3 outline-none"
-                                value={form.reservedQuantity}
-                                onChange={(e) => setForm({ ...form, reservedQuantity: Number(e.target.value) })}
+                                value={adjustForm.reservedQuantity}
+                                onChange={(e) => setAdjustForm({
+                                    ...adjustForm,
+                                    reservedQuantity: Number(e.target.value)
+                                })}
+                                disabled={isAdjusting}
+                            />
+                            <textarea
+                                placeholder="Ghi chú"
+                                className="min-h-[80px] w-full rounded-xl border px-4 py-3 outline-none"
+                                value={adjustForm.note}
+                                onChange={(e) => setAdjustForm({...adjustForm, note: e.target.value})}
+                                disabled={isAdjusting}
                             />
                         </div>
 
-                        <button className="mt-4 w-full rounded-xl border border-brand-dark py-3 font-semibold text-brand-dark">
-                            Xác nhận điều chỉnh
+                        <button
+                            disabled={adjustSubmitDisabled}
+                            className="mt-4 w-full rounded-xl border border-brand-dark py-3 font-semibold text-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isAdjusting ? "Đang điều chỉnh..." : "Xác nhận điều chỉnh"}
                         </button>
                     </form>
                 </aside>
