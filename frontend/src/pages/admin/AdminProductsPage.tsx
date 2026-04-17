@@ -513,7 +513,14 @@ export default function AdminProductsPage() {
             setInlineImportLoadingId(variant.id)
 
             if (!selectedProduct?.id) {
-                throw new Error("Missing selected product id")
+                setInlineImportMessages((prev) => ({
+                    ...prev,
+                    [key]: {
+                        type: "error",
+                        text: "Thiếu product đang chọn để nhập kho",
+                    },
+                }))
+                return
             }
 
             await importStock({
@@ -1127,8 +1134,7 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tồn kho ban
-                                            đầu</label>
+                                        <label className="mb-1 block text-xs font-medium text-gray-500">Tồn kho khởi tạo</label>
                                         <input
                                             type="number"
                                             min={0}
@@ -1139,6 +1145,9 @@ export default function AdminProductsPage() {
                                             })}
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
+                                        <p className="mt-1 text-xs text-gray-400">
+                                            Chỉ dùng để set số lượng ban đầu cho variant; không phải số đang giữ/reserved.
+                                        </p>
                                     </div>
 
                                     <div className="sm:col-span-2 lg:col-span-3">
@@ -1184,8 +1193,11 @@ export default function AdminProductsPage() {
 
                                 <div
                                     className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                    Tồn kho thực tế nên nhập ở bảng variant bên dưới. Ô tồn kho trong form này đang giữ
-                                    lại để tương thích payload hiện tại của product-service.
+                                    <p className="font-semibold">Số lượng trong product là gì?</p>
+                                    <p className="mt-1 leading-5">
+                                        Đây là <b>số tồn khởi tạo</b> của variant khi tạo/sửa product. Tồn kho thực tế,
+                                        số đang giữ và số khả dụng sẽ được quản lý ở module Inventory.
+                                    </p>
                                 </div>
 
                                 <div className="mt-4 flex gap-2">
