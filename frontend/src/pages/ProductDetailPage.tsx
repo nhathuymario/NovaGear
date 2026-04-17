@@ -1,13 +1,10 @@
 import {useEffect, useMemo, useState} from "react"
 import {useNavigate, useParams} from "react-router-dom"
 import {addToCart} from "../api/cartApi"
-import {
-    getPublicInventoryByVariant,
-    type InventoryItem,
-} from "../api/inventoryApi"
+import {getPublicInventoryByVariant, type InventoryItem,} from "../api/inventoryApi"
 import {getProductDetailBySlug, type ProductDetailData, type PublicProductVariant,} from "../api/productApi"
 import {getToken} from "../utils/auth"
-import { getFallbackImageSrc, handleImageError } from "../utils/image"
+import {getFallbackImageSrc, handleImageError} from "../utils/image"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -119,7 +116,7 @@ export default function ProductDetailPage() {
         selectedVariant?.stockQuantity ??
         0
 
-    const reservedStock = selectedInventory?.reservedQuantity ?? 0
+    // const reservedStock = selectedInventory?.reservedQuantity ?? 0
     const totalStock =
         selectedInventory?.stockQuantity ??
         selectedVariant?.stockQuantity ??
@@ -212,8 +209,8 @@ export default function ProductDetailPage() {
                         src={galleryImage}
                         alt={product.name}
                         className="h-full w-full object-cover"
-                            data-fallback={getFallbackImageSrc("NovaGear")}
-                            onError={handleImageError}
+                        data-fallback={getFallbackImageSrc("NovaGear")}
+                        onError={handleImageError}
                     />
                 </div>
 
@@ -332,12 +329,12 @@ export default function ProductDetailPage() {
                                         {availableStock}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-brand-gray">Đang giữ</p>
-                                    <p className="mt-1 font-semibold text-amber-600">
-                                        {reservedStock}
-                                    </p>
-                                </div>
+                                {/*<div>*/}
+                                {/*    <p className="text-sm text-brand-gray">Đang giữ</p>*/}
+                                {/*    <p className="mt-1 font-semibold text-amber-600">*/}
+                                {/*        {reservedStock}*/}
+                                {/*    </p>*/}
+                                {/*</div>*/}
                             </div>
 
                             {availableStock <= 0 && (
@@ -367,14 +364,14 @@ export default function ProductDetailPage() {
                     </button>
                 </div>
 
-                <div className="mt-8 rounded-2xl bg-gray-50 p-4">
-                    <h3 className="font-bold">Thông tin sản phẩm</h3>
-                    <div className="mt-3 space-y-2 text-sm text-brand-gray">
-                        <p>Danh mục: {product.category?.name || "Đang cập nhật"}</p>
-                        <p>Thương hiệu: {product.brand || "Đang cập nhật"}</p>
-                        <p>Mã sản phẩm: {product.slug || "Đang cập nhật"}</p>
-                    </div>
-                </div>
+                {/*<div className="mt-8 rounded-2xl bg-gray-50 p-4">*/}
+                {/*    <h3 className="font-bold">Thông tin sản phẩm</h3>*/}
+                {/*    <div className="mt-3 space-y-2 text-sm text-brand-gray">*/}
+                {/*        <p>Danh mục: {product.category?.name || "Đang cập nhật"}</p>*/}
+                {/*        <p>Thương hiệu: {product.brand || "Đang cập nhật"}</p>*/}
+                {/*        <p>Mã sản phẩm: {product.slug || "Đang cập nhật"}</p>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
 
                 {product.description && (
                     <div className="mt-6 rounded-2xl bg-white">
