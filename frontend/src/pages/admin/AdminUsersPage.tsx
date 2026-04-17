@@ -1,7 +1,7 @@
-import {useCallback, useEffect, useMemo, useState, type ReactNode} from "react"
+import {type ReactNode, useCallback, useEffect, useMemo, useState} from "react"
 import {AlertTriangle, RefreshCw} from "lucide-react"
 import axios from "axios"
-import {getAdminUsers, type AdminUserItem, updateAdminUserStatus} from "../../api/adminUserApi"
+import {type AdminUserItem, getAdminUsers, updateAdminUserStatus} from "../../api/adminUserApi"
 import {useAuth} from "../../hooks/useAuth"
 
 function statusBadgeClass(status: string) {
@@ -39,16 +39,16 @@ export default function AdminUsersPage() {
             if (axios.isAxiosError(error)) {
                 const status = error.response?.status
                 const serverMessage =
-                    (error.response?.data as {message?: string} | undefined)?.message ||
+                    (error.response?.data as { message?: string } | undefined)?.message ||
                     error.message
 
                 if (status === 500) {
-                    setErrorText(`API /api/admin/users dang loi 500. ${serverMessage}. Hay restart User service (8082) va Gateway (8089), sau do thu lai.`)
+                    setErrorText(`API /api/admin/users đang lỗi 500. ${serverMessage}. Hãy restart User service (8082) va Gateway (8089), sau đó thử lại.`)
                 } else {
-                    setErrorText(`Khong tai duoc danh sach user (${status ?? "no-status"}): ${serverMessage}`)
+                    setErrorText(`Không tải được danh sách user (${status ?? "no-status"}): ${serverMessage}`)
                 }
             } else {
-                setErrorText("Khong tai duoc danh sach user. Vui long thu lai.")
+                setErrorText("Không tải được danh sách  user. Vui lòng thử lại.")
             }
         } finally {
             setLoading(false)
@@ -64,7 +64,7 @@ export default function AdminUsersPage() {
         const targetId = target.authUserId
 
         if (String(targetId) === String(user?.id)) {
-            setErrorText("Khong the tu khoa tai khoan admin dang dang nhap.")
+            setErrorText("Không thể tự khóa tài khoản admin đang login.")
             return
         }
 
@@ -83,11 +83,11 @@ export default function AdminUsersPage() {
             console.error(error)
             if (axios.isAxiosError(error)) {
                 const serverMessage =
-                    (error.response?.data as {message?: string} | undefined)?.message ||
+                    (error.response?.data as { message?: string } | undefined)?.message ||
                     error.message
-                setErrorText(`Khong cap nhat duoc trang thai user: ${serverMessage}`)
+                setErrorText(`Không cập nhật được trạng thái user ${serverMessage}`)
             } else {
-                setErrorText("Khong cap nhat duoc trang thai user. Vui long thu lai.")
+                setErrorText("Không cập nhật được trạng thái user. Vui lòng thử lại.")
             }
         } finally {
             setSavingUserId(null)
@@ -111,13 +111,13 @@ export default function AdminUsersPage() {
     if (loading) {
         tableRows = (
             <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Dang tai danh sach user...</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Đang tải danh sách user...</td>
             </tr>
         )
     } else if (filtered.length === 0) {
         tableRows = (
             <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Khong co user nao.</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Không có user nào.</td>
             </tr>
         )
     } else {
@@ -125,11 +125,11 @@ export default function AdminUsersPage() {
             const isSaving = savingUserId === item.authUserId
             const isActive = item.status === "ACTIVE"
 
-            let actionLabel = "Mo khoa"
+            let actionLabel = "Mở khóa"
             if (isSaving) {
-                actionLabel = "Dang luu..."
+                actionLabel = "Đang lưu..."
             } else if (isActive) {
-                actionLabel = "Khoa"
+                actionLabel = "Khóa"
             }
 
             const buttonClass = isActive
@@ -138,31 +138,33 @@ export default function AdminUsersPage() {
 
             return (
                 <tr key={String(item.authUserId)} className="border-t border-slate-100">
-                <td className="px-4 py-3 font-medium text-slate-700">{item.authUserId}</td>
-                <td className="px-4 py-3 text-slate-700">{item.email || "--"}</td>
-                <td className="px-4 py-3 text-slate-700">{item.username || "--"}</td>
-                <td className="px-4 py-3 text-slate-700">{item.fullName || "--"}</td>
-                <td className="px-4 py-3 text-slate-700">{item.phone || "--"}</td>
-                <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${roleBadgeClass(item.role)}`}>
+                    <td className="px-4 py-3 font-medium text-slate-700">{item.authUserId}</td>
+                    <td className="px-4 py-3 text-slate-700">{item.email || "--"}</td>
+                    <td className="px-4 py-3 text-slate-700">{item.username || "--"}</td>
+                    <td className="px-4 py-3 text-slate-700">{item.fullName || "--"}</td>
+                    <td className="px-4 py-3 text-slate-700">{item.phone || "--"}</td>
+                    <td className="px-4 py-3">
+                    <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${roleBadgeClass(item.role)}`}>
                         {item.role || "--"}
                     </span>
-                </td>
-                <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(item.status)}`}>
+                    </td>
+                    <td className="px-4 py-3">
+                    <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(item.status)}`}>
                         {item.status || "--"}
                     </span>
-                </td>
-                <td className="px-4 py-3">
-                    <button
-                        disabled={savingUserId === item.authUserId || String(item.authUserId) === String(user?.id)}
-                        onClick={() => void handleToggleUserStatus(item)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${buttonClass}`}
-                    >
-                        {actionLabel}
-                    </button>
-                </td>
-            </tr>
+                    </td>
+                    <td className="px-4 py-3">
+                        <button
+                            disabled={savingUserId === item.authUserId || String(item.authUserId) === String(user?.id)}
+                            onClick={() => void handleToggleUserStatus(item)}
+                            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${buttonClass}`}
+                        >
+                            {actionLabel}
+                        </button>
+                    </td>
+                </tr>
             )
         })
     }
@@ -170,14 +172,15 @@ export default function AdminUsersPage() {
     return (
         <div className="space-y-5 pb-4">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h1 className="text-xl font-bold text-slate-900">Quan ly nguoi dung</h1>
-                <p className="mt-1 text-sm text-slate-500">Du lieu lay tu endpoint admin user cua backend. Co the khoa/mo khoa tai khoan tai bang ben duoi.</p>
+                <h1 className="text-xl font-bold text-slate-900">Quản lí người dùng</h1>
+                {/*<p className="mt-1 text-sm text-slate-500">Du lieu lay tu endpoint admin user cua backend. Co the*/}
+                {/*    khoa/mo khoa tai khoan tai bang ben duoi.</p>*/}
 
                 <div className="mt-4">
                     <input
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
-                        placeholder="Tim theo email, username, ho ten..."
+                        placeholder="Tìm theo email, username, họ tên..."
                         className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:bg-white"
                     />
                 </div>
@@ -193,7 +196,7 @@ export default function AdminUsersPage() {
                             className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
                         >
                             <RefreshCw className="h-3.5 w-3.5"/>
-                            Thu lai
+                            Thử lại
                         </button>
                     </div>
                 ) : null}
@@ -207,11 +210,11 @@ export default function AdminUsersPage() {
                             <th className="px-4 py-3">ID</th>
                             <th className="px-4 py-3">Email</th>
                             <th className="px-4 py-3">Username</th>
-                            <th className="px-4 py-3">Ho ten</th>
+                            <th className="px-4 py-3">Họ tên</th>
                             <th className="px-4 py-3">Phone</th>
                             <th className="px-4 py-3">Role</th>
                             <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3">Thao tac</th>
+                            <th className="px-4 py-3">Thao tác</th>
                         </tr>
                         </thead>
                         <tbody>

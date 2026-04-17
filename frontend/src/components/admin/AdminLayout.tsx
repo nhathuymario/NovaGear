@@ -18,18 +18,18 @@ export default function AdminLayout() {
         {to: "/admin/categories", label: "Danh mục"},
         {to: "/admin/orders", label: "Đơn hàng"},
         {to: "/admin/inventory", label: "Tồn kho"},
-        {to: "/admin/users", label: "Nguoi dung"},
-        {to: "/admin/policies", label: "Chinh sach"},
+        {to: "/admin/users", label: "Người dùng"},
+        {to: "/admin/policies", label: "Chính sách"},
     ]
 
     const pageTitleMap: Record<string, string> = {
         "/admin": "Dashboard",
-        "/admin/products": "Quan ly san pham",
-        "/admin/categories": "Quan ly danh muc",
-        "/admin/orders": "Quan ly don hang",
-        "/admin/inventory": "Quan ly ton kho",
-        "/admin/users": "Quan ly nguoi dung",
-        "/admin/policies": "Quan ly chinh sach",
+        "/admin/products": "Quản lý sản phẩm",
+        "/admin/categories": "Quản lý danh muc",
+        "/admin/orders": "Quản lý đơn hàng",
+        "/admin/inventory": "Quản lý tồn kho",
+        "/admin/users": "Quản lý người dùng",
+        "/admin/policies": "Quản lý chính sách",
     }
 
     const activeTitle = pageTitleMap[location.pathname] ?? "Admin"
@@ -46,7 +46,8 @@ export default function AdminLayout() {
                     className="h-full rounded-[28px] bg-gradient-to-b from-indigo-600 via-blue-600 to-indigo-700 p-5 text-white shadow-xl">
                     <div className="border-b border-white/15 pb-5">
                         <div className="flex items-center gap-2">
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-sm font-extrabold">NG</span>
+                            <span
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-sm font-extrabold">NG</span>
                             <div>
                                 <p className="text-xs uppercase tracking-[0.2em] text-white/70">NovaGear</p>
                                 <h2 className="text-xl font-bold">Admin Panel</h2>
@@ -79,24 +80,28 @@ export default function AdminLayout() {
                 </aside>
 
                 <main className="min-w-0 space-y-4 overflow-y-auto pr-1">
-                    <header className="sticky top-0 z-10 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <header
+                        className="sticky top-0 z-10 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Admin dashboard</p>
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Admin
+                                    dashboard</p>
                                 <h1 className="mt-1 text-xl font-extrabold text-slate-900">{activeTitle}</h1>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                                <div
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                     <ShieldUser className="h-4 w-4 text-blue-600"/>
-                                    <span className="max-w-[180px] truncate font-semibold">{user?.fullName || user?.email || "Admin"}</span>
+                                    <span
+                                        className="max-w-[180px] truncate font-semibold">{user?.fullName || user?.email || "Admin"}</span>
                                 </div>
                                 <button
                                     onClick={handleLogout}
                                     className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
                                 >
                                     <LogOut className="h-4 w-4"/>
-                                    Dang xuat
+                                    Đăng xuất
                                 </button>
                             </div>
                         </div>

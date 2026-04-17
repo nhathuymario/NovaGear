@@ -2,7 +2,7 @@ import {useEffect, useMemo, useState} from "react"
 import {useNavigate} from "react-router-dom"
 
 import {CircleUserRound, Mail, Phone, ShieldCheck, UserRound} from "lucide-react"
-import {getOrBootstrapMyProfile, type UserProfile, updateMyProfile} from "../api/userApi"
+import {getOrBootstrapMyProfile, updateMyProfile, type UserProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
 import {setStoredUser} from "../utils/auth"
 
@@ -32,9 +32,9 @@ export default function ProfilePage() {
         dateOfBirth: "",
     })
 
-    const displayName = profile?.fullName || user?.fullName || user?.username || "Nguoi dung"
-    const displayEmail = profile?.email || user?.email || "Chua cap nhat"
-    const displayUsername = profile?.username || user?.username || "Chua cap nhat"
+    const displayName = profile?.fullName || user?.fullName || user?.username || "Người dùng"
+    const displayEmail = profile?.email || user?.email || "Chưa cập nhật"
+    const displayUsername = profile?.username || user?.username || "Chưa cập nhật"
     const displayRole = user?.role || "USER"
     const hasChanges = useMemo(() => JSON.stringify(form) !== JSON.stringify(initialForm), [form, initialForm])
 
@@ -107,10 +107,10 @@ export default function ProfilePage() {
                 fullName: updated?.fullName || user?.fullName,
                 role: user?.role,
             })
-            setSuccessMessage("Cap nhat tai khoan thanh cong")
+            setSuccessMessage("Cập nhật tài khoản thành công")
         } catch (error) {
             console.error(error)
-            setErrorMessage("Khong the cap nhat tai khoan. Vui long thu lai.")
+            setErrorMessage("Không thể cập nhật tài khoản. Vui lòng thử lại.")
         } finally {
             setSaving(false)
         }
@@ -159,7 +159,8 @@ export default function ProfilePage() {
                         </button>
                     </div>
 
-                    <p className="text-sm text-slate-500">Chinh sua truc tiep cac truong ben duoi, sau do bam Luu thay doi.</p>
+                    <p className="text-sm text-slate-500">Chinh sua truc tiep cac truong ben duoi, sau do bam Luu thay
+                        doi.</p>
 
                     {errorMessage ? <p className="text-sm font-medium text-red-600">{errorMessage}</p> : null}
                     {successMessage ? <p className="text-sm font-medium text-emerald-600">{successMessage}</p> : null}
@@ -186,27 +187,27 @@ export default function ProfilePage() {
                         </div>
 
                         <label className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Ho va ten</p>
+                            <p className="text-sm text-brand-gray">Họ và tên</p>
                             <input
                                 type="text"
                                 value={form.fullName}
                                 onChange={(event) => handleInputChange("fullName", event.target.value)}
                                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
-                                placeholder="Nhap ho va ten"
+                                placeholder="Nhập họ và tên"
                             />
                         </label>
 
                         <label className="rounded-2xl bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <Phone className="h-4 w-4"/>
-                                So dien thoai
+                                Số điện thoại
                             </p>
                             <input
                                 type="text"
                                 value={form.phone}
                                 onChange={(event) => handleInputChange("phone", event.target.value)}
                                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
-                                placeholder="Nhap so dien thoai"
+                                placeholder="Nhập số điện thoại"
                             />
                         </label>
 
@@ -217,12 +218,12 @@ export default function ProfilePage() {
                                 value={form.gender}
                                 onChange={(event) => handleInputChange("gender", event.target.value)}
                                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold outline-none transition focus:border-slate-400"
-                                placeholder="VD: Nam / Nu"
+                                placeholder="VD: Nam / Nữ"
                             />
                         </label>
 
                         <label className="rounded-2xl bg-gray-50 p-4">
-                            <p className="text-sm text-brand-gray">Ngay sinh</p>
+                            <p className="text-sm text-brand-gray">Ngày sinh</p>
                             <input
                                 type="date"
                                 value={form.dateOfBirth}
@@ -234,7 +235,7 @@ export default function ProfilePage() {
                         <div className="rounded-2xl bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <ShieldCheck className="h-4 w-4"/>
-                                Vai tro
+                                Vai trò
                             </p>
                             <p className="mt-1 font-semibold">
                                 {displayRole}
