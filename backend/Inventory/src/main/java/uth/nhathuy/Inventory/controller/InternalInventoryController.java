@@ -16,7 +16,7 @@ public class InternalInventoryController {
 
     @GetMapping("/variant/{variantId}")
     public ResponseEntity<InventoryResponse> getByVariant(@PathVariable Long variantId) {
-        return ResponseEntity.ok(inventoryService.getByVariantId(variantId));
+        return ResponseEntity.ok(inventoryService.getByVariantIdOrCreate(variantId));
     }
 
     @PostMapping("/reserve")

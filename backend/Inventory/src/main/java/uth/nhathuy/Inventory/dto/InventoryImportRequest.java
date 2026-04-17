@@ -8,9 +8,11 @@ import lombok.Data;
 public class InventoryImportRequest {
 
     @NotNull
+    @Min(1)
     private Long productId;
 
     @NotNull
+    @Min(1)
     private Long variantId;
 
     @NotNull

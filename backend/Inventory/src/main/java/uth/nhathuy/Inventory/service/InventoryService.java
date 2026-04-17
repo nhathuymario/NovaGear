@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +41,24 @@ public class InventoryService {
         return mapInventory(inventory);
     }
 
+    public InventoryResponse getByVariantIdOrCreate(Long variantId) {
+        return inventoryRepository.findByVariantId(variantId)
+                .map(this::mapInventory)
+                .orElseGet(() -> {
+                    // Return a virtual zero-stock view for public calls.
+                    // Do not persist placeholder rows because productId is unknown here.
+                    Inventory virtualInventory = Inventory.builder()
+                            .variantId(variantId)
+                            .productId(null)
+                            .availableQuantity(0)
+                            .reservedQuantity(0)
+                            .lowStockThreshold(5)
+                            .status(InventoryStatus.OUT_OF_STOCK)
+                            .build();
+                    return mapInventory(virtualInventory);
+                });
+    }
+
     public List<InventoryTransactionResponse> getTransactionsByVariantId(Long variantId) {
         return transactionRepository.findByVariantIdOrderByIdDesc(variantId)
                 .stream()
@@ -50,18 +69,28 @@ public class InventoryService {
     @Transactional
     public InventoryResponse importStock(InventoryImportRequest request) {
         Inventory inventory = inventoryRepository.findByVariantId(request.getVariantId())
-                .orElseGet(() -> Inventory.builder()
-                        .productId(request.getProductId())
-                        .variantId(request.getVariantId())
-                        .availableQuantity(0)
-                        .reservedQuantity(0)
-                        .lowStockThreshold(request.getLowStockThreshold() != null ? request.getLowStockThreshold() : 5)
-                        .status(InventoryStatus.OUT_OF_STOCK)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build());
+                .orElse(null);
 
-        inventory.setProductId(request.getProductId());
+        if (inventory == null) {
+            inventory = Inventory.builder()
+                    .productId(request.getProductId())
+                    .variantId(request.getVariantId())
+                    .availableQuantity(0)
+                    .reservedQuantity(0)
+                    .lowStockThreshold(request.getLowStockThreshold() != null ? request.getLowStockThreshold() : 5)
+                    .status(InventoryStatus.OUT_OF_STOCK)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+        } else {
+            // Backfill legacy rows created without a valid product reference.
+            if (inventory.getProductId() == null || inventory.getProductId() <= 0) {
+                inventory.setProductId(request.getProductId());
+            } else if (!Objects.equals(inventory.getProductId(), request.getProductId())) {
+                throw new BadRequestException("Variant đã thuộc product khác, không thể nhập kho với productId hiện tại");
+            }
+        }
+
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + request.getQuantity());
 
         if (request.getLowStockThreshold() != null) {
