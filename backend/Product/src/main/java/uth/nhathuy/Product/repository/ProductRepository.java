@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
@@ -45,6 +46,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> searchPublic(
             @Param("keyword") String keyword,
             @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"category"})
+    @Query("""
+        select p from Product p
+        where p.status = uth.nhathuy.Product.entity.ProductStatus.ACTIVE
+          and p.category.id = :categoryId
+          and p.id <> :excludeId
+    """)
+    List<Product> findRelatedProducts(
+            @Param("categoryId") Long categoryId,
+            @Param("excludeId") Long excludeId,
             Pageable pageable
     );
 }
