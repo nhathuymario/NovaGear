@@ -6,10 +6,10 @@ import {
     getProductDetailBySlug,
     getProductReviewsBySlug,
     getRelatedProductsBySlug,
-    submitProductReview,
     type ProductDetailData,
     type ProductReviewOverview,
     type PublicProductVariant,
+    submitProductReview,
 } from "../api/productApi"
 import type {Product} from "../types/product"
 import {getToken} from "../utils/auth"
@@ -24,6 +24,18 @@ function buildVariantLabel(variant: PublicProductVariant) {
     return [variant.color, variant.ram, variant.storage, variant.versionName]
         .filter(Boolean)
         .join(" / ")
+}
+
+function extractApiErrorMessage(error: unknown): string {
+    const maybeAxiosError = error as {
+        response?: { data?: { message?: string } }
+        message?: string
+    }
+    return (
+        maybeAxiosError?.response?.data?.message ||
+        maybeAxiosError?.message ||
+        "Gửi đánh giá thất bại"
+    )
 }
 
 export default function ProductDetailPage() {
@@ -252,11 +264,11 @@ export default function ProductDetailPage() {
     }
 
     const reviewBars = [
-        { star: 5, count: reviewSummary.fiveStar },
-        { star: 4, count: reviewSummary.fourStar },
-        { star: 3, count: reviewSummary.threeStar },
-        { star: 2, count: reviewSummary.twoStar },
-        { star: 1, count: reviewSummary.oneStar },
+        {star: 5, count: reviewSummary.fiveStar},
+        {star: 4, count: reviewSummary.fourStar},
+        {star: 3, count: reviewSummary.threeStar},
+        {star: 2, count: reviewSummary.twoStar},
+        {star: 1, count: reviewSummary.oneStar},
     ]
 
     const handleSubmitReview = async (e: React.FormEvent) => {
@@ -267,10 +279,16 @@ export default function ProductDetailPage() {
             return
         }
 
+        const normalizedRating = Number(reviewForm.rating)
+        if (!Number.isFinite(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) {
+            alert("Số sao không hợp lệ")
+            return
+        }
+
         try {
             setReviewSubmitting(true)
             await submitProductReview(slug, {
-                rating: Number(reviewForm.rating),
+                rating: normalizedRating,
                 comment: reviewForm.comment.trim(),
             })
 
@@ -283,7 +301,7 @@ export default function ProductDetailPage() {
             alert("Đã gửi đánh giá")
         } catch (error) {
             console.error(error)
-            alert("Gửi đánh giá thất bại")
+            alert(extractApiErrorMessage(error))
         } finally {
             setReviewSubmitting(false)
         }
@@ -371,250 +389,251 @@ export default function ProductDetailPage() {
     return (
         <div className="space-y-6">
             <div className="grid gap-6 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-2">
-            <div className="space-y-4">
-                <div className="overflow-hidden rounded-2xl bg-gray-100">
-                    <div className="relative">
-                        <img
-                            src={galleryImage}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                            data-fallback={getFallbackImageSrc("NovaGear")}
-                            onError={handleImageError}
-                        />
+                <div className="space-y-4">
+                    <div className="overflow-hidden rounded-2xl bg-gray-100">
+                        <div className="relative">
+                            <img
+                                src={galleryImage}
+                                alt={product.name}
+                                className="h-full w-full object-cover"
+                                data-fallback={getFallbackImageSrc("NovaGear")}
+                                onError={handleImageError}
+                            />
 
-                        {galleryImages.length > 1 && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={handlePrevImage}
-                                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
-                                >
-                                    ‹
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleNextImage}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
-                                >
-                                    ›
-                                </button>
-                                <span
-                                    className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
+                            {galleryImages.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handlePrevImage}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
+                                    >
+                                        ‹
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNextImage}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-sm font-bold text-slate-700 shadow"
+                                    >
+                                        ›
+                                    </button>
+                                    <span
+                                        className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
                                     {selectedImageIndex + 1}/{galleryImages.length}
                                 </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {galleryImages.length > 1 && (
+                        <div className="grid grid-cols-4 gap-3">
+                            {galleryImages.slice(0, 8).map((imageUrl, index) => (
+                                <div
+                                    key={`${imageUrl}-${index}`}
+                                    className={`overflow-hidden rounded-xl border bg-gray-50 ${
+                                        index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
+                                    }`}
+                                >
+                                    <button type="button" onClick={() => setSelectedImageIndex(index)}
+                                            className="w-full">
+                                        <img
+                                            src={imageUrl || getFallbackImageSrc("NovaGear")}
+                                            alt={`${product.name}-${index}`}
+                                            className="h-24 w-full object-cover"
+                                            data-fallback={getFallbackImageSrc("NovaGear")}
+                                            onError={handleImageError}
+                                        />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    <h1 className="text-3xl font-bold">{product.name}</h1>
+                    <p className="mt-3 text-sm text-brand-gray">
+                        {product.shortDescription || product.description}
+                    </p>
+
+                    <div className="mt-6">
+                        <p className="text-3xl font-extrabold text-brand-red">
+                            {formatCurrency(finalPrice)}
+                        </p>
+
+                        {selectedVariant?.salePrice != null && (
+                            <p className="mt-1 text-sm text-gray-400 line-through">
+                                {formatCurrency(originalPrice)}
+                            </p>
+                        )}
+                    </div>
+
+                    {product.variants.length > 0 && (
+                        <div className="mt-6">
+                            <h3 className="font-bold">Phiên bản</h3>
+
+                            <div className="mt-3 grid gap-3">
+                                {product.variants.map((variant) => {
+                                    const label =
+                                        buildVariantLabel(variant) ||
+                                        variant.sku ||
+                                        `Variant #${variant.id}`
+
+                                    const isSelected =
+                                        String(variant.id) === String(selectedVariant?.id)
+
+                                    return (
+                                        <button
+                                            key={variant.id}
+                                            type="button"
+                                            onClick={() => setSelectedVariantId(variant.id)}
+                                            className={`rounded-2xl border p-4 text-left transition ${
+                                                isSelected
+                                                    ? "border-brand-dark bg-gray-50"
+                                                    : "border-gray-200 hover:border-gray-400"
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="font-semibold">{label}</p>
+                                                    {/*{variant.sku && (*/}
+                                                    {/*    <p className="mt-1 text-xs text-brand-gray">*/}
+                                                    {/*        SKU: {variant.sku}*/}
+                                                    {/*    </p>*/}
+                                                    {/*)}*/}
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <p className="font-bold text-brand-red">
+                                                        {formatCurrency(
+                                                            variant.salePrice ?? variant.price
+                                                        )}
+                                                    </p>
+                                                    {variant.salePrice != null && (
+                                                        <p className="text-xs text-gray-400 line-through">
+                                                            {formatCurrency(variant.price)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 rounded-2xl bg-gray-50 p-4">
+                        <h3 className="font-bold">Tình trạng kho</h3>
+
+                        {inventoryLoading ? (
+                            <p className="mt-3 text-sm text-brand-gray">Đang tải tồn kho...</p>
+                        ) : (
+                            <>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                                    <div>
+                                        <p className="text-sm text-brand-gray">Tổng tồn</p>
+                                        <p className="mt-1 font-semibold">{totalStock}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-brand-gray">Khả dụng</p>
+                                        <p
+                                            className={`mt-1 font-semibold ${
+                                                availableStock > 0 ? "text-green-600" : "text-red-500"
+                                            }`}
+                                        >
+                                            {availableStock}
+                                        </p>
+                                    </div>
+                                    {/*<div>*/}
+                                    {/*    <p className="text-sm text-brand-gray">Đang giữ</p>*/}
+                                    {/*    <p className="mt-1 font-semibold text-amber-600">*/}
+                                    {/*        {reservedStock}*/}
+                                    {/*    </p>*/}
+                                    {/*</div>*/}
+                                </div>
+
+                                {availableStock <= 0 && (
+                                    <p className="mt-3 text-sm font-medium text-red-500">
+                                        Phiên bản này hiện đang hết hàng.
+                                    </p>
+                                )}
                             </>
                         )}
                     </div>
-                </div>
 
-                {galleryImages.length > 1 && (
-                    <div className="grid grid-cols-4 gap-3">
-                        {galleryImages.slice(0, 8).map((imageUrl, index) => (
-                            <div
-                                key={`${imageUrl}-${index}`}
-                                className={`overflow-hidden rounded-xl border bg-gray-50 ${
-                                    index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
-                                }`}
-                            >
-                                <button type="button" onClick={() => setSelectedImageIndex(index)} className="w-full">
-                                    <img
-                                        src={imageUrl || getFallbackImageSrc("NovaGear")}
-                                        alt={`${product.name}-${index}`}
-                                        className="h-24 w-full object-cover"
-                                        data-fallback={getFallbackImageSrc("NovaGear")}
-                                        onError={handleImageError}
-                                    />
-                                </button>
-                            </div>
-                        ))}
+                    <div className="mt-6 flex gap-3">
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={adding || inventoryLoading || availableStock <= 0}
+                            className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
+                        >
+                            {adding ? "Đang thêm..." : "Thêm vào giỏ"}
+                        </button>
+
+                        <button
+                            onClick={handleBuyNow}
+                            disabled={adding || inventoryLoading || availableStock <= 0}
+                            className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
+                        >
+                            Mua ngay
+                        </button>
                     </div>
-                )}
-            </div>
 
-            <div>
-                <h1 className="text-3xl font-bold">{product.name}</h1>
-                <p className="mt-3 text-sm text-brand-gray">
-                    {product.shortDescription || product.description}
-                </p>
+                    {groupedSpecifications.length > 0 && (
+                        <div className="mt-6 space-y-3 rounded-2xl bg-gray-50 p-4">
+                            <h3 className="font-bold">Thông số kỹ thuật</h3>
 
-                <div className="mt-6">
-                    <p className="text-3xl font-extrabold text-brand-red">
-                        {formatCurrency(finalPrice)}
-                    </p>
-
-                    {selectedVariant?.salePrice != null && (
-                        <p className="mt-1 text-sm text-gray-400 line-through">
-                            {formatCurrency(originalPrice)}
-                        </p>
-                    )}
-                </div>
-
-                {product.variants.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="font-bold">Phiên bản</h3>
-
-                        <div className="mt-3 grid gap-3">
-                            {product.variants.map((variant) => {
-                                const label =
-                                    buildVariantLabel(variant) ||
-                                    variant.sku ||
-                                    `Variant #${variant.id}`
-
-                                const isSelected =
-                                    String(variant.id) === String(selectedVariant?.id)
+                            {groupedSpecifications.map((group) => {
+                                const isOpen = Boolean(openSpecGroups[group.groupName])
 
                                 return (
-                                    <button
-                                        key={variant.id}
-                                        type="button"
-                                        onClick={() => setSelectedVariantId(variant.id)}
-                                        className={`rounded-2xl border p-4 text-left transition ${
-                                            isSelected
-                                                ? "border-brand-dark bg-gray-50"
-                                                : "border-gray-200 hover:border-gray-400"
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="font-semibold">{label}</p>
-                                                {variant.sku && (
-                                                    <p className="mt-1 text-xs text-brand-gray">
-                                                        SKU: {variant.sku}
-                                                    </p>
-                                                )}
-                                            </div>
+                                    <div key={group.groupName}
+                                         className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleSpecGroup(group.groupName)}
+                                            className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left"
+                                        >
+                                            <span className="font-semibold text-gray-800">{group.groupName}</span>
+                                            <span className="text-gray-500">{isOpen ? "-" : "+"}</span>
+                                        </button>
 
-                                            <div className="text-right">
-                                                <p className="font-bold text-brand-red">
-                                                    {formatCurrency(
-                                                        variant.salePrice ?? variant.price
-                                                    )}
-                                                </p>
-                                                {variant.salePrice != null && (
-                                                    <p className="text-xs text-gray-400 line-through">
-                                                        {formatCurrency(variant.price)}
-                                                    </p>
-                                                )}
+                                        {isOpen && (
+                                            <div className="divide-y divide-gray-100">
+                                                {group.specs.map((spec) => (
+                                                    <div key={`${group.groupName}-${spec.id ?? spec.specKey}`}
+                                                         className="grid grid-cols-[170px_1fr] gap-3 px-4 py-3 text-sm">
+                                                        <p className="font-medium text-gray-700">{spec.specKey}</p>
+                                                        <p className="text-gray-700">{spec.specValue}</p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        </div>
-                                    </button>
+                                        )}
+                                    </div>
                                 )
                             })}
                         </div>
-                    </div>
-                )}
+                    )}
 
-                <div className="mt-6 rounded-2xl bg-gray-50 p-4">
-                    <h3 className="font-bold">Tình trạng kho</h3>
+                    {/*<div className="mt-8 rounded-2xl bg-gray-50 p-4">*/}
+                    {/*    <h3 className="font-bold">Thông tin sản phẩm</h3>*/}
+                    {/*    <div className="mt-3 space-y-2 text-sm text-brand-gray">*/}
+                    {/*        <p>Danh mục: {product.category?.name || "Đang cập nhật"}</p>*/}
+                    {/*        <p>Thương hiệu: {product.brand || "Đang cập nhật"}</p>*/}
+                    {/*        <p>Mã sản phẩm: {product.slug || "Đang cập nhật"}</p>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
 
-                    {inventoryLoading ? (
-                        <p className="mt-3 text-sm text-brand-gray">Đang tải tồn kho...</p>
-                    ) : (
-                        <>
-                            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                                <div>
-                                    <p className="text-sm text-brand-gray">Tổng tồn</p>
-                                    <p className="mt-1 font-semibold">{totalStock}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-brand-gray">Khả dụng</p>
-                                    <p
-                                        className={`mt-1 font-semibold ${
-                                            availableStock > 0 ? "text-green-600" : "text-red-500"
-                                        }`}
-                                    >
-                                        {availableStock}
-                                    </p>
-                                </div>
-                                {/*<div>*/}
-                                {/*    <p className="text-sm text-brand-gray">Đang giữ</p>*/}
-                                {/*    <p className="mt-1 font-semibold text-amber-600">*/}
-                                {/*        {reservedStock}*/}
-                                {/*    </p>*/}
-                                {/*</div>*/}
-                            </div>
-
-                            {availableStock <= 0 && (
-                                <p className="mt-3 text-sm font-medium text-red-500">
-                                    Phiên bản này hiện đang hết hàng.
-                                </p>
-                            )}
-                        </>
+                    {product.description && (
+                        <div className="mt-6 rounded-2xl bg-white">
+                            <h3 className="text-lg font-bold">Mô tả chi tiết</h3>
+                            <p className="mt-3 whitespace-pre-line text-sm text-brand-gray">
+                                {product.description}
+                            </p>
+                        </div>
                     )}
                 </div>
-
-                <div className="mt-6 flex gap-3">
-                    <button
-                        onClick={handleAddToCart}
-                        disabled={adding || inventoryLoading || availableStock <= 0}
-                        className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
-                    >
-                        {adding ? "Đang thêm..." : "Thêm vào giỏ"}
-                    </button>
-
-                    <button
-                        onClick={handleBuyNow}
-                        disabled={adding || inventoryLoading || availableStock <= 0}
-                        className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
-                    >
-                        Mua ngay
-                    </button>
-                </div>
-
-                {groupedSpecifications.length > 0 && (
-                    <div className="mt-6 space-y-3 rounded-2xl bg-gray-50 p-4">
-                        <h3 className="font-bold">Thông số kỹ thuật</h3>
-
-                        {groupedSpecifications.map((group) => {
-                            const isOpen = Boolean(openSpecGroups[group.groupName])
-
-                            return (
-                                <div key={group.groupName}
-                                     className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleSpecGroup(group.groupName)}
-                                        className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left"
-                                    >
-                                        <span className="font-semibold text-gray-800">{group.groupName}</span>
-                                        <span className="text-gray-500">{isOpen ? "-" : "+"}</span>
-                                    </button>
-
-                                    {isOpen && (
-                                        <div className="divide-y divide-gray-100">
-                                            {group.specs.map((spec) => (
-                                                <div key={`${group.groupName}-${spec.id ?? spec.specKey}`}
-                                                     className="grid grid-cols-[170px_1fr] gap-3 px-4 py-3 text-sm">
-                                                    <p className="font-medium text-gray-700">{spec.specKey}</p>
-                                                    <p className="text-gray-700">{spec.specValue}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/*<div className="mt-8 rounded-2xl bg-gray-50 p-4">*/}
-                {/*    <h3 className="font-bold">Thông tin sản phẩm</h3>*/}
-                {/*    <div className="mt-3 space-y-2 text-sm text-brand-gray">*/}
-                {/*        <p>Danh mục: {product.category?.name || "Đang cập nhật"}</p>*/}
-                {/*        <p>Thương hiệu: {product.brand || "Đang cập nhật"}</p>*/}
-                {/*        <p>Mã sản phẩm: {product.slug || "Đang cập nhật"}</p>*/}
-                {/*    </div>*/}
-                {/*</div>*/}
-
-                {product.description && (
-                    <div className="mt-6 rounded-2xl bg-white">
-                        <h3 className="text-lg font-bold">Mô tả chi tiết</h3>
-                        <p className="mt-3 whitespace-pre-line text-sm text-brand-gray">
-                            {product.description}
-                        </p>
-                    </div>
-                )}
-            </div>
             </div>
 
             <section className="rounded-3xl bg-white p-6 shadow-sm">
@@ -636,7 +655,8 @@ export default function ProductDetailPage() {
                                     : 0
 
                                 return (
-                                    <div key={item.star} className="grid grid-cols-[24px_1fr_40px] items-center gap-2 text-sm">
+                                    <div key={item.star}
+                                         className="grid grid-cols-[24px_1fr_40px] items-center gap-2 text-sm">
                                         <span className="text-slate-600">{item.star}★</span>
                                         <div className="h-2 overflow-hidden rounded-full bg-slate-200">
                                             <div className="h-full bg-brand-blue" style={{width: `${percent}%`}}/>
@@ -689,7 +709,8 @@ export default function ProductDetailPage() {
                                     <p className="text-xs text-slate-500">{review.createdAt || ""}</p>
                                 </div>
                                 <p className="mt-1 text-sm text-amber-600">{"★".repeat(Math.max(1, review.rating))}</p>
-                                {review.comment ? <p className="mt-2 text-sm text-slate-700">{review.comment}</p> : null}
+                                {review.comment ?
+                                    <p className="mt-2 text-sm text-slate-700">{review.comment}</p> : null}
                             </div>
                         ))}
                     </div>
