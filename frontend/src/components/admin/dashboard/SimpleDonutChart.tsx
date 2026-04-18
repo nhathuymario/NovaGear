@@ -16,8 +16,9 @@ export default function SimpleDonutChart({data, size = 164, strokeWidth = 18}: S
 
     if (!total) {
         return (
-            <div className="flex h-44 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-                Chua co du lieu bieu do.
+            <div
+                className="flex h-44 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                Chưa có dữ liệu biểu đồ.
             </div>
         )
     }

@@ -637,10 +637,10 @@ export default function ProductDetailPage() {
             </div>
 
             <section className="rounded-3xl bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-900">Danh gia san pham</h3>
+                <h3 className="text-xl font-bold text-slate-900">Đánh giá sản phẩm</h3>
 
                 {reviewLoading ? (
-                    <p className="mt-3 text-sm text-slate-500">Dang tai danh gia...</p>
+                    <p className="mt-3 text-sm text-slate-500">Đang tải đánh giá...</p>
                 ) : (
                     <div className="mt-4 grid gap-6 lg:grid-cols-[280px_1fr]">
                         <div className="rounded-2xl bg-slate-50 p-4">
@@ -670,9 +670,9 @@ export default function ProductDetailPage() {
                 )}
 
                 <form onSubmit={handleSubmitReview} className="mt-6 rounded-2xl border border-slate-200 p-4">
-                    <p className="text-sm font-semibold text-slate-800">Viet danh gia cua ban</p>
+                    <p className="text-sm font-semibold text-slate-800">Viết đánh giá của bạn</p>
                     <div className="mt-3 flex items-center gap-3">
-                        <label className="text-sm text-slate-600">So sao</label>
+                        <label className="text-sm text-slate-600">Số sao</label>
                         <select
                             value={reviewForm.rating}
                             onChange={(e) => setReviewForm((prev) => ({...prev, rating: Number(e.target.value)}))}
@@ -688,7 +688,7 @@ export default function ProductDetailPage() {
                     <textarea
                         value={reviewForm.comment}
                         onChange={(e) => setReviewForm((prev) => ({...prev, comment: e.target.value}))}
-                        placeholder="Chia se trai nghiem cua ban ve san pham..."
+                        placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
                         className="mt-3 min-h-[100px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"
                     />
                     <button
@@ -696,7 +696,7 @@ export default function ProductDetailPage() {
                         disabled={reviewSubmitting}
                         className="mt-3 rounded-xl bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                     >
-                        {reviewSubmitting ? "Dang gui..." : "Gui danh gia"}
+                        {reviewSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
                     </button>
                 </form>
 
@@ -719,13 +719,13 @@ export default function ProductDetailPage() {
 
             <section className="rounded-3xl bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-slate-900">San pham cung loai</h3>
+                    <h3 className="text-xl font-bold text-slate-900">Sản phẩm cùng loại</h3>
                 </div>
 
                 {relatedLoading ? (
-                    <p className="text-sm text-slate-500">Dang tai san pham cung loai...</p>
+                    <p className="text-sm text-slate-500">Đang tải sản phẩm cùng loại...</p>
                 ) : relatedProducts.length === 0 ? (
-                    <p className="text-sm text-slate-500">Chua co san pham cung loai.</p>
+                    <p className="text-sm text-slate-500">Chưa có sản phẩm cùng loại.</p>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         {relatedProducts.map((item) => (
