@@ -21,6 +21,7 @@ public class ProductService {
     private final ProductVariantRepository variantRepository;
     private final ProductSpecificationRepository specificationRepository;
     private final ProductImageRepository imageRepository;
+    private final ProductReviewRepository reviewRepository;
     private final CategoryService categoryService;
 
     public Page<ProductResponse> publicSearch(String keyword, Long categoryId, int page, int size) {
@@ -49,6 +50,92 @@ public class ProductService {
     public ProductResponse getAdminDetail(Long id) {
         Product product = getProduct(id);
         return mapToResponse(product);
+    }
+
+    public List<ProductResponse> getRelatedProductsBySlug(String slug, int limit) {
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+        }
+
+        int safeLimit = Math.max(1, Math.min(limit, 12));
+        Pageable pageable = PageRequest.of(0, safeLimit);
+
+        return productRepository.findRelatedProducts(product.getCategory().getId(), product.getId(), pageable)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public ProductReviewOverviewResponse getReviewsBySlug(String slug) {
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+        }
+
+        List<ProductReview> reviews = reviewRepository.findByProductIdOrderByCreatedAtDesc(product.getId());
+        long total = reviews.size();
+
+        long five = reviews.stream().filter(r -> r.getRating() == 5).count();
+        long four = reviews.stream().filter(r -> r.getRating() == 4).count();
+        long three = reviews.stream().filter(r -> r.getRating() == 3).count();
+        long two = reviews.stream().filter(r -> r.getRating() == 2).count();
+        long one = reviews.stream().filter(r -> r.getRating() == 1).count();
+
+        double avg = total == 0
+                ? 0.0
+                : reviews.stream().mapToInt(ProductReview::getRating).average().orElse(0.0);
+
+        ProductReviewSummaryResponse summary = ProductReviewSummaryResponse.builder()
+                .averageRating(avg)
+                .totalReviews(total)
+                .fiveStar(five)
+                .fourStar(four)
+                .threeStar(three)
+                .twoStar(two)
+                .oneStar(one)
+                .build();
+
+        return ProductReviewOverviewResponse.builder()
+                .summary(summary)
+                .reviews(reviews.stream().map(this::mapReview).toList())
+                .build();
+    }
+
+    @Transactional
+    public ProductReviewResponse createOrUpdateReview(String slug, Long userId, String username, ProductReviewRequest request) {
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+        }
+
+        ProductReview review = reviewRepository.findByProductIdAndUserId(product.getId(), userId)
+                .orElse(null);
+
+        if (review == null) {
+            review = ProductReview.builder()
+                    .product(product)
+                    .userId(userId)
+                    .username(username)
+                    .rating(request.getRating())
+                    .comment(request.getComment())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+        } else {
+            review.setUsername(username);
+            review.setRating(request.getRating());
+            review.setComment(request.getComment());
+            review.setUpdatedAt(LocalDateTime.now());
+        }
+
+        return mapReview(reviewRepository.save(review));
     }
 
     @Transactional
@@ -329,6 +416,18 @@ public class ProductService {
                 .imageUrl(image.getImageUrl())
                 .thumbnail(image.getThumbnail())
                 .sortOrder(image.getSortOrder())
+                .build();
+    }
+
+    private ProductReviewResponse mapReview(ProductReview review) {
+        return ProductReviewResponse.builder()
+                .id(review.getId())
+                .userId(review.getUserId())
+                .username(review.getUsername())
+                .rating(review.getRating())
+                .comment(review.getComment())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
                 .build();
     }
 }
