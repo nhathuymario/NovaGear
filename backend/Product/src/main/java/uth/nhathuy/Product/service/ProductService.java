@@ -7,6 +7,7 @@ import uth.nhathuy.Product.exception.ResourceNotFoundException;
 import uth.nhathuy.Product.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,6 +116,7 @@ public class ProductService {
             throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
         }
 
+        String normalizedComment = request.getComment() == null ? null : request.getComment().trim();
         ProductReview review = reviewRepository.findByProductIdAndUserId(product.getId(), userId)
                 .orElse(null);
 
@@ -124,18 +126,30 @@ public class ProductService {
                     .userId(userId)
                     .username(username)
                     .rating(request.getRating())
-                    .comment(request.getComment())
+                    .comment(normalizedComment)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
         } else {
             review.setUsername(username);
             review.setRating(request.getRating());
-            review.setComment(request.getComment());
+            review.setComment(normalizedComment);
             review.setUpdatedAt(LocalDateTime.now());
         }
 
-        return mapReview(reviewRepository.save(review));
+        try {
+            return mapReview(reviewRepository.saveAndFlush(review));
+        } catch (DataIntegrityViolationException ex) {
+            ProductReview existing = reviewRepository.findByProductIdAndUserId(product.getId(), userId)
+                    .orElseThrow(() -> ex);
+
+            existing.setUsername(username);
+            existing.setRating(request.getRating());
+            existing.setComment(normalizedComment);
+            existing.setUpdatedAt(LocalDateTime.now());
+
+            return mapReview(reviewRepository.saveAndFlush(existing));
+        }
     }
 
     @Transactional

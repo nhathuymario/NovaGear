@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        if (isPublicPath(path)) {
+        if (isPublicPath(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
 
@@ -61,8 +61,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         Claims claims = jwtUtil.extractAllClaims(token);
 
-        String userId = String.valueOf(claims.get("userId"));
-        String username = String.valueOf(claims.get("username"));
+        String userId = extractClaimAsString(claims, "userId");
+        String username = extractClaimAsString(claims, "username");
+        if (!isNumeric(userId) || username == null || username.isBlank()) {
+            return unauthorized(exchange, "Token payload thiếu thông tin người dùng");
+        }
         Object rolesObj = claims.get("roles");
         String roles = rolesObj != null ? rolesObj.toString() : "";
 
@@ -75,8 +78,45 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
 
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    private boolean isPublicPath(String path, HttpMethod method) {
+        String normalizedPath = normalizePath(path);
+        // Reviews submit must pass through JWT validation so gateway can inject X-User-* headers.
+        if (method == HttpMethod.POST && normalizedPath.matches("^/api/products/public/[^/]+/reviews$")) {
+            return false;
+        }
+        return PUBLIC_PATHS.stream().anyMatch(normalizedPath::startsWith);
+    }
+
+    private String normalizePath(String path) {
+        if (path == null || path.isBlank() || "/".equals(path)) {
+            return "/";
+        }
+        // Keep one canonical form to avoid auth bypass differences like '/reviews/' vs '/reviews'.
+        return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+    }
+
+    private String extractClaimAsString(Claims claims, String key) {
+        Object value = claims.get(key);
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty() || "null".equalsIgnoreCase(text)) {
+            return null;
+        }
+        return text;
+    }
+
+    private boolean isNumeric(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (!Character.isDigit(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
