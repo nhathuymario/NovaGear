@@ -96,7 +96,7 @@ export default function AdminPoliciesPage() {
                             onClick={handleSave}
                             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                         >
-                            Luu chinh sach
+                            Lưu chính sách
                         </button>
                         {message ? <span className="text-sm font-medium text-emerald-600">{message}</span> : null}
                     </div>

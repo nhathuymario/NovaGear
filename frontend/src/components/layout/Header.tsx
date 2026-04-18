@@ -88,7 +88,7 @@ export default function Header() {
                     ) : (
                         <Link
                             to="/login"
-                            className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                            className="rounded-lg bg-amber-400 px-3 py-2 text-sm font-bold text-slate-900 hover:bg-amber-500 transition-colors"
                         >
                             Đăng nhập
                         </Link>
