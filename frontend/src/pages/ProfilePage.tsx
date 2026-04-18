@@ -5,6 +5,13 @@ import {CircleUserRound, Mail, Phone, ShieldCheck, UserRound} from "lucide-react
 import {getOrBootstrapMyProfile, updateMyProfile, type UserProfile} from "../api/userApi"
 import {useAuth} from "../hooks/useAuth"
 import {setStoredUser} from "../utils/auth"
+import {
+    createSavedAddress,
+    loadSavedAddresses,
+    normalizePhone,
+    persistSavedAddresses,
+    type SavedAddress,
+} from "../utils/addressBook"
 
 function isAdminRole(role?: string | null) {
     if (!role) return false
@@ -31,12 +38,29 @@ export default function ProfilePage() {
         gender: "",
         dateOfBirth: "",
     })
+    const userStorageKey = String(user?.id ?? user?.username ?? "guest")
+    const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+    const [selectedAddressId, setSelectedAddressId] = useState("")
+    const [addressForm, setAddressForm] = useState({
+        label: "",
+        receiverName: "",
+        receiverPhone: "",
+        shippingAddress: "",
+        note: "",
+    })
+    const [addressError, setAddressError] = useState("")
+    const [addressSuccess, setAddressSuccess] = useState("")
+    const [isAddressBookOpen, setIsAddressBookOpen] = useState(false)
 
     const displayName = profile?.fullName || user?.fullName || user?.username || "Người dùng"
     const displayEmail = profile?.email || user?.email || "Chưa cập nhật"
     const displayUsername = profile?.username || user?.username || "Chưa cập nhật"
     const displayRole = user?.role || "USER"
     const hasChanges = useMemo(() => JSON.stringify(form) !== JSON.stringify(initialForm), [form, initialForm])
+    const selectedAddress = useMemo(
+        () => savedAddresses.find((item) => item.id === selectedAddressId) ?? null,
+        [savedAddresses, selectedAddressId]
+    )
 
     const bindProfileToForm = (data: UserProfile | null) => {
         const next = {
@@ -67,6 +91,12 @@ export default function ProfilePage() {
 
         loadProfile()
     }, [])
+
+    useEffect(() => {
+        const addresses = loadSavedAddresses(userStorageKey)
+        setSavedAddresses(addresses)
+        setSelectedAddressId(addresses[0]?.id ?? "")
+    }, [userStorageKey])
 
     const handleInputChange = (field: keyof typeof form, value: string) => {
         setErrorMessage("")
@@ -120,6 +150,58 @@ export default function ProfilePage() {
         logout()
         navigate("/")
         globalThis.location.reload()
+    }
+
+    const handleAddAddress = () => {
+        setAddressError("")
+        setAddressSuccess("")
+
+        if (!addressForm.receiverName.trim() || !normalizePhone(addressForm.receiverPhone) || !addressForm.shippingAddress.trim()) {
+            setAddressError("Điền đủ người nhận, số điện thoại và địa chỉ trước khi thêm")
+            return
+        }
+
+        const newAddress = createSavedAddress({
+            label: addressForm.label,
+            receiverName: addressForm.receiverName,
+            receiverPhone: addressForm.receiverPhone,
+            shippingAddress: addressForm.shippingAddress,
+            note: addressForm.note,
+        })
+
+        const next = [
+            newAddress,
+            ...savedAddresses.map((item) => ({...item, isDefault: false})),
+        ]
+
+        persistSavedAddresses(userStorageKey, next)
+        setSavedAddresses(next)
+        setSelectedAddressId(newAddress.id)
+        setAddressForm({
+            label: "",
+            receiverName: "",
+            receiverPhone: "",
+            shippingAddress: "",
+            note: "",
+        })
+        setAddressSuccess("Đã thêm địa chỉ mới")
+    }
+
+    const handleDeleteAddress = (addressId: string) => {
+        setAddressError("")
+        setAddressSuccess("")
+
+        const next = savedAddresses
+            .filter((item) => item.id !== addressId)
+            .map((item, index) => ({
+                ...item,
+                isDefault: index === 0,
+            }))
+
+        persistSavedAddresses(userStorageKey, next)
+        setSavedAddresses(next)
+        setSelectedAddressId(next[0]?.id ?? "")
+        setAddressSuccess("Đã xóa địa chỉ")
     }
 
     if (loading || profileLoading) {
@@ -242,6 +324,116 @@ export default function ProfilePage() {
                             </p>
                         </div>
                     </div>
+
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsAddressBookOpen((prev) => !prev)}
+                            aria-expanded={isAddressBookOpen}
+                            aria-controls="profile-address-book"
+                            className="flex w-full items-center justify-between gap-3 text-left"
+                        >
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Sổ địa chỉ giao hàng</h3>
+                                <p className="text-xs text-slate-500">Bấm để mở và quản lý địa chỉ.</p>
+                            </div>
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                                {isAddressBookOpen ? "Thu gọn" : "Mở ra"}
+                            </span>
+                        </button>
+
+                        {isAddressBookOpen && (
+                            <div id="profile-address-book" className="mt-4 space-y-4">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Nhãn địa chỉ (Nhà riêng, Công ty...)"
+                                        value={addressForm.label}
+                                        onChange={(e) => setAddressForm((prev) => ({...prev, label: e.target.value}))}
+                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Người nhận"
+                                        value={addressForm.receiverName}
+                                        onChange={(e) => setAddressForm((prev) => ({...prev, receiverName: e.target.value}))}
+                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Số điện thoại"
+                                        value={addressForm.receiverPhone}
+                                        onChange={(e) => setAddressForm((prev) => ({...prev, receiverPhone: e.target.value}))}
+                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Ghi chú (không bắt buộc)"
+                                        value={addressForm.note}
+                                        onChange={(e) => setAddressForm((prev) => ({...prev, note: e.target.value}))}
+                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                                    />
+                                    <textarea
+                                        placeholder="Địa chỉ giao hàng"
+                                        value={addressForm.shippingAddress}
+                                        onChange={(e) => setAddressForm((prev) => ({...prev, shippingAddress: e.target.value}))}
+                                        className="min-h-[90px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none sm:col-span-2"
+                                    />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddAddress}
+                                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                                >
+                                    Thêm địa chỉ
+                                </button>
+
+                                {addressError ? <p className="text-sm text-red-600">{addressError}</p> : null}
+                                {addressSuccess ? <p className="text-sm text-emerald-600">{addressSuccess}</p> : null}
+
+                                {savedAddresses.length === 0 ? (
+                                    <p className="text-sm text-slate-500">Chưa có địa chỉ nào.</p>
+                                ) : (
+                                    <div className="grid gap-2">
+                                        {savedAddresses.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className={`rounded-xl border bg-white p-3 ${item.id === selectedAddressId ? "border-slate-900" : "border-slate-200"}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-800">{item.label} {item.isDefault ? "(Mặc định)" : ""}</p>
+                                                        <p className="text-sm text-slate-600">{item.receiverName} - {item.receiverPhone}</p>
+                                                        <p className="text-sm text-slate-600">{item.shippingAddress}</p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedAddressId(item.id)}
+                                                            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600"
+                                                        >
+                                                            Chọn
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteAddress(item.id)}
+                                                            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600"
+                                                        >
+                                                            Xóa
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {selectedAddress ? (
+                                    <p className="text-xs text-slate-500">Địa chỉ đang chọn cho checkout: <span className="font-semibold text-slate-700">{selectedAddress.label}</span></p>
+                                ) : null}
+                            </div>
+                        )}
+                    </div>
                 </section>
 
                 <aside className="h-fit rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -269,13 +461,6 @@ export default function ProfilePage() {
                             className="w-full rounded-xl border px-4 py-3 text-left font-semibold"
                         >
                             Đi tới giỏ hàng
-                        </button>
-
-                        <button
-                            onClick={() => navigate("/checkout")}
-                            className="w-full rounded-xl border px-4 py-3 text-left font-semibold"
-                        >
-                            Quản lý danh sách địa chỉ
                         </button>
 
                         <button
