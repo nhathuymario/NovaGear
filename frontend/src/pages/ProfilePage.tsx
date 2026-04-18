@@ -272,6 +272,13 @@ export default function ProfilePage() {
                         </button>
 
                         <button
+                            onClick={() => navigate("/checkout")}
+                            className="w-full rounded-xl border px-4 py-3 text-left font-semibold"
+                        >
+                            Quản lý danh sách địa chỉ
+                        </button>
+
+                        <button
                             onClick={handleLogout}
                             className="w-full rounded-xl bg-brand-dark px-4 py-3 font-semibold text-white"
                         >
