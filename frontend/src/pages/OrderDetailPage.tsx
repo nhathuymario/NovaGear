@@ -4,6 +4,7 @@ import { cancelMyOrder, getOrderDetail } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
 import { getFallbackImageSrc, handleImageError } from "../utils/image"
+import { readPaymentSync } from "../utils/paymentSync"
 
 function getStatusText(status: Order["status"]) {
     switch (status) {
@@ -11,11 +12,9 @@ function getStatusText(status: Order["status"]) {
             return "Chờ xác nhận"
         case "CONFIRMED":
             return "Đã xác nhận"
-        case "PROCESSING":
-            return "Đang xử lý"
         case "SHIPPING":
             return "Đang giao"
-        case "DELIVERED":
+        case "COMPLETED":
             return "Đã giao"
         case "CANCELLED":
             return "Đã hủy"
@@ -41,11 +40,23 @@ export default function OrderDetailPage() {
         if (!token || !id) return
 
         let mounted = true
+        let refreshTimer: number | undefined
 
         getOrderDetail(id)
             .then((data) => {
                 if (mounted) {
                     setOrder(data)
+                }
+
+                const syncMarker = readPaymentSync()
+                if (syncMarker && (syncMarker.orderId === id || syncMarker.orderId)) {
+                    refreshTimer = window.setTimeout(() => {
+                        getOrderDetail(id).then((fresh) => {
+                            if (mounted) {
+                                setOrder(fresh)
+                            }
+                        })
+                    }, 1200)
                 }
             })
             .finally(() => {
@@ -56,6 +67,9 @@ export default function OrderDetailPage() {
 
         return () => {
             mounted = false
+            if (refreshTimer) {
+                window.clearTimeout(refreshTimer)
+            }
         }
     }, [id, token])
 
@@ -84,7 +98,7 @@ export default function OrderDetailPage() {
     const handleCancelOrder = async () => {
         if (!id || !canCancel) return
 
-        const ok = window.confirm("Bạn chắc chắn muốn hủy đơn hàng này?")
+        const ok = globalThis.confirm("Bạn chắc chắn muốn hủy đơn hàng này?")
         if (!ok) return
 
         try {

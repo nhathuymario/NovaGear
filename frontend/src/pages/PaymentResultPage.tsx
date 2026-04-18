@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 import { getPaymentByOrderId, mockPaymentSuccess } from "../api/paymentApi"
+import { markPaymentSync } from "../utils/paymentSync"
 
 // 1. Định nghĩa interface cho cấu trúc một config
 interface StatusConfig {
@@ -60,15 +61,25 @@ export default function PaymentResultPage() {
                 if (!mounted) return
 
                 if (payment?.status) {
-                    setResolvedStatus(normalizeDisplayStatus(payment.status))
+                    const nextStatus = normalizeDisplayStatus(payment.status)
+                    setResolvedStatus(nextStatus)
+                    if (nextStatus === "success") {
+                        markPaymentSync(orderId, String(payment.status))
+                    }
                     return
                 }
 
                 setResolvedStatus(queryStatus)
+                if (queryStatus === "success") {
+                    markPaymentSync(orderId, "SUCCESS")
+                }
             } catch (error) {
                 if (!mounted) return
                 console.error(error)
                 setResolvedStatus(queryStatus)
+                if (queryStatus === "success") {
+                    markPaymentSync(orderId, "SUCCESS")
+                }
             } finally {
                 if (mounted) {
                     setChecking(false)

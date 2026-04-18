@@ -217,7 +217,9 @@ public class OrderService {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
-        List<OrderItemResponse> items = order.getItems().stream()
+        List<OrderItem> orderItems = order.getItems() == null ? List.of() : order.getItems();
+
+        List<OrderItemResponse> items = orderItems.stream()
                 .map(item -> OrderItemResponse.builder()
                         .id(item.getId())
                         .productId(item.getProductId())
@@ -240,6 +242,7 @@ public class OrderService {
                 .address(order.getAddress())
                 .note(order.getNote())
                 .status(order.getStatus())
+                .paymentStatus(order.getPaymentStatus())
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(items)

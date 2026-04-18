@@ -1,9 +1,8 @@
 export type OrderStatus =
     | "PENDING"
     | "CONFIRMED"
-    | "PROCESSING"
     | "SHIPPING"
-    | "DELIVERED"
+    | "COMPLETED"
     | "CANCELLED"
 
 export interface CreateOrderPayload {

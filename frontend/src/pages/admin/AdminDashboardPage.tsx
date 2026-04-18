@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
 
     const orderStatusDistribution = useMemo(() => {
         const total = orders.length || 1
-        const stages = ["PENDING", "PROCESSING", "SHIPPING", "DELIVERED"]
+        const stages = ["PENDING", "CONFIRMED", "SHIPPING", "COMPLETED"]
         return stages.map((stage) => {
             const count = orders.filter((item) => item.status === stage).length
             return {

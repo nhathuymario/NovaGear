@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { getMyOrders } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
+import { readPaymentSync } from "../utils/paymentSync"
 
 type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "PENDING" | "FAILED" | "REFUNDED"
 
@@ -12,11 +13,9 @@ function getStatusText(status: Order["status"]) {
             return "Chờ xác nhận"
         case "CONFIRMED":
             return "Đã xác nhận"
-        case "PROCESSING":
-            return "Đang xử lý"
         case "SHIPPING":
             return "Đang giao"
-        case "DELIVERED":
+        case "COMPLETED":
             return "Đã giao"
         case "CANCELLED":
             return "Đã hủy"
@@ -81,11 +80,23 @@ export default function OrdersPage() {
         if (!token) return
 
         let mounted = true
+        let refreshTimer: number | undefined
 
         getMyOrders()
             .then((data) => {
                 if (mounted) {
                     setItems(data)
+                }
+
+                const syncMarker = readPaymentSync()
+                if (syncMarker) {
+                    refreshTimer = window.setTimeout(() => {
+                        getMyOrders().then((fresh) => {
+                            if (mounted) {
+                                setItems(fresh)
+                            }
+                        })
+                    }, 1200)
                 }
             })
             .finally(() => {
@@ -96,6 +107,9 @@ export default function OrdersPage() {
 
         return () => {
             mounted = false
+            if (refreshTimer) {
+                window.clearTimeout(refreshTimer)
+            }
         }
     }, [token])
 

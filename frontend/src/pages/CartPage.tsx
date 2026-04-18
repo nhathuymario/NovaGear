@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import { Minus, Plus, ShoppingCart, TicketPercent, Trash2, Truck } from "lucide-react"
-import type { CartItem } from "../types/cart"
-import { getMyCart, removeCartItem, updateCartItem } from "../api/cartApi"
-import { getToken } from "../utils/auth"
-import { getFallbackImageSrc, handleImageError } from "../utils/image"
+import {useEffect, useMemo, useState} from "react"
+import {Link, useNavigate} from "react-router-dom"
+import {Minus, Plus, ShoppingCart, TicketPercent, Trash2, Truck} from "lucide-react"
+import type {CartItem} from "../types/cart"
+import {getMyCart, removeCartItem, updateCartItem} from "../api/cartApi"
+import {getToken} from "../utils/auth"
+import {getFallbackImageSrc, handleImageError} from "../utils/image"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -44,7 +44,7 @@ export default function CartPage() {
         try {
             await updateCartItem(id, quantity)
             setItems((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+                prev.map((item) => (item.id === id ? {...item, quantity} : item))
             )
         } catch (error) {
             console.error(error)
@@ -94,7 +94,7 @@ export default function CartPage() {
         <div className="grid gap-6 md:grid-cols-[1fr_320px]">
             <section className="space-y-4">
                 <h1 className="flex items-center gap-2 text-2xl font-bold">
-                    <ShoppingCart className="h-6 w-6" />
+                    <ShoppingCart className="h-6 w-6"/>
                     Gio hang
                 </h1>
 
@@ -149,7 +149,7 @@ export default function CartPage() {
                                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                             aria-label="Giam so luong"
                                         >
-                                            <Minus className="h-4 w-4" />
+                                            <Minus className="h-4 w-4"/>
                                         </button>
                                         <span className="min-w-[32px] text-center">{item.quantity}</span>
                                         <button
@@ -157,7 +157,7 @@ export default function CartPage() {
                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                             aria-label="Tang so luong"
                                         >
-                                            <Plus className="h-4 w-4" />
+                                            <Plus className="h-4 w-4"/>
                                         </button>
                                     </div>
                                 </div>
@@ -165,9 +165,9 @@ export default function CartPage() {
                                 <button
                                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
                                     onClick={() => removeItem(item.id)}
-                                    aria-label="Xoa san pham"
+                                    aria-label="Xóa sản phẩm"
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4"/>
                                 </button>
                             </div>
                         )
@@ -183,15 +183,15 @@ export default function CartPage() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="inline-flex items-center gap-1">
-                        <Truck className="h-4 w-4" />
-                        Phi van chuyen
+                        <Truck className="h-4 w-4"/>
+                         Phí vận chuyển
                     </span>
                     <span>0đ</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="inline-flex items-center gap-1">
-                        <TicketPercent className="h-4 w-4" />
-                        Uu dai
+                        <TicketPercent className="h-4 w-4"/>
+                        Ưu đãi
                     </span>
                     <span>0đ</span>
                 </div>

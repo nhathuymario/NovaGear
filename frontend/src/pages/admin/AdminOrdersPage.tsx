@@ -2,14 +2,30 @@ import { useEffect, useState } from "react"
 import { getAdminOrders, updateAdminOrderStatus } from "../../api/adminOrderApi"
 import type { Order } from "../../types/order"
 
-const statusOptions = [
+const statusOptions: Order["status"][] = [
     "PENDING",
     "CONFIRMED",
-    "PROCESSING",
     "SHIPPING",
-    "DELIVERED",
+    "COMPLETED",
     "CANCELLED",
 ]
+
+function getStatusLabel(status: Order["status"]) {
+    switch (status) {
+        case "PENDING":
+            return "PENDING"
+        case "CONFIRMED":
+            return "CONFIRMED"
+        case "SHIPPING":
+            return "SHIPPING"
+        case "COMPLETED":
+            return "COMPLETED"
+        case "CANCELLED":
+            return "CANCELLED"
+        default:
+            return status
+    }
+}
 
 export default function AdminOrdersPage() {
     const [items, setItems] = useState<Order[]>([])
@@ -33,12 +49,12 @@ export default function AdminOrdersPage() {
         loadOrders()
     }, [])
 
-    const handleChangeStatus = async (id: number | string, status: string) => {
+    const handleChangeStatus = async (id: number | string, status: Order["status"]) => {
         try {
             setSavingId(id)
             await updateAdminOrderStatus(id, status)
             setItems((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, status: status as Order["status"] } : item))
+                prev.map((item) => (item.id === id ? { ...item, status } : item))
             )
             alert("Cập nhật trạng thái đơn thành công")
         } catch (error) {
@@ -90,12 +106,12 @@ export default function AdminOrdersPage() {
                                     <select
                                         disabled={savingId === item.id}
                                         value={item.status}
-                                        onChange={(e) => handleChangeStatus(item.id, e.target.value)}
+                                        onChange={(e) => handleChangeStatus(item.id, e.target.value as Order["status"])}
                                         className="rounded-lg border px-3 py-2 outline-none disabled:opacity-60"
                                     >
                                         {statusOptions.map((status) => (
                                             <option key={status} value={status}>
-                                                {status}
+                                                {getStatusLabel(status)}
                                             </option>
                                         ))}
                                     </select>
