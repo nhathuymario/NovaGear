@@ -25,13 +25,13 @@ spring:
       client:
         registration:
           google:
-            client-id: 729316149106-6039bgrd6a34pv4lroauscrc599ce9l1.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID:local-dev-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:local-dev-google-client-secret}
             scope:
               - openid
               - profile
               - email
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8089/login/oauth2/code/{registrationId}}
 
 springdoc:
   swagger-ui:
