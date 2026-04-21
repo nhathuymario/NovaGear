@@ -1,0 +1,2 @@
+"""NovaGear AI service package."""
+

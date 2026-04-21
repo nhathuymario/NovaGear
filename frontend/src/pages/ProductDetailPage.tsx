@@ -390,12 +390,12 @@ export default function ProductDetailPage() {
         <div className="space-y-6">
             <div className="grid gap-6 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-2">
                 <div className="space-y-4">
-                    <div className="overflow-hidden rounded-2xl bg-gray-100">
-                        <div className="relative">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                        <div className="relative aspect-square w-full bg-slate-100">
                             <img
                                 src={galleryImage}
                                 alt={product.name}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain p-2"
                                 data-fallback={getFallbackImageSrc("NovaGear")}
                                 onError={handleImageError}
                             />
@@ -430,16 +430,16 @@ export default function ProductDetailPage() {
                             {galleryImages.slice(0, 8).map((imageUrl, index) => (
                                 <div
                                     key={`${imageUrl}-${index}`}
-                                    className={`overflow-hidden rounded-xl border bg-gray-50 ${
+                                    className={`aspect-square overflow-hidden rounded-xl border bg-slate-50 ${
                                         index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
                                     }`}
                                 >
                                     <button type="button" onClick={() => setSelectedImageIndex(index)}
-                                            className="w-full">
+                                            className="h-full w-full">
                                         <img
                                             src={imageUrl || getFallbackImageSrc("NovaGear")}
                                             alt={`${product.name}-${index}`}
-                                            className="h-24 w-full object-cover"
+                                            className="h-full w-full object-contain p-1"
                                             data-fallback={getFallbackImageSrc("NovaGear")}
                                             onError={handleImageError}
                                         />
