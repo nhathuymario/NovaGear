@@ -76,6 +76,7 @@ type ProductResponse = {
     description?: string
     thumbnail?: string
     brand?: string
+    featured?: boolean
     category?: {
         id?: number | string
         name?: string
@@ -138,6 +139,7 @@ function mapProduct(item: ProductResponse): Product {
         id: item.id,
         slug: item.slug ?? "",
         name: item.name ?? "",
+        featured: Boolean(item.featured),
         description: item.shortDescription ?? item.description ?? "",
         imageUrl:
             item.thumbnail ??

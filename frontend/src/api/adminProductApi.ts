@@ -17,8 +17,10 @@ export interface AdminProductItem {
     slug: string
     name: string
     brand: string
+    categoryId?: number | string
     categoryName?: string
     shortDescription?: string
+    description?: string
     thumbnail?: string
     status?: string
     featured?: boolean
@@ -38,10 +40,12 @@ type RawAdminProduct = {
     thumbnail?: string
     status?: string
     featured?: boolean
+    categoryId?: number | string
     category?: {
         id?: number | string
         name?: string
     }
+    description?: string
 }
 
 type RawAdminCategory = {
@@ -55,8 +59,10 @@ function mapAdminProduct(raw: RawAdminProduct): AdminProductItem {
         slug: raw.slug ?? "",
         name: raw.name ?? "",
         brand: raw.brand ?? "",
+        categoryId: raw.category?.id ?? raw.categoryId ?? "",
         categoryName: raw.category?.name ?? "",
         shortDescription: raw.shortDescription ?? "",
+        description: raw.description ?? "",
         thumbnail: raw.thumbnail ?? "",
         status: raw.status ?? "",
         featured: Boolean(raw.featured),

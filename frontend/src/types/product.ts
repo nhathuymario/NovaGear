@@ -2,6 +2,7 @@ export interface Product {
     id: number | string
     slug: string
     name: string
+    featured?: boolean
     description?: string
     imageUrl?: string
     price: number

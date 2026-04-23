@@ -3,10 +3,9 @@ import {Link} from "react-router-dom"
 import {motion} from "framer-motion"
 import {getProducts} from "../api/productApi"
 import type {Product} from "../types/product"
-import ProductCard from "../components/product/ProductCard"
 import {getSiteContent} from "../utils/siteContent"
 import TechShowcase3D from "../components/ui/TechShowcase3D"
-import {ProductGridSkeleton} from "../components/ui/Skeletons"
+import FeaturedProductsSection from "../components/home/FeaturedProductsSection"
 
 export default function HomePage() {
     const [products, setProducts] = useState<Product[]>([])
@@ -64,12 +63,6 @@ export default function HomePage() {
                                 className="inline-flex items-center justify-center rounded-2xl bg-brand-yellow px-6 py-3.5 text-sm font-bold text-brand-dark transition hover:-translate-y-0.5 hover:brightness-95"
                             >
                                 Khám phá ngay
-                            </Link>
-                            <Link
-                                to="/products?keyword=laptop"
-                                className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
-                            >
-                                Xem laptop hot
                             </Link>
                         </div>
 
@@ -135,33 +128,7 @@ export default function HomePage() {
                 </div>
             </motion.section>
 
-            <motion.section
-                initial={{opacity: 0, y: 18}}
-                whileInView={{opacity: 1, y: 0}}
-                viewport={{once: true, amount: 0.2}}
-                transition={{duration: 0.35}}
-                className="rounded-[28px] border border-slate-200/80 bg-white p-4 shadow-sm md:p-5"
-            >
-                <div className="mb-4 flex items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-900">Sản phẩm nổi bật</h2>
-                        <p className="mt-1 text-sm text-slate-500">Micro-interactions, đổ bóng mềm và hover nâng card.</p>
-                    </div>
-                    <Link to="/products" className="text-sm font-semibold text-brand-blue transition hover:opacity-80">
-                        Xem tất cả
-                    </Link>
-                </div>
-
-                {loading ? (
-                    <ProductGridSkeleton />
-                ) : (
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {products.slice(0, 8).map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                )}
-            </motion.section>
+            <FeaturedProductsSection products={products} loading={loading} />
         </div>
     )
 }
