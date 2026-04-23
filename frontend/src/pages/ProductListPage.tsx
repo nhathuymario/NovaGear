@@ -1,8 +1,10 @@
 import {useEffect, useMemo, useState} from "react"
 import {useSearchParams} from "react-router-dom"
+import {motion} from "framer-motion"
 import {getProducts, getPublicCategories} from "../api/productApi"
 import type {Product, PublicCategory} from "../types/product"
 import ProductCard from "../components/product/ProductCard"
+import {ProductListSkeleton} from "../components/ui/Skeletons"
 
 export default function ProductListPage() {
     const [items, setItems] = useState<Product[]>([])
@@ -57,7 +59,12 @@ export default function ProductListPage() {
 
     return (
         <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-            <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <motion.aside
+                initial={{opacity: 0, x: -14}}
+                animate={{opacity: 1, x: 0}}
+                transition={{duration: 0.28}}
+                className="h-fit rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm"
+            >
                 <h3 className="text-lg font-bold text-slate-900">Bộ lọc nhanh</h3>
 
                 <div className="mt-4 space-y-3 text-sm text-slate-600">
@@ -93,10 +100,10 @@ export default function ProductListPage() {
                         )
                     })}
                 </div>
-            </aside>
+            </motion.aside>
 
             <section>
-                <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
                     <h1 className="text-2xl font-black text-slate-900">Danh sách sản phẩm</h1>
 
                     {keyword && (
@@ -120,9 +127,7 @@ export default function ProductListPage() {
                 </div>
 
                 {loading ? (
-                    <div className="rounded-xl bg-white px-4 py-8 text-center text-slate-500 shadow-sm">
-                        Đang tải...
-                    </div>
+                    <ProductListSkeleton />
                 ) : (
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         {filtered.map((product) => (

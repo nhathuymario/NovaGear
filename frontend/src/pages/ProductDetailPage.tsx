@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react"
 import {useNavigate, useParams} from "react-router-dom"
+import {motion} from "framer-motion"
 import {addToCart} from "../api/cartApi"
 import {getPublicInventoryByVariant, type InventoryItem,} from "../api/inventoryApi"
 import {
@@ -15,6 +16,7 @@ import type {Product} from "../types/product"
 import {getToken} from "../utils/auth"
 import {getFallbackImageSrc, handleImageError} from "../utils/image"
 import ProductCard from "../components/product/ProductCard"
+import {ProductDetailSkeleton} from "../components/ui/Skeletons"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -383,14 +385,28 @@ export default function ProductDetailPage() {
         }
     }
 
-    if (loading) return <div>Đang tải...</div>
-    if (!product) return <div>Không tìm thấy sản phẩm</div>
+    if (loading) return <ProductDetailSkeleton />
+    if (!product) {
+        return (
+            <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <p className="text-2xl font-black text-slate-900">Không tìm thấy sản phẩm</p>
+                <p className="mt-3 text-sm text-slate-500">
+                    Sản phẩm có thể đã bị gỡ hoặc đường dẫn không còn hợp lệ.
+                </p>
+            </div>
+        )
+    }
 
     return (
-        <div className="space-y-6">
-            <div className="grid gap-6 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-2">
+        <motion.div
+            initial={{opacity: 0, y: 18}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.3}}
+            className="space-y-6"
+        >
+            <div className="grid gap-6 rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:grid-cols-2 md:p-8">
                 <div className="space-y-4">
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-inner">
                         <div className="relative aspect-square w-full bg-slate-100">
                             <img
                                 src={galleryImage}
@@ -430,7 +446,7 @@ export default function ProductDetailPage() {
                             {galleryImages.slice(0, 8).map((imageUrl, index) => (
                                 <div
                                     key={`${imageUrl}-${index}`}
-                                    className={`aspect-square overflow-hidden rounded-xl border bg-slate-50 ${
+                                    className={`aspect-square overflow-hidden rounded-2xl border bg-slate-50 ${
                                         index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
                                     }`}
                                 >
@@ -450,13 +466,18 @@ export default function ProductDetailPage() {
                     )}
                 </div>
 
-                <div>
-                    <h1 className="text-3xl font-bold">{product.name}</h1>
-                    <p className="mt-3 text-sm text-brand-gray">
+                <div className="space-y-4">
+                    <div>
+                        <p className="inline-flex rounded-full bg-brand-yellow/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-brand-dark">
+                            Sản phẩm nổi bật
+                        </p>
+                        <h1 className="mt-3 text-3xl font-black text-slate-900">{product.name}</h1>
+                    </div>
+                    <p className="text-sm leading-7 text-brand-gray">
                         {product.shortDescription || product.description}
                     </p>
 
-                    <div className="mt-6">
+                    <div className="rounded-[28px] bg-gradient-to-r from-slate-50 to-blue-50 p-4">
                         <p className="text-3xl font-extrabold text-brand-red">
                             {formatCurrency(finalPrice)}
                         </p>
@@ -469,7 +490,7 @@ export default function ProductDetailPage() {
                     </div>
 
                     {product.variants.length > 0 && (
-                        <div className="mt-6">
+                        <div>
                             <h3 className="font-bold">Phiên bản</h3>
 
                             <div className="mt-3 grid gap-3">
@@ -523,7 +544,7 @@ export default function ProductDetailPage() {
                         </div>
                     )}
 
-                    <div className="mt-6 rounded-2xl bg-gray-50 p-4">
+                    <div className="rounded-[28px] bg-slate-50 p-4">
                         <h3 className="font-bold">Tình trạng kho</h3>
 
                         {inventoryLoading ? (
@@ -562,7 +583,7 @@ export default function ProductDetailPage() {
                         )}
                     </div>
 
-                    <div className="mt-6 flex gap-3">
+                    <div className="flex gap-3">
                         <button
                             onClick={handleAddToCart}
                             disabled={adding || inventoryLoading || availableStock <= 0}
@@ -581,7 +602,7 @@ export default function ProductDetailPage() {
                     </div>
 
                     {groupedSpecifications.length > 0 && (
-                        <div className="mt-6 space-y-3 rounded-2xl bg-gray-50 p-4">
+                        <div className="space-y-3 rounded-[28px] bg-slate-50 p-4">
                             <h3 className="font-bold">Thông số kỹ thuật</h3>
 
                             {groupedSpecifications.map((group) => {
@@ -626,7 +647,7 @@ export default function ProductDetailPage() {
                     {/*</div>*/}
 
                     {product.description && (
-                        <div className="mt-6 rounded-2xl bg-white">
+                        <div className="rounded-[28px] bg-white p-1">
                             <h3 className="text-lg font-bold">Mô tả chi tiết</h3>
                             <p className="mt-3 whitespace-pre-line text-sm text-brand-gray">
                                 {product.description}
@@ -636,7 +657,7 @@ export default function ProductDetailPage() {
                 </div>
             </div>
 
-            <section className="rounded-3xl bg-white p-6 shadow-sm">
+            <section className="rounded-[32px] bg-white p-6 shadow-sm">
                 <h3 className="text-xl font-bold text-slate-900">Đánh giá sản phẩm</h3>
 
                 {reviewLoading ? (
@@ -717,7 +738,7 @@ export default function ProductDetailPage() {
                 )}
             </section>
 
-            <section className="rounded-3xl bg-white p-6 shadow-sm">
+            <section className="rounded-[32px] bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-xl font-bold text-slate-900">Sản phẩm cùng loại</h3>
                 </div>
@@ -734,6 +755,6 @@ export default function ProductDetailPage() {
                     </div>
                 )}
             </section>
-        </div>
+        </motion.div>
     )
 }

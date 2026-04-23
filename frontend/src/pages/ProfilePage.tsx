@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react"
 import {useNavigate} from "react-router-dom"
+import {motion} from "framer-motion"
 
 import {CircleUserRound, Mail, Phone, ShieldCheck, UserRound} from "lucide-react"
 import {getOrBootstrapMyProfile, updateMyProfile, type UserProfile} from "../api/userApi"
@@ -12,6 +13,7 @@ import {
     persistSavedAddresses,
     type SavedAddress,
 } from "../utils/addressBook"
+import {ProfileSkeleton} from "../components/ui/Skeletons"
 
 function isAdminRole(role?: string | null) {
     if (!role) return false
@@ -205,18 +207,23 @@ export default function ProfilePage() {
     }
 
     if (loading || profileLoading) {
-        return <div>Đang tải thông tin tài khoản...</div>
+        return <ProfileSkeleton />
     }
 
     return (
-        <div className="mx-auto max-w-5xl space-y-6">
-            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-                <h1 className="text-3xl font-bold">Tài khoản của tôi</h1>
+        <motion.div
+            initial={{opacity: 0, y: 18}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.28}}
+            className="mx-auto max-w-5xl space-y-6"
+        >
+            <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
+                <h1 className="text-3xl font-black text-slate-900">Tài khoản của tôi</h1>
                 <p className="mt-2 text-sm text-brand-gray">
                     Quản lý thông tin cá nhân và trạng thái đăng nhập.
                 </p>
 
-                <div className="mt-5 flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+                <div className="mt-5 flex items-center gap-4 rounded-[28px] bg-slate-50 p-4">
                     <div className="rounded-full bg-slate-900 p-3 text-white">
                         <CircleUserRound className="h-6 w-6"/>
                     </div>
@@ -228,14 +235,14 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <section className="space-y-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                <section className="space-y-6 rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h2 className="text-xl font-bold">Thông tin cá nhân</h2>
                         <button
                             type="button"
                             onClick={handleUpdateProfile}
                             disabled={!hasChanges || saving}
-                            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-400"
+                            className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-400"
                         >
                             {saving ? "Dang luu..." : "Luu thay doi"}
                         </button>
@@ -248,7 +255,7 @@ export default function ProfilePage() {
                     {successMessage ? <p className="text-sm font-medium text-emerald-600">{successMessage}</p> : null}
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-2xl bg-gray-50 p-4">
+                        <div className="rounded-[24px] bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <UserRound className="h-4 w-4"/>
                                 Username
@@ -258,7 +265,7 @@ export default function ProfilePage() {
                             </p>
                         </div>
 
-                        <div className="rounded-2xl bg-gray-50 p-4">
+                        <div className="rounded-[24px] bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <Mail className="h-4 w-4"/>
                                 Email
@@ -268,7 +275,7 @@ export default function ProfilePage() {
                             </p>
                         </div>
 
-                        <label className="rounded-2xl bg-gray-50 p-4">
+                        <label className="rounded-[24px] bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Họ và tên</p>
                             <input
                                 type="text"
@@ -279,7 +286,7 @@ export default function ProfilePage() {
                             />
                         </label>
 
-                        <label className="rounded-2xl bg-gray-50 p-4">
+                        <label className="rounded-[24px] bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <Phone className="h-4 w-4"/>
                                 Số điện thoại
@@ -293,7 +300,7 @@ export default function ProfilePage() {
                             />
                         </label>
 
-                        <label className="rounded-2xl bg-gray-50 p-4">
+                        <label className="rounded-[24px] bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Gioi tinh</p>
                             <input
                                 type="text"
@@ -304,7 +311,7 @@ export default function ProfilePage() {
                             />
                         </label>
 
-                        <label className="rounded-2xl bg-gray-50 p-4">
+                        <label className="rounded-[24px] bg-gray-50 p-4">
                             <p className="text-sm text-brand-gray">Ngày sinh</p>
                             <input
                                 type="date"
@@ -314,7 +321,7 @@ export default function ProfilePage() {
                             />
                         </label>
 
-                        <div className="rounded-2xl bg-gray-50 p-4">
+                        <div className="rounded-[24px] bg-gray-50 p-4">
                             <p className="inline-flex items-center gap-1 text-sm text-brand-gray">
                                 <ShieldCheck className="h-4 w-4"/>
                                 Vai trò
@@ -325,7 +332,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
                         <button
                             type="button"
                             onClick={() => setIsAddressBookOpen((prev) => !prev)}
@@ -399,7 +406,7 @@ export default function ProfilePage() {
                                         {savedAddresses.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className={`rounded-xl border bg-white p-3 ${item.id === selectedAddressId ? "border-slate-900" : "border-slate-200"}`}
+                                                    className={`rounded-2xl border bg-white p-3 ${item.id === selectedAddressId ? "border-slate-900" : "border-slate-200"}`}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
@@ -436,7 +443,7 @@ export default function ProfilePage() {
                     </div>
                 </section>
 
-                <aside className="h-fit rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                <aside className="h-fit rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
                     <h2 className="text-xl font-bold">Thao tác nhanh</h2>
 
                     <div className="mt-4 space-y-3">
@@ -472,6 +479,6 @@ export default function ProfilePage() {
                     </div>
                 </aside>
             </div>
-        </div>
+        </motion.div>
     )
 }

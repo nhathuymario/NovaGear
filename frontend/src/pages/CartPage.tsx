@@ -1,10 +1,12 @@
 import {useEffect, useMemo, useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
+import {motion} from "framer-motion"
 import {Minus, Plus, ShoppingCart, TicketPercent, Trash2, Truck} from "lucide-react"
 import type {CartItem} from "../types/cart"
 import {getMyCart, removeCartItem, updateCartItem} from "../api/cartApi"
 import {getToken} from "../utils/auth"
 import {getFallbackImageSrc, handleImageError} from "../utils/image"
+import {CartSkeleton} from "../components/ui/Skeletons"
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -71,14 +73,14 @@ export default function CartPage() {
 
     if (!token) {
         return (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-                <h1 className="text-2xl font-bold">Giỏ hàng</h1>
+            <div className="rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm">
+                <h1 className="text-2xl font-black text-slate-900">Giỏ hàng</h1>
                 <p className="mt-3 text-brand-gray">
                     Bạn cần đăng nhập để xem giỏ hàng.
                 </p>
                 <Link
                     to="/login"
-                    className="mt-5 inline-block rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                    className="mt-5 inline-flex rounded-2xl bg-brand-dark px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5"
                 >
                     Đi tới đăng nhập
                 </Link>
@@ -87,19 +89,24 @@ export default function CartPage() {
     }
 
     if (loading) {
-        return <div>Đang tải giỏ hàng...</div>
+        return <CartSkeleton />
     }
 
     return (
-        <div className="grid gap-6 md:grid-cols-[1fr_320px]">
+        <motion.div
+            initial={{opacity: 0, y: 18}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.28}}
+            className="grid gap-6 md:grid-cols-[1fr_320px]"
+        >
             <section className="space-y-4">
-                <h1 className="flex items-center gap-2 text-2xl font-bold">
+                <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900">
                     <ShoppingCart className="h-6 w-6"/>
-                    Gio hang
+                    Giỏ hàng
                 </h1>
 
                 {items.length === 0 ? (
-                    <div className="rounded-2xl bg-white p-6 shadow-sm">
+                    <div className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
                         Giỏ hàng của bạn đang trống
                     </div>
                 ) : (
@@ -111,7 +118,7 @@ export default function CartPage() {
                         return (
                             <div
                                 key={item.id}
-                                className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm"
+                                className="flex gap-4 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm"
                             >
                                 <img
                                     src={imageSrc}
@@ -122,7 +129,7 @@ export default function CartPage() {
                                 />
 
                                 <div className="flex-1">
-                                    <h3 className="font-semibold">{productName}</h3>
+                                    <h3 className="font-semibold text-slate-900">{productName}</h3>
 
                                     {(item.variantLabel || item.variantSku) && (
                                         <div className="mt-1 space-y-1">
@@ -145,7 +152,7 @@ export default function CartPage() {
 
                                     <div className="mt-3 flex items-center gap-2">
                                         <button
-                                            className="rounded-lg border px-2.5 py-1 text-slate-700"
+                                                className="rounded-xl border border-slate-200 px-2.5 py-1 text-slate-700 transition hover:bg-slate-50"
                                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                             aria-label="Giam so luong"
                                         >
@@ -153,7 +160,7 @@ export default function CartPage() {
                                         </button>
                                         <span className="min-w-[32px] text-center">{item.quantity}</span>
                                         <button
-                                            className="rounded-lg border px-2.5 py-1 text-slate-700"
+                                                className="rounded-xl border border-slate-200 px-2.5 py-1 text-slate-700 transition hover:bg-slate-50"
                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                             aria-label="Tang so luong"
                                         >
@@ -163,7 +170,7 @@ export default function CartPage() {
                                 </div>
 
                                 <button
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-red-500 transition hover:bg-red-50"
                                     onClick={() => removeItem(item.id)}
                                     aria-label="Xóa sản phẩm"
                                 >
@@ -175,8 +182,8 @@ export default function CartPage() {
                 )}
             </section>
 
-            <aside className="h-fit rounded-2xl bg-white p-5 shadow-sm">
-                <h2 className="text-xl font-bold">Tóm tắt đơn hàng</h2>
+            <aside className="h-fit rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
+                <h2 className="text-xl font-black text-slate-900">Tóm tắt đơn hàng</h2>
                 <div className="mt-4 flex items-center justify-between text-sm">
                     <span>Tạm tính</span>
                     <span>{formatCurrency(total)}</span>
@@ -207,11 +214,11 @@ export default function CartPage() {
                 <button
                     disabled={items.length === 0}
                     onClick={() => navigate("/checkout")}
-                    className="mt-5 w-full rounded-xl bg-brand-dark py-3 font-semibold text-white disabled:opacity-60"
+                        className="mt-5 w-full rounded-2xl bg-brand-dark py-3 font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
                 >
                     Tiến hành thanh toán
                 </button>
             </aside>
-        </div>
+                </motion.div>
     )
 }

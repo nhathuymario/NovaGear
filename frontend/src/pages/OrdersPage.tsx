@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import {motion} from "framer-motion"
 import { getMyOrders } from "../api/orderApi"
 import type { Order } from "../types/order"
 import { getToken } from "../utils/auth"
 import { readPaymentSync } from "../utils/paymentSync"
+import {OrdersSkeleton} from "../components/ui/Skeletons"
 
 type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "PENDING" | "FAILED" | "REFUNDED"
 
@@ -115,14 +117,14 @@ export default function OrdersPage() {
 
     if (!token) {
         return (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-                <h1 className="text-2xl font-bold">Đơn hàng của tôi</h1>
+            <div className="rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm">
+                <h1 className="text-2xl font-black text-slate-900">Đơn hàng của tôi</h1>
                 <p className="mt-3 text-brand-gray">
                     Bạn cần đăng nhập để xem đơn hàng.
                 </p>
                 <button
                     onClick={() => navigate("/login")}
-                    className="mt-5 rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                    className="mt-5 rounded-2xl bg-brand-dark px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5"
                 >
                     Đi tới đăng nhập
                 </button>
@@ -130,12 +132,17 @@ export default function OrdersPage() {
         )
     }
 
-    if (loading) return <div>Đang tải đơn hàng...</div>
+    if (loading) return <OrdersSkeleton />
 
     return (
-        <div className="space-y-4">
-            <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-bold">Đơn hàng của tôi</h1>
+        <motion.div
+            initial={{opacity: 0, y: 18}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.28}}
+            className="space-y-4"
+        >
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <h1 className="text-2xl font-black text-slate-900">Đơn hàng của tôi</h1>
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-medium text-slate-600">Lọc theo thanh toán:</span>
                     {(["ALL", "PAID", "UNPAID", "PENDING", "FAILED", "REFUNDED"] as PaymentFilter[]).map((value) => {
@@ -160,7 +167,7 @@ export default function OrdersPage() {
             </div>
 
             {filteredItems.length === 0 ? (
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <div className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
                     {items.length === 0 ? "Bạn chưa có đơn hàng nào." : "Không có đơn hàng phù hợp với bộ lọc thanh toán."}
                 </div>
             ) : (
@@ -168,7 +175,7 @@ export default function OrdersPage() {
                     <Link
                         key={order.id}
                         to={`/orders/${order.id}`}
-                        className="block rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
+                        className="block rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl"
                     >
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
@@ -206,9 +213,9 @@ export default function OrdersPage() {
                         {order.items.length > 0 && (
                             <div className="mt-4 grid gap-3 md:grid-cols-2">
                                 {order.items.slice(0, 2).map((item) => (
-                                    <div
+                                        <div
                                         key={item.id}
-                                        className="rounded-xl border p-3"
+                                            className="rounded-2xl border border-slate-200 p-3"
                                     >
                                         <p className="font-medium">
                                             {item.productName || "Sản phẩm"}
@@ -236,6 +243,6 @@ export default function OrdersPage() {
                     </Link>
                 ))
             )}
-        </div>
+        </motion.div>
     )
 }

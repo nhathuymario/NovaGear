@@ -1,3 +1,4 @@
+import {motion} from "framer-motion"
 import {Link} from "react-router-dom"
 import type {Product} from "../../types/product"
 import {getFallbackImageSrc, handleImageError} from "../../utils/image"
@@ -14,20 +15,28 @@ export default function ProductCard({product}: Readonly<Props>) {
             : 0
 
     return (
-        <div
-            className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <motion.article
+            initial={{opacity: 0, y: 18}}
+            whileInView={{opacity: 1, y: 0}}
+            viewport={{once: true, amount: 0.2}}
+            transition={{duration: 0.28, ease: "easeOut"}}
+            whileHover={{y: -6}}
+            whileTap={{scale: 0.985}}
+            className="group overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm transition-shadow duration-300 hover:shadow-2xl"
+        >
             <Link to={`/products/${product.slug}`}>
-                <div className="relative aspect-square bg-slate-100">
+                <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
                     <img
                         src={product.imageUrl || getFallbackImageSrc("NovaGear")}
                         alt={product.name}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                         data-fallback={getFallbackImageSrc("NovaGear")}
                         onError={handleImageError}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     {percentOff > 0 && (
                         <span
-                            className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
+                            className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/20">
                             -{percentOff}%
                         </span>
                     )}
@@ -61,12 +70,12 @@ export default function ProductCard({product}: Readonly<Props>) {
                     </span>
                     <Link
                         to={`/products/${product.slug}`}
-                        className="rounded-lg bg-amber-400 px-3 py-2 text-xs font-bold text-slate-900 transition hover:bg-amber-500"
+                        className="rounded-xl bg-brand-yellow px-3 py-2 text-xs font-bold text-brand-dark transition hover:-translate-y-0.5 hover:brightness-95"
                     >
                         Xem chi tiết
                     </Link>
                 </div>
             </div>
-        </div>
+        </motion.article>
     )
 }

@@ -2,15 +2,14 @@ import {Link} from "react-router-dom"
 
 export default function Footer() {
     return (
-        <footer className="mt-14 border-t border-slate-200 bg-white">
-            <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-10 md:grid-cols-3 md:px-5">
+        <footer className="mt-14 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50">
+            <div className="mx-auto grid max-w-[1320px] gap-8 px-4 py-10 md:grid-cols-3 md:px-5">
                 <div className="space-y-3">
-                    <h3 className="text-xl font-extrabold text-slate-900">NovaGear</h3>
+                    <h3 className="text-xl font-black text-slate-900">NovaGear</h3>
                     <p className="text-sm text-slate-600">
                         Shop công nghệ tối giản, tập trung vào trải nghiệm mua sắm nhanh, rỏ ràng và dễ chọn.
                     </p>
-                    <span
-                        className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                         Trusted Electronics Store
                     </span>
                 </div>
@@ -37,7 +36,7 @@ export default function Footer() {
                 </div>
             </div>
 
-            <div className="border-t border-slate-100 bg-slate-50 py-3 text-center text-xs text-slate-500">
+            <div className="border-t border-slate-100 bg-white/70 py-3 text-center text-xs text-slate-500 backdrop-blur">
                 © 2026 NovaGear. All rights reserved.
             </div>
         </footer>
