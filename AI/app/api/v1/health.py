@@ -16,5 +16,5 @@ def health() -> HealthResponse:
         environment=settings.app_env,
         vector_store=settings.default_vector_store,
         search_backend=settings.default_search_backend,
-        mock_mode=settings.enable_mock_mode,
+        mock_mode=not bool(settings.gemini_api_key),
     )

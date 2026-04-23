@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import html
 import json
+import re
 from dataclasses import dataclass
 from urllib import error, parse, request
 from typing import Sequence
@@ -14,6 +16,13 @@ class KnowledgeDocument:
     title: str
     content: str
     keywords: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class WebResult:
+    title: str
+    url: str
+    snippet: str
 
 
 _KNOWLEDGE_BASE: tuple[KnowledgeDocument, ...] = (
@@ -34,21 +43,72 @@ _KNOWLEDGE_BASE: tuple[KnowledgeDocument, ...] = (
     ),
 )
 
+_POLICY_BASE: tuple[KnowledgeDocument, ...] = (
+    KnowledgeDocument(
+        title="Chính sách bảo hành",
+        content=(
+            "1. Sản phẩm được bảo hành theo chính sách của cửa hàng và hãng sản xuất. "
+            "2. Thời gian tiếp nhận bảo hành: 8:00 - 22:00 mỗi ngày. "
+            "3. Khách hàng cần cung cấp hóa đơn hoặc thông tin đơn hàng. "
+            "4. Các lỗi do va đập, vào nước, can thiệp phần cứng không thuộc phạm vi bảo hành."
+        ),
+        keywords=("bao", "hanh", "bao-hanh", "warranty", "chinh", "sach"),
+    ),
+    KnowledgeDocument(
+        title="Chính sách giao hàng",
+        content=(
+            "1. Đơn hàng được xác nhận trước 16:00 sẽ được xử lý trong ngày. "
+            "2. Nội thành dự kiến 2-24 giờ, ngoại thành 2-5 ngày làm việc. "
+            "3. Miễn phí vận chuyển cho đơn hàng từ 500.000đ (tùy khu vực). "
+            "4. Đơn hàng giá trị cao có thể cần xác minh trước khi giao."
+        ),
+        keywords=("giao", "hang", "giao-hang", "shipping", "van", "chuyen"),
+    ),
+    KnowledgeDocument(
+        title="Hướng dẫn thanh toán",
+        content=(
+            "1. Hỗ trợ COD cho khu vực đủ điều kiện. "
+            "2. Hỗ trợ thanh toán online qua cổng thanh toán được tích hợp. "
+            "3. Đơn hàng online cần thanh toán thành công để xác nhận. "
+            "4. Vui lòng không chia sẻ OTP và thông tin tài khoản thanh toán."
+        ),
+        keywords=("thanh", "toan", "payment", "cod", "otp"),
+    ),
+    KnowledgeDocument(
+        title="Liên hệ hỗ trợ 24/7",
+        content=(
+            "1. Hotline: 0123 456 789. "
+            "2. Email: support@novagear.vn. "
+            "3. Khung giờ hỗ trợ: 8:00 - 22:00 (Mon - Sun). "
+            "4. Vui lòng cung cấp mã đơn hàng để được hỗ trợ nhanh hơn."
+        ),
+        keywords=("ho", "tro", "hotline", "support", "email"),
+    ),
+)
+
+_DUCKDUCKGO_RESULT_PATTERN = re.compile(
+    r'<a[^>]*class="result__a"[^>]*href="(?P<href>[^"]+)"[^>]*>(?P<title>.*?)</a>.*?'
+    r'(?:<a[^>]*class="result__snippet"[^>]*>(?P<snippet>.*?)</a>|<div[^>]*class="result__snippet"[^>]*>(?P<snippet2>.*?)</div>)',
+    re.IGNORECASE | re.DOTALL,
+)
+
 
 class RAGService:
     def answer(self, question: str, context: Sequence[str] | None = None, top_k: int = 5) -> RagQueryResponse:
         settings = get_settings()
         safe_top_k = max(1, min(top_k, 10))
-        tokens = _tokenize(question)
-        context_tokens = _tokenize(" ".join(context or []))
-        query_tokens = tokens | context_tokens
+        # Rank retrieval sources from the real user question to avoid noisy
+        # always-on context making every reply look the same.
+        query_tokens = _tokenize(question)
 
-        selected_sources = self._select_sources(query_tokens, safe_top_k)
+        static_sources = self._select_sources(query_tokens, safe_top_k)
+        web_sources = self._collect_web_sources(question, settings)
+        selected_sources = self._merge_sources(static_sources, web_sources, safe_top_k)
 
-        if settings.enable_mock_mode or not settings.gemini_api_key:
+        if not settings.gemini_api_key:
             return RagQueryResponse(
                 question=question,
-                answer=self._build_mock_answer(selected_sources),
+                answer=self._build_non_gemini_answer(question, selected_sources),
                 confidence=self._confidence_from_sources(selected_sources, gemini=False),
                 mode="mock-rag",
                 sources=selected_sources,
@@ -59,7 +119,7 @@ class RAGService:
             mode = "gemini"
             confidence = self._confidence_from_sources(selected_sources, gemini=True)
         except Exception:
-            answer = self._build_mock_answer(selected_sources)
+            answer = self._build_non_gemini_answer(question, selected_sources)
             mode = "fallback"
             confidence = self._confidence_from_sources(selected_sources, gemini=False)
 
@@ -73,7 +133,7 @@ class RAGService:
 
     def _select_sources(self, query_tokens: set[str], top_k: int) -> list[RagSource]:
         scored_sources: list[RagSource] = []
-        for document in _KNOWLEDGE_BASE:
+        for document in (*_KNOWLEDGE_BASE, *_POLICY_BASE):
             score = _score_document(query_tokens, document)
             if score <= 0:
                 continue
@@ -88,6 +148,72 @@ class RAGService:
         scored_sources.sort(key=lambda item: item.score, reverse=True)
         return scored_sources[:top_k]
 
+    def _collect_web_sources(self, question: str, settings) -> list[RagSource]:
+        if not settings.enable_web_search:
+            return []
+
+        web_results = self._search_duckduckgo(question, settings.web_search_max_results, settings.web_search_timeout_seconds)
+        return [
+            RagSource(
+                title=f"Web: {result.title}",
+                excerpt=result.snippet[:240],
+                score=0.45,
+            )
+            for result in web_results
+        ]
+
+    def _search_duckduckgo(self, query: str, limit: int, timeout_seconds: float) -> list[WebResult]:
+        safe_query = query.strip()
+        if not safe_query:
+            return []
+
+        search_url = f"https://html.duckduckgo.com/html/?q={parse.quote_plus(safe_query)}"
+        http_request = request.Request(
+            search_url,
+            headers={"User-Agent": "Mozilla/5.0 (NovaGear AI)"},
+            method="GET",
+        )
+
+        try:
+            with request.urlopen(http_request, timeout=timeout_seconds) as response:
+                body = response.read().decode("utf-8", errors="ignore")
+        except Exception:
+            return []
+
+        results: list[WebResult] = []
+        for match in _DUCKDUCKGO_RESULT_PATTERN.finditer(body):
+            if len(results) >= limit:
+                break
+
+            href = html.unescape(match.group("href") or "").strip()
+            title = _clean_html_text(match.group("title") or "")
+            snippet = _clean_html_text(match.group("snippet") or match.group("snippet2") or "")
+
+            if not title or not href:
+                continue
+
+            results.append(WebResult(title=title, url=href, snippet=snippet or title))
+
+        return results
+
+    def _merge_sources(
+        self,
+        static_sources: Sequence[RagSource],
+        web_sources: Sequence[RagSource],
+        top_k: int,
+    ) -> list[RagSource]:
+        merged: list[RagSource] = []
+        seen_titles: set[str] = set()
+
+        for source in list(static_sources) + list(web_sources):
+            normalized_title = source.title.strip().lower()
+            if not normalized_title or normalized_title in seen_titles:
+                continue
+            seen_titles.add(normalized_title)
+            merged.append(source)
+
+        return merged[:top_k]
+
     def _build_mock_answer(self, selected_sources: Sequence[RagSource]) -> str:
         if selected_sources:
             return (
@@ -98,6 +224,29 @@ class RAGService:
 
         return (
             "Chưa tìm thấy tài liệu đủ liên quan. Hãy cung cấp thêm ngữ cảnh hoặc ingest thêm source vào vector store."
+        )
+
+    def _build_non_gemini_answer(self, question: str, selected_sources: Sequence[RagSource]) -> str:
+        if not selected_sources:
+            return (
+                "Mình chưa có Gemini key nên chưa trả lời tự do được. "
+                "Bạn hãy thêm `GEMINI_API_KEY` để AI trả lời mở rộng hơn; hiện tại mình chưa thấy nguồn nội bộ/web đủ khớp câu hỏi này."
+            )
+
+        top_source = selected_sources[0]
+        related_titles = "; ".join(source.title for source in selected_sources[:3])
+
+        if top_source.title.lower().startswith("web:"):
+            return (
+                f"Theo nguồn web gần nhất, mình thấy thông tin liên quan đến '{question}': "
+                f"{top_source.excerpt}. "
+                f"Bạn có thể đối chiếu thêm ở các nguồn: {related_titles}."
+            )
+
+        return (
+            f"Theo dữ liệu nội bộ hiện có, nội dung gần nhất cho '{question}' là: "
+            f"{top_source.excerpt}. "
+            f"Nguồn liên quan: {related_titles}."
         )
 
     def _confidence_from_sources(self, selected_sources: Sequence[RagSource], *, gemini: bool) -> float:
@@ -195,6 +344,13 @@ def _tokenize(value: str) -> set[str]:
         if cleaned:
             tokens.add(cleaned)
     return tokens
+
+
+def _clean_html_text(value: str) -> str:
+    text = html.unescape(value)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 
 def _score_document(query_tokens: set[str], document: KnowledgeDocument) -> float:

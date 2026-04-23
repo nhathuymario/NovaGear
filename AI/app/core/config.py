@@ -23,12 +23,15 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default_factory=lambda: DEFAULT_CORS_ORIGINS.copy())
     default_vector_store: str = "chroma"
     default_search_backend: str = "meilisearch"
-    enable_mock_mode: bool = True
+    enable_mock_mode: bool = False
     rag_top_k: int = 5
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.0-flash"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_timeout_seconds: float = 20.0
+    enable_web_search: bool = True
+    web_search_max_results: int = 3
+    web_search_timeout_seconds: float = 8.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -52,6 +55,25 @@ class Settings(BaseSettings):
 
         if isinstance(value, (list, tuple, set)):
             return [str(item).strip() for item in value if str(item).strip()]
+
+        return value
+
+    @field_validator("gemini_api_key", mode="before")
+    @classmethod
+    def normalize_gemini_api_key(cls, value: object) -> str | None | object:
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+            normalized = value.strip()
+            if not normalized:
+                return None
+
+            # Common placeholder values should be treated as unset keys.
+            if normalized.lower() in {"str", "your_gemini_api_key_here", "changeme"}:
+                return None
+
+            return normalized
 
         return value
 
