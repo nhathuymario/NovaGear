@@ -147,25 +147,8 @@ Thư mục `AI/` được tách riêng để triển khai các tính năng AI-fi
 
 - **RAG**: hỏi đáp dựa trên tài liệu nội bộ, policy, FAQ, manual.
 - **AI Search**: gợi ý tìm kiếm và tìm kiếm theo ngữ nghĩa.
-- **Adapter-ready**: có sẵn vị trí để gắn vector DB như `Pinecone`, `Milvus`, `Chroma` và search backend như `Meilisearch`, `Elasticsearch`.
-
-Chạy service:
-
-```powershell
-cd E:\NovaGear\AI
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e .
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
-```
-
-Endpoints chính:
-
-- `GET /`
-- `GET /api/v1/health`
-- `POST /api/v1/rag/query`
-- `POST /api/v1/search/suggest`
-- `POST /api/v1/search/semantic`
+- **Adapter-ready**: có sẵn vị trí để gắn vector DB như `Pinecone`, `Milvus`, `Chroma` và search backend như
+  `Meilisearch`, `Elasticsearch`.
 
 ---
 
