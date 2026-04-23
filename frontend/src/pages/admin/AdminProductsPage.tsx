@@ -48,6 +48,8 @@ import {
     type VariantImportMessage,
 } from "./products/adminProductsShared"
 
+const PRODUCT_LEVEL_VARIANT = "__PRODUCT_LEVEL__"
+
 function getApiErrorMessage(error: unknown, fallback: string): string {
     const axiosError = error as AxiosError<{ message?: string; data?: Record<string, string> }>
     const responseData = axiosError.response?.data
@@ -93,6 +95,7 @@ export default function AdminProductsPage() {
     const [variantImgUploading, setVariantImgUploading] = useState(false)
     const [galleryUploading, setGalleryUploading] = useState(false)
     const [gallerySaving, setGallerySaving] = useState(false)
+    const [selectedImageVariantId, setSelectedImageVariantId] = useState<string>(PRODUCT_LEVEL_VARIANT)
 
     const [editingSpec, setEditingSpec] = useState<AdminSpecificationItem | null>(null)
     const [specForm, setSpecForm] = useState<AdminSpecificationPayload>(INITIAL_SPEC_FORM)
@@ -223,6 +226,7 @@ export default function AdminProductsPage() {
         setShowVariantForm(false)
         setShowSpecForm(false)
         setProductImages([])
+        setSelectedImageVariantId(PRODUCT_LEVEL_VARIANT)
         setTab("detail")
         loadDetail(item.id)
     }
@@ -509,6 +513,11 @@ export default function AdminProductsPage() {
         const files = Array.from(e.target.files ?? [])
         if (!selectedProduct || files.length === 0) return
 
+        const targetVariantId =
+            selectedImageVariantId === PRODUCT_LEVEL_VARIANT
+                ? undefined
+                : Number(selectedImageVariantId)
+
         try {
             setGalleryUploading(true)
             const uploadedUrls: string[] = []
@@ -522,6 +531,7 @@ export default function AdminProductsPage() {
             for (const url of uploadedUrls) {
                 const payload: AdminProductImagePayload = {
                     imageUrl: url,
+                    variantId: targetVariantId,
                     thumbnail: productImages.length === 0 && sortOrderBase === 0,
                     sortOrder: sortOrderBase,
                 }
@@ -548,6 +558,7 @@ export default function AdminProductsPage() {
             setGallerySaving(true)
             await updateProductImage(image.id, {
                 imageUrl: image.imageUrl,
+                variantId: image.variantId,
                 thumbnail: true,
                 sortOrder: image.sortOrder,
             })
@@ -575,6 +586,44 @@ export default function AdminProductsPage() {
         } catch (error) {
             console.error(error)
             alert("Xóa ảnh thất bại")
+        } finally {
+            setGallerySaving(false)
+        }
+    }
+
+    const handleAssignImageVariant = async (
+        image: AdminProductImageItem,
+        variantValue: string
+    ) => {
+        if (!selectedProduct) return
+
+        const nextVariantId =
+            variantValue === PRODUCT_LEVEL_VARIANT
+                ? undefined
+                : Number(variantValue)
+
+        const currentVariantId =
+            image.variantId == null || String(image.variantId).trim() === ""
+                ? undefined
+                : Number(image.variantId)
+
+        if (currentVariantId === nextVariantId) {
+            return
+        }
+
+        try {
+            setGallerySaving(true)
+            await updateProductImage(image.id, {
+                imageUrl: image.imageUrl,
+                variantId: nextVariantId,
+                thumbnail: image.thumbnail,
+                sortOrder: image.sortOrder,
+            })
+            await loadDetail(selectedProduct.id)
+            alert("Đã cập nhật variant cho ảnh")
+        } catch (error) {
+            console.error(error)
+            alert("Cập nhật variant ảnh thất bại")
         } finally {
             setGallerySaving(false)
         }
@@ -1505,19 +1554,35 @@ export default function AdminProductsPage() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="font-semibold text-gray-800">Thư viện ảnh sản phẩm</h2>
-                            <label className="cursor-pointer">
-                                <span className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700">
-                                    {galleryUploading ? "Đang upload..." : "Upload nhiều ảnh"}
-                                </span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="hidden"
-                                    onChange={handleUploadProductGallery}
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={selectedImageVariantId}
+                                    onChange={(event) => setSelectedImageVariantId(event.target.value)}
+                                    className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-700 outline-none focus:border-gray-900"
                                     disabled={galleryUploading || gallerySaving}
-                                />
-                            </label>
+                                >
+                                    <option value={PRODUCT_LEVEL_VARIANT}>Ảnh chung sản phẩm</option>
+                                    {variants.map((variant) => (
+                                        <option key={variant.id} value={String(variant.id)}>
+                                            {variant.sku}
+                                            {variant.versionName ? ` · ${variant.versionName}` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                                <label className="cursor-pointer">
+                                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700">
+                                        {galleryUploading ? "Đang upload..." : "Upload nhiều ảnh"}
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        onChange={handleUploadProductGallery}
+                                        disabled={galleryUploading || gallerySaving}
+                                    />
+                                </label>
+                            </div>
                         </div>
 
                         {productImages.length === 0 ? (
@@ -1545,6 +1610,29 @@ export default function AdminProductsPage() {
                                                     </span>
                                                 )}
                                             </div>
+
+                                            <div className="mt-2 rounded-lg bg-gray-50 px-2 py-1 text-[11px] text-gray-600">
+                                                {image.variantId
+                                                    ? `Variant: ${image.variantSku || "SKU"}${image.variantVersionName ? ` · ${image.variantVersionName}` : ""}`
+                                                    : "Variant: Ảnh chung sản phẩm"}
+                                            </div>
+
+                                            <select
+                                                value={image.variantId ? String(image.variantId) : PRODUCT_LEVEL_VARIANT}
+                                                onChange={(event) => {
+                                                    void handleAssignImageVariant(image, event.target.value)
+                                                }}
+                                                disabled={gallerySaving}
+                                                className="mt-2 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-900"
+                                            >
+                                                <option value={PRODUCT_LEVEL_VARIANT}>Ảnh chung sản phẩm</option>
+                                                {variants.map((variant) => (
+                                                    <option key={variant.id} value={String(variant.id)}>
+                                                        {variant.sku}
+                                                        {variant.versionName ? ` · ${variant.versionName}` : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
 
                                             <div className="mt-3 flex gap-2">
                                                 <button

@@ -22,6 +22,7 @@ export interface AdminSpecificationPayload {
 
 export interface AdminProductImagePayload {
     imageUrl: string
+    variantId?: number | string
     thumbnail?: boolean
     sortOrder?: number
 }
@@ -51,6 +52,9 @@ export interface AdminSpecificationItem {
 export interface AdminProductImageItem {
     id: number | string
     imageUrl: string
+    variantId?: number | string
+    variantSku?: string
+    variantVersionName?: string
     thumbnail: boolean
     sortOrder: number
 }
@@ -80,6 +84,9 @@ type RawSpecification = {
 type RawProductImage = {
     id?: number | string
     imageUrl?: string
+    variantId?: number | string
+    variantSku?: string
+    variantVersionName?: string
     thumbnail?: boolean
     sortOrder?: number
 }
@@ -143,8 +150,28 @@ function mapProductImage(raw: RawProductImage): AdminProductImageItem {
     return {
         id: raw.id ?? "",
         imageUrl: raw.imageUrl ?? "",
+        variantId: raw.variantId ?? undefined,
+        variantSku: raw.variantSku ?? "",
+        variantVersionName: raw.variantVersionName ?? "",
         thumbnail: Boolean(raw.thumbnail),
         sortOrder: Number(raw.sortOrder ?? 0),
+    }
+}
+
+function normalizeImagePayload(payload: AdminProductImagePayload): AdminProductImagePayload {
+    let normalizedVariantId: number | undefined
+    if (payload.variantId !== undefined && payload.variantId !== null && String(payload.variantId).trim() !== "") {
+        const numeric = Number(payload.variantId)
+        if (Number.isFinite(numeric) && numeric > 0) {
+            normalizedVariantId = numeric
+        }
+    }
+
+    return {
+        imageUrl: payload.imageUrl,
+        variantId: normalizedVariantId,
+        thumbnail: payload.thumbnail,
+        sortOrder: payload.sortOrder,
     }
 }
 
@@ -222,7 +249,7 @@ export async function addProductImage(
     productId: number | string,
     payload: AdminProductImagePayload
 ) {
-    const res = await axiosClient.post(`/admin/products/${productId}/images`, payload)
+    const res = await axiosClient.post(`/admin/products/${productId}/images`, normalizeImagePayload(payload))
     return unwrapApiData<AdminProductImageItem>(res.data)
 }
 
@@ -230,7 +257,7 @@ export async function updateProductImage(
     imageId: number | string,
     payload: AdminProductImagePayload
 ) {
-    const res = await axiosClient.put(`/admin/products/images/${imageId}`, payload)
+    const res = await axiosClient.put(`/admin/products/images/${imageId}`, normalizeImagePayload(payload))
     return unwrapApiData<AdminProductImageItem>(res.data)
 }
 
