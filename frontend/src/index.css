@@ -3,6 +3,7 @@
 :root {
     --color-white: #ffffff;
     --color-black: #000000;
+    color-scheme: light;
 }
 
 @theme {
@@ -21,19 +22,96 @@
 body {
     margin: 0;
     min-width: 320px;
-    background: radial-gradient(circle at 0% 0%, #fff5bf 0, rgba(255, 245, 191, 0) 28%),
-    radial-gradient(circle at 100% 0%, #dbeafe 0, rgba(219, 234, 254, 0) 24%),
-    var(--color-brand-bg);
+    background: radial-gradient(circle at 0% 0%, rgba(255, 212, 0, 0.18) 0, rgba(255, 245, 191, 0) 28%),
+    radial-gradient(circle at 100% 0%, rgba(29, 78, 216, 0.14) 0, rgba(219, 234, 254, 0) 24%),
+    linear-gradient(180deg, #fbfcff 0%, var(--color-brand-bg) 52%, #eef3fb 100%);
     color: #111827;
     font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
     line-height: 1.5;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+#root {
+    min-height: 100vh;
 }
 
 * {
     box-sizing: border-box;
 }
 
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid rgba(29, 78, 216, 0.55);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: rgba(255, 212, 0, 0.35);
+    color: #111827;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, rgba(226, 232, 240, 0.8) 25%, rgba(241, 245, 249, 0.9) 37%, rgba(226, 232, 240, 0.8) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 a {
     text-decoration: none;
     color: inherit;
+}
+
+html {
+    scroll-padding-top: 6rem;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(226, 232, 240, 0.7);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 2px solid rgba(226, 232, 240, 0.7);
+    background: linear-gradient(180deg, rgba(29, 78, 216, 0.5), rgba(15, 23, 42, 0.55));
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(29, 78, 216, 0.7), rgba(15, 23, 42, 0.75));
 }
