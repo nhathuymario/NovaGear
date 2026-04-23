@@ -33,93 +33,19 @@ import {getInventoryByVariant, importStock} from "../../api/inventoryApi"
 import {uploadProductImage} from "../../api/uploadApi"
 import type {InventoryItem} from "../../types/inventory"
 import {getFallbackImageSrc, getImageSrc, handleImageError} from "../../utils/image"
-
-interface CategoryOption {
-    id: number | string
-    name: string
-}
-
-type Tab = "list" | "form" | "detail"
-type DetailTab = "variants" | "images" | "specs"
-
-type VariantImportForm = {
-    quantity: number
-}
-
-type VariantImportMessage = {
-    type: "success" | "error"
-    text: string
-}
-
-const INITIAL_PRODUCT_FORM: AdminProductPayload = {
-    name: "",
-    slug: "",
-    brand: "",
-    categoryId: "",
-    shortDescription: "",
-    description: "",
-    thumbnail: "",
-    status: "ACTIVE",
-    featured: false,
-}
-
-const INITIAL_VARIANT_FORM: AdminVariantPayload = {
-    sku: "",
-    color: "",
-    ram: "",
-    storage: "",
-    versionName: "",
-    price: 0,
-    salePrice: undefined,
-    stockQuantity: 0,
-    imageUrl: "",
-    status: "ACTIVE",
-}
-
-const INITIAL_SPEC_FORM: AdminSpecificationPayload = {
-    groupName: "",
-    specKey: "",
-    specValue: "",
-    sortOrder: 0,
-}
-
-const DEFAULT_IMPORT_FORM: VariantImportForm = {
-    quantity: 1,
-}
-
-function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-")
-}
-
-function StatusBadge({status}: { status?: string }) {
-    const map: Record<string, { label: string; cls: string }> = {
-        ACTIVE: {label: "Hoạt động", cls: "bg-emerald-50 text-emerald-700 border-emerald-200"},
-        DRAFT: {label: "Nháp", cls: "bg-amber-50 text-amber-700 border-amber-200"},
-        INACTIVE: {label: "Ẩn", cls: "bg-gray-100 text-gray-500 border-gray-200"},
-        OUT_OF_STOCK: {label: "Hết hàng", cls: "bg-red-50 text-red-600 border-red-200"},
-    }
-
-    const s =
-        map[status ?? ""] ?? {
-            label: status ?? "—",
-            cls: "bg-gray-100 text-gray-500 border-gray-200",
-        }
-
-    return (
-        <span
-            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${s.cls}`}
-        >
-            {s.label}
-        </span>
-    )
-}
+import StatusBadge from "./products/StatusBadge"
+import {
+    DEFAULT_IMPORT_FORM,
+    INITIAL_PRODUCT_FORM,
+    INITIAL_SPEC_FORM,
+    INITIAL_VARIANT_FORM,
+    slugify,
+    type CategoryOption,
+    type DetailTab,
+    type Tab,
+    type VariantImportForm,
+    type VariantImportMessage,
+} from "./products/adminProductsShared"
 
 export default function AdminProductsPage() {
     const [tab, setTab] = useState<Tab>("list")
@@ -131,6 +57,7 @@ export default function AdminProductsPage() {
     const [editingProduct, setEditingProduct] = useState<AdminProductItem | null>(null)
     const [productForm, setProductForm] = useState<AdminProductPayload>(INITIAL_PRODUCT_FORM)
     const [submittingProduct, setSubmittingProduct] = useState(false)
+    const [togglingFeaturedId, setTogglingFeaturedId] = useState<number | string | null>(null)
     const [thumbnailUploading, setThumbnailUploading] = useState(false)
 
     const [selectedProduct, setSelectedProduct] = useState<AdminProductItem | null>(null)
@@ -262,9 +189,9 @@ export default function AdminProductsPage() {
             name: item.name,
             slug: item.slug,
             brand: item.brand,
-            categoryId: "",
+            categoryId: item.categoryId ?? "",
             shortDescription: item.shortDescription ?? "",
-            description: "",
+            description: item.description ?? "",
             thumbnail: item.thumbnail ?? "",
             status: (item.status as AdminProductPayload["status"]) ?? "ACTIVE",
             featured: item.featured ?? false,
@@ -340,6 +267,35 @@ export default function AdminProductsPage() {
         } catch (err) {
             console.error(err)
             alert("Xóa thất bại")
+        }
+    }
+
+    const handleToggleFeatured = async (item: AdminProductItem) => {
+        if (!item.categoryId) {
+            alert("Sản phẩm này chưa có danh mục hợp lệ để cập nhật nổi bật")
+            return
+        }
+
+        try {
+            setTogglingFeaturedId(item.id)
+            await updateAdminProduct(item.id, {
+                name: item.name,
+                slug: item.slug,
+                brand: item.brand,
+                categoryId: item.categoryId,
+                shortDescription: item.shortDescription ?? "",
+                description: item.description ?? "",
+                thumbnail: item.thumbnail ?? "",
+                status: (item.status as AdminProductPayload["status"]) ?? "ACTIVE",
+                featured: !Boolean(item.featured),
+            })
+            await loadProducts()
+            alert(!item.featured ? "Đã đặt sản phẩm nổi bật" : "Đã bỏ nổi bật")
+        } catch (error) {
+            console.error(error)
+            alert("Cập nhật nổi bật thất bại")
+        } finally {
+            setTogglingFeaturedId(null)
         }
     }
 
@@ -769,6 +725,17 @@ export default function AdminProductsPage() {
                                                     className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-gray-900 hover:text-gray-900"
                                                 >
                                                     Variants / Specs
+                                                </button>
+                                                <button
+                                                    onClick={() => handleToggleFeatured(item)}
+                                                    disabled={togglingFeaturedId === item.id}
+                                                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+                                                        item.featured
+                                                            ? "border border-yellow-300 bg-yellow-50 text-yellow-700 hover:border-yellow-400"
+                                                            : "border border-gray-200 text-gray-700 hover:border-gray-900"
+                                                    }`}
+                                                >
+                                                    {togglingFeaturedId === item.id ? "..." : item.featured ? "Bỏ nổi bật" : "Đặt nổi bật"}
                                                 </button>
                                                 <button
                                                     onClick={() => openEditProduct(item)}
