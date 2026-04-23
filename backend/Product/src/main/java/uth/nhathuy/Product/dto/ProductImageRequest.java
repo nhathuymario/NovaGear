@@ -9,6 +9,8 @@ public class ProductImageRequest {
     @NotBlank
     private String imageUrl;
 
+    private Long variantId;
+
     private Boolean thumbnail;
     private Integer sortOrder;
 }

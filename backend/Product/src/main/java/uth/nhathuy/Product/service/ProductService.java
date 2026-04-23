@@ -18,6 +18,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final String PRODUCT_NOT_FOUND = "Không tìm thấy sản phẩm";
+    private static final String VARIANT_NOT_FOUND = "Không tìm thấy variant";
+    private static final String SPECIFICATION_NOT_FOUND = "Không tìm thấy specification";
+    private static final String IMAGE_NOT_FOUND = "Không tìm thấy image";
+
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
     private final ProductSpecificationRepository specificationRepository;
@@ -39,10 +44,10 @@ public class ProductService {
 
     public ProductResponse getPublicDetailBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
 
         if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+            throw new ResourceNotFoundException(PRODUCT_NOT_FOUND);
         }
 
         return mapToResponse(product);
@@ -55,10 +60,10 @@ public class ProductService {
 
     public List<ProductResponse> getRelatedProductsBySlug(String slug, int limit) {
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
 
         if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+            throw new ResourceNotFoundException(PRODUCT_NOT_FOUND);
         }
 
         int safeLimit = Math.max(1, Math.min(limit, 12));
@@ -72,10 +77,10 @@ public class ProductService {
 
     public ProductReviewOverviewResponse getReviewsBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
 
         if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+            throw new ResourceNotFoundException(PRODUCT_NOT_FOUND);
         }
 
         List<ProductReview> reviews = reviewRepository.findByProductIdOrderByCreatedAtDesc(product.getId());
@@ -110,10 +115,10 @@ public class ProductService {
     @Transactional
     public ProductReviewResponse createOrUpdateReview(String slug, Long userId, String username, ProductReviewRequest request) {
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
 
         if (product.getStatus() != ProductStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
+            throw new ResourceNotFoundException(PRODUCT_NOT_FOUND);
         }
 
         String normalizedComment = request.getComment() == null ? null : request.getComment().trim();
@@ -169,7 +174,7 @@ public class ProductService {
                 .description(request.getDescription())
                 .thumbnail(request.getThumbnail())
                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
-                .featured(request.getFeatured() != null ? request.getFeatured() : false)
+                .featured(Boolean.TRUE.equals(request.getFeatured()))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -235,7 +240,7 @@ public class ProductService {
     @Transactional
     public ProductVariantResponse updateVariant(Long variantId, ProductVariantRequest request) {
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+                .orElseThrow(() -> new ResourceNotFoundException(VARIANT_NOT_FOUND));
 
         if (!variant.getSku().equals(request.getSku()) && variantRepository.existsBySku(request.getSku())) {
             throw new BadRequestException("SKU đã tồn tại");
@@ -258,7 +263,7 @@ public class ProductService {
     @Transactional
     public void deleteVariant(Long variantId) {
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+                .orElseThrow(() -> new ResourceNotFoundException(VARIANT_NOT_FOUND));
         variantRepository.delete(variant);
     }
 
@@ -280,7 +285,7 @@ public class ProductService {
     @Transactional
     public ProductSpecificationResponse updateSpecification(Long specificationId, ProductSpecificationRequest request) {
         ProductSpecification specification = specificationRepository.findById(specificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy specification"));
+                .orElseThrow(() -> new ResourceNotFoundException(SPECIFICATION_NOT_FOUND));
 
         specification.setGroupName(request.getGroupName());
         specification.setSpecKey(request.getSpecKey());
@@ -293,22 +298,29 @@ public class ProductService {
     @Transactional
     public void deleteSpecification(Long specificationId) {
         ProductSpecification specification = specificationRepository.findById(specificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy specification"));
+                .orElseThrow(() -> new ResourceNotFoundException(SPECIFICATION_NOT_FOUND));
         specificationRepository.delete(specification);
     }
 
     @Transactional
     public ProductImageResponse addImage(Long productId, ProductImageRequest request) {
         Product product = getProduct(productId);
+        ProductVariant variant = resolveVariantForProduct(productId, request.getVariantId());
 
         ProductImage image = ProductImage.builder()
                 .product(product)
+                .variant(variant)
                 .imageUrl(request.getImageUrl())
-                .thumbnail(request.getThumbnail() != null ? request.getThumbnail() : false)
+                .thumbnail(Boolean.TRUE.equals(request.getThumbnail()))
                 .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
                 .build();
 
         ProductImage saved = imageRepository.save(image);
+
+        if (variant != null && (Boolean.TRUE.equals(saved.getThumbnail()) || variant.getImageUrl() == null || variant.getImageUrl().isBlank())) {
+            variant.setImageUrl(saved.getImageUrl());
+            variantRepository.save(variant);
+        }
 
         if (Boolean.TRUE.equals(saved.getThumbnail())) {
             product.setThumbnail(saved.getImageUrl());
@@ -321,13 +333,35 @@ public class ProductService {
     @Transactional
     public ProductImageResponse updateImage(Long imageId, ProductImageRequest request) {
         ProductImage image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy image"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
+
+        ProductVariant previousVariant = image.getVariant();
+        Long previousVariantId = previousVariant != null ? previousVariant.getId() : null;
+        String previousImageUrl = image.getImageUrl();
+
+        if (request.getVariantId() != null) {
+            image.setVariant(resolveVariantForProduct(image.getProduct().getId(), request.getVariantId()));
+        }
 
         image.setImageUrl(request.getImageUrl());
         image.setThumbnail(request.getThumbnail() != null ? request.getThumbnail() : image.getThumbnail());
         image.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : image.getSortOrder());
 
         ProductImage saved = imageRepository.save(image);
+
+        ProductVariant currentVariant = saved.getVariant();
+        if (previousVariantId != null && (currentVariant == null || !previousVariantId.equals(currentVariant.getId()))
+                && previousImageUrl != null && previousImageUrl.equals(previousVariant.getImageUrl())) {
+            refreshVariantPrimaryImage(previousVariantId, saved.getProduct().getId());
+        }
+
+        if (currentVariant != null && (Boolean.TRUE.equals(saved.getThumbnail())
+                || currentVariant.getImageUrl() == null
+                || currentVariant.getImageUrl().isBlank()
+                || (currentVariant.getId().equals(previousVariantId) && previousImageUrl != null && previousImageUrl.equals(currentVariant.getImageUrl())))) {
+            currentVariant.setImageUrl(saved.getImageUrl());
+            variantRepository.save(currentVariant);
+        }
 
         if (Boolean.TRUE.equals(saved.getThumbnail())) {
             Product product = saved.getProduct();
@@ -341,13 +375,24 @@ public class ProductService {
     @Transactional
     public void deleteImage(Long imageId) {
         ProductImage image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy image"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
+        Long variantId = image.getVariant() != null ? image.getVariant().getId() : null;
+        String imageUrl = image.getImageUrl();
+        Long productId = image.getProduct().getId();
         imageRepository.delete(image);
+
+        if (variantId != null && imageUrl != null) {
+            ProductVariant variant = variantRepository.findById(variantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+            if (imageUrl.equals(variant.getImageUrl())) {
+                refreshVariantPrimaryImage(productId, variantId);
+            }
+        }
     }
 
     private Product getProduct(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
     }
 
     private String buildKeywordPattern(String keyword) {
@@ -358,9 +403,10 @@ public class ProductService {
     }
 
     private ProductResponse mapToResponse(Product product) {
+        List<ProductImage> productImages = imageRepository.findByProductIdOrderBySortOrderAscIdAsc(product.getId());
         List<ProductVariantResponse> variants = variantRepository.findByProductIdOrderByIdAsc(product.getId())
                 .stream()
-                .map(this::mapVariant)
+                .map(variant -> mapVariant(variant, productImages))
                 .toList();
 
         List<ProductSpecificationResponse> specifications =
@@ -369,7 +415,7 @@ public class ProductService {
                         .map(this::mapSpecification)
                         .toList();
 
-        List<ProductImageResponse> images = imageRepository.findByProductIdOrderBySortOrderAscIdAsc(product.getId())
+        List<ProductImageResponse> images = productImages
                 .stream()
                 .map(this::mapImage)
                 .toList();
@@ -397,6 +443,17 @@ public class ProductService {
     }
 
     private ProductVariantResponse mapVariant(ProductVariant variant) {
+        List<ProductImage> productImages = imageRepository.findByProductIdOrderBySortOrderAscIdAsc(variant.getProduct().getId());
+        return mapVariant(variant, productImages);
+    }
+
+    private ProductVariantResponse mapVariant(ProductVariant variant, List<ProductImage> productImages) {
+        List<ProductImageResponse> images = productImages.stream()
+                .filter(image -> image.getVariant() == null
+                        || (image.getVariant().getId() != null && image.getVariant().getId().equals(variant.getId())))
+                .map(this::mapImage)
+                .toList();
+
         return ProductVariantResponse.builder()
                 .id(variant.getId())
                 .productId(variant.getProduct().getId())
@@ -410,6 +467,7 @@ public class ProductService {
                 .salePrice(variant.getSalePrice())
                 .stockQuantity(variant.getStockQuantity())
                 .imageUrl(variant.getImageUrl())
+                .images(images)
                 .status(variant.getStatus())
                 .build();
     }
@@ -425,12 +483,45 @@ public class ProductService {
     }
 
     private ProductImageResponse mapImage(ProductImage image) {
+        ProductVariant variant = image.getVariant();
         return ProductImageResponse.builder()
                 .id(image.getId())
+                .variantId(variant != null ? variant.getId() : null)
+                .variantSku(variant != null ? variant.getSku() : null)
+                .variantVersionName(variant != null ? variant.getVersionName() : null)
                 .imageUrl(image.getImageUrl())
                 .thumbnail(image.getThumbnail())
                 .sortOrder(image.getSortOrder())
                 .build();
+    }
+
+    private ProductVariant resolveVariantForProduct(Long productId, Long variantId) {
+        if (variantId == null) {
+            return null;
+        }
+
+        ProductVariant variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException(VARIANT_NOT_FOUND));
+
+        if (!variant.getProduct().getId().equals(productId)) {
+            throw new BadRequestException("Variant không thuộc product này");
+        }
+
+        return variant;
+    }
+
+    private void refreshVariantPrimaryImage(Long productId, Long variantId) {
+        ProductVariant variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+
+        List<ProductImage> variantImages = imageRepository.findByProductIdAndVariantIdOrderBySortOrderAscIdAsc(productId, variantId);
+        if (variantImages.isEmpty()) {
+            variant.setImageUrl(null);
+        } else {
+            variant.setImageUrl(variantImages.get(0).getImageUrl());
+        }
+
+        variantRepository.save(variant);
     }
 
     private ProductReviewResponse mapReview(ProductReview review) {
