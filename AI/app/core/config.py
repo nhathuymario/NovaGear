@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     default_search_backend: str = "meilisearch"
     enable_mock_mode: bool = True
     rag_top_k: int = 5
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_timeout_seconds: float = 20.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod
