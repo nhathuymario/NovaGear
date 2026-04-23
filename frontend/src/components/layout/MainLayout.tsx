@@ -2,6 +2,7 @@ import {AnimatePresence, motion} from "framer-motion"
 import {Outlet, useLocation} from "react-router-dom"
 import Header from "./Header"
 import Footer from "./Footer"
+import AiChatWidget from "../ai/AiChatWidget"
 
 export default function MainLayout() {
     const location = useLocation()
@@ -23,6 +24,7 @@ export default function MainLayout() {
                 </AnimatePresence>
             </main>
             <Footer />
+            <AiChatWidget />
         </div>
     )
 }
