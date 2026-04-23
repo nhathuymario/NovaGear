@@ -8,7 +8,7 @@ export interface AdminVariantPayload {
     versionName?: string
     price: number
     salePrice?: number
-    stockQuantity?: number
+    stockQuantity: number
     imageUrl?: string
     status?: "ACTIVE" | "OUT_OF_STOCK" | "INACTIVE"
 }
@@ -89,6 +89,30 @@ function unwrapApiData<T>(data: unknown): T {
     return (wrapped?.data ?? data) as T
 }
 
+function normalizeOptionalText(value?: string) {
+    const text = (value ?? "").trim()
+    return text.length > 0 ? text : undefined
+}
+
+function normalizeVariantPayload(payload: AdminVariantPayload): AdminVariantPayload {
+    const price = Number(payload.price)
+    const stockQuantity = Number(payload.stockQuantity)
+    const salePrice = payload.salePrice != null ? Number(payload.salePrice) : undefined
+
+    return {
+        sku: payload.sku.trim(),
+        color: normalizeOptionalText(payload.color),
+        ram: normalizeOptionalText(payload.ram),
+        storage: normalizeOptionalText(payload.storage),
+        versionName: normalizeOptionalText(payload.versionName),
+        price: Number.isFinite(price) ? price : 0,
+        salePrice: salePrice != null && Number.isFinite(salePrice) ? salePrice : undefined,
+        stockQuantity: Number.isFinite(stockQuantity) ? Math.max(0, Math.floor(stockQuantity)) : 0,
+        imageUrl: normalizeOptionalText(payload.imageUrl),
+        status: payload.status,
+    }
+}
+
 function mapVariant(raw: RawVariant): AdminVariantItem {
     return {
         id: raw.id ?? "",
@@ -145,7 +169,10 @@ export async function addProductVariant(
     productId: number | string,
     payload: AdminVariantPayload
 ) {
-    const res = await axiosClient.post(`/admin/products/${productId}/variants`, payload)
+    const res = await axiosClient.post(
+        `/admin/products/${productId}/variants`,
+        normalizeVariantPayload(payload)
+    )
     return unwrapApiData<AdminVariantItem>(res.data)
 }
 
@@ -153,7 +180,10 @@ export async function updateProductVariant(
     variantId: number | string,
     payload: AdminVariantPayload
 ) {
-    const res = await axiosClient.put(`/admin/products/variants/${variantId}`, payload)
+    const res = await axiosClient.put(
+        `/admin/products/variants/${variantId}`,
+        normalizeVariantPayload(payload)
+    )
     return unwrapApiData<AdminVariantItem>(res.data)
 }
 

@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react"
+import type {AxiosError} from "axios"
 import {
     type AdminCategorySummary,
     type AdminProductItem,
@@ -46,6 +47,23 @@ import {
     type VariantImportForm,
     type VariantImportMessage,
 } from "./products/adminProductsShared"
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+    const axiosError = error as AxiosError<{ message?: string; data?: Record<string, string> }>
+    const responseData = axiosError.response?.data
+
+    if (responseData?.message === "Dữ liệu không hợp lệ" && responseData.data) {
+        const details = Object.entries(responseData.data)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join("; ")
+
+        if (details) {
+            return `${responseData.message} (${details})`
+        }
+    }
+
+    return responseData?.message || fallback
+}
 
 export default function AdminProductsPage() {
     const [tab, setTab] = useState<Tab>("list")
@@ -342,21 +360,63 @@ export default function AdminProductsPage() {
         e.preventDefault()
         if (!selectedProduct) return
 
+        const normalizedSku = variantForm.sku.trim()
+        const normalizedPrice = Number(variantForm.price)
+        const normalizedStock = Number(variantForm.stockQuantity)
+        const normalizedSalePrice =
+            variantForm.salePrice != null ? Number(variantForm.salePrice) : undefined
+
+        if (!normalizedSku) {
+            alert("SKU khong duoc de trong")
+            return
+        }
+
+        if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+            alert("Gia goc phai la so >= 0")
+            return
+        }
+
+        if (!Number.isFinite(normalizedStock) || normalizedStock < 0) {
+            alert("Ton kho khoi tao phai la so >= 0")
+            return
+        }
+
+        if (
+            normalizedSalePrice != null &&
+            (!Number.isFinite(normalizedSalePrice) || normalizedSalePrice < 0)
+        ) {
+            alert("Gia sale phai la so >= 0")
+            return
+        }
+
+        if (normalizedSalePrice != null && normalizedSalePrice > normalizedPrice) {
+            alert("Gia sale khong duoc lon hon gia goc")
+            return
+        }
+
+        const payload: AdminVariantPayload = {
+            ...variantForm,
+            sku: normalizedSku,
+            price: normalizedPrice,
+            salePrice: normalizedSalePrice,
+            stockQuantity: Math.floor(normalizedStock),
+        }
+
         try {
             setSubmittingVariant(true)
 
             if (editingVariant) {
-                await updateProductVariant(editingVariant.id, variantForm)
+                await updateProductVariant(editingVariant.id, payload)
             } else {
-                const createdVariant = await addProductVariant(selectedProduct.id, variantForm)
-                const initialStock = Number(variantForm.stockQuantity ?? 0)
+                const createdVariant = await addProductVariant(selectedProduct.id, payload)
+                const initialStock = Number(payload.stockQuantity ?? 0)
 
                 if (createdVariant?.id && initialStock > 0) {
                     await importStock({
                         productId: selectedProduct.id,
                         variantId: createdVariant.id,
                         quantity: initialStock,
-                        note: `Khoi tao ton kho cho ${variantForm.sku}`,
+                        note: `Khoi tao ton kho cho ${payload.sku}`,
                     })
                 }
             }
@@ -367,7 +427,7 @@ export default function AdminProductsPage() {
             alert(editingVariant ? "Cập nhật variant thành công" : "Thêm variant thành công")
         } catch (err) {
             console.error(err)
-            alert("Lưu variant thất bại")
+            alert(getApiErrorMessage(err, "Luu variant that bai"))
         } finally {
             setSubmittingVariant(false)
         }
