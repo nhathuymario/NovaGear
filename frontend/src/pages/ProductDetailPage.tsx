@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from "react"
 import {useNavigate, useParams} from "react-router-dom"
 import {motion} from "framer-motion"
+import {Package, RefreshCw, ShieldCheck, Truck} from "lucide-react"
 import {addToCart} from "../api/cartApi"
 import {getPublicInventoryByVariant, type InventoryItem,} from "../api/inventoryApi"
 import {
@@ -40,6 +41,36 @@ function extractApiErrorMessage(error: unknown): string {
     )
 }
 
+const SHOP_COMMITMENTS = [
+    {
+        icon: RefreshCw,
+        title: "Hư gì đổi nấy 12 tháng",
+        description: "Đổi trả tại hệ thống cửa hàng trong 12 tháng, miễn phí tháng đầu theo chính sách.",
+    },
+    {
+        icon: Package,
+        title: "Bộ sản phẩm đầy đủ",
+        description: "Hộp, sách hướng dẫn, cáp Type-C và phụ kiện đi kèm theo từng phiên bản.",
+    },
+    {
+        icon: ShieldCheck,
+        title: "Bảo hành chính hãng",
+        description: "Bảo hành điện thoại chính hãng tại trung tâm bảo hành của hãng.",
+    },
+    {
+        icon: Truck,
+        title: "Giao hàng nhanh",
+        description: "Hỗ trợ giao nhanh, theo dõi đơn hàng và nhận hàng thuận tiện tại nhà.",
+    },
+]
+
+function sanitizeDescriptionHtml(htmlValue: string) {
+    return htmlValue
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+        .replace(/ on\w+="[^"]*"/gi, "")
+        .replace(/ on\w+='[^']*'/gi, "")
+}
+
 export default function ProductDetailPage() {
     const {slug = ""} = useParams()
     const navigate = useNavigate()
@@ -52,6 +83,7 @@ export default function ProductDetailPage() {
     const [reviewData, setReviewData] = useState<ProductReviewOverview | null>(null)
     const [reviewLoading, setReviewLoading] = useState(false)
     const [reviewSubmitting, setReviewSubmitting] = useState(false)
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
     const [reviewForm, setReviewForm] = useState({
         rating: 5,
         comment: "",
@@ -139,10 +171,22 @@ export default function ProductDetailPage() {
             return String(img.variantId) === selectedId
         })
 
+        const variantImageUrls = new Set(
+            [
+                ...(product?.variants ?? []).map((variant) => String(variant.imageUrl ?? "").trim()),
+                ...(product?.images ?? [])
+                    .filter((img) => img.variantId != null && String(img.variantId).trim() !== "")
+                    .map((img) => String(img.imageUrl ?? "").trim()),
+            ].filter(Boolean)
+        )
+
+        const sharedThumbnail = String(product?.thumbnail ?? "").trim()
+        const sharedThumbnailIsVariantImage = sharedThumbnail ? variantImageUrls.has(sharedThumbnail) : false
+
         const candidates = [
             selectedVariant?.imageUrl,
             ...scopedImages.map((img) => img.imageUrl),
-            product?.thumbnail,
+            ...(sharedThumbnail && !sharedThumbnailIsVariantImage ? [sharedThumbnail] : []),
         ]
 
         const normalized = candidates
@@ -210,6 +254,22 @@ export default function ProductDetailPage() {
 
         loadRelatedProducts()
     }, [slug])
+
+    useEffect(() => {
+        setIsDescriptionExpanded(false)
+    }, [product?.id])
+
+    const descriptionHtml = useMemo(() => {
+        const raw = (product?.description ?? product?.shortDescription ?? "").trim()
+        if (!raw) {
+            return ""
+        }
+
+        const looksLikeHtml = /<[^>]+>/.test(raw)
+        return sanitizeDescriptionHtml(looksLikeHtml ? raw : raw.replace(/\n/g, "<br />"))
+    }, [product?.description, product?.shortDescription])
+
+    const hasExpandableDescription = Boolean(descriptionHtml)
 
     const groupedSpecifications = useMemo(() => {
         const source = product?.specifications ?? []
@@ -562,6 +622,24 @@ export default function ProductDetailPage() {
                         </div>
                     )}
 
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={adding || inventoryLoading || availableStock <= 0}
+                            className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
+                        >
+                            {adding ? "Đang thêm..." : "Thêm vào giỏ"}
+                        </button>
+
+                        <button
+                            onClick={handleBuyNow}
+                            disabled={adding || inventoryLoading || availableStock <= 0}
+                            className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
+                        >
+                            Mua ngay
+                        </button>
+                    </div>
+
                     <div className="rounded-[28px] bg-slate-50 p-4">
                         <h3 className="font-bold">Tình trạng kho</h3>
 
@@ -584,12 +662,6 @@ export default function ProductDetailPage() {
                                             {availableStock}
                                         </p>
                                     </div>
-                                    {/*<div>*/}
-                                    {/*    <p className="text-sm text-brand-gray">Đang giữ</p>*/}
-                                    {/*    <p className="mt-1 font-semibold text-amber-600">*/}
-                                    {/*        {reservedStock}*/}
-                                    {/*    </p>*/}
-                                    {/*</div>*/}
                                 </div>
 
                                 {availableStock <= 0 && (
@@ -600,80 +672,113 @@ export default function ProductDetailPage() {
                             </>
                         )}
                     </div>
-
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={adding || inventoryLoading || availableStock <= 0}
-                            className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
-                        >
-                            {adding ? "Đang thêm..." : "Thêm vào giỏ"}
-                        </button>
-
-                        <button
-                            onClick={handleBuyNow}
-                            disabled={adding || inventoryLoading || availableStock <= 0}
-                            className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
-                        >
-                            Mua ngay
-                        </button>
-                    </div>
-
-                    {groupedSpecifications.length > 0 && (
-                        <div className="space-y-3 rounded-[28px] bg-slate-50 p-4">
-                            <h3 className="font-bold">Thông số kỹ thuật</h3>
-
-                            {groupedSpecifications.map((group) => {
-                                const isOpen = Boolean(openSpecGroups[group.groupName])
-
-                                return (
-                                    <div key={group.groupName}
-                                         className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSpecGroup(group.groupName)}
-                                            className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left"
-                                        >
-                                            <span className="font-semibold text-gray-800">{group.groupName}</span>
-                                            <span className="text-gray-500">{isOpen ? "-" : "+"}</span>
-                                        </button>
-
-                                        {isOpen && (
-                                            <div className="divide-y divide-gray-100">
-                                                {group.specs.map((spec) => (
-                                                    <div key={`${group.groupName}-${spec.id ?? spec.specKey}`}
-                                                         className="grid grid-cols-[170px_1fr] gap-3 px-4 py-3 text-sm">
-                                                        <p className="font-medium text-gray-700">{spec.specKey}</p>
-                                                        <p className="text-gray-700">{spec.specValue}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-
-                    {/*<div className="mt-8 rounded-2xl bg-gray-50 p-4">*/}
-                    {/*    <h3 className="font-bold">Thông tin sản phẩm</h3>*/}
-                    {/*    <div className="mt-3 space-y-2 text-sm text-brand-gray">*/}
-                    {/*        <p>Danh mục: {product.category?.name || "Đang cập nhật"}</p>*/}
-                    {/*        <p>Thương hiệu: {product.brand || "Đang cập nhật"}</p>*/}
-                    {/*        <p>Mã sản phẩm: {product.slug || "Đang cập nhật"}</p>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
-
-                    {product.description && (
-                        <div className="rounded-[28px] bg-white p-1">
-                            <h3 className="text-lg font-bold">Mô tả chi tiết</h3>
-                            <p className="mt-3 whitespace-pre-line text-sm text-brand-gray">
-                                {product.description}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                <h3 className="text-xl font-bold text-slate-900">NovaGear cam kết</h3>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    {SHOP_COMMITMENTS.map((item) => {
+                        const Icon = item.icon
+                        return (
+                            <div
+                                key={item.title}
+                                className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                            >
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm">
+                                    <Icon className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-slate-900">{item.title}</p>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </section>
+
+            {descriptionHtml && (
+                <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-900">Thông tin sản phẩm</h3>
+                        </div>
+                    </div>
+
+                    <div className="relative mt-5">
+                        <div
+                            className={`overflow-hidden rounded-[28px] transition-all duration-300 ${
+                                isDescriptionExpanded ? "max-h-none" : "max-h-[360px]"
+                            }`}
+                        >
+                            <div
+                                className="product-description p-4 text-slate-800 [&_a]:text-brand-blue [&_a]:underline [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-slate-900 [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-none [&_p]:mt-3 [&_p]:leading-7 [&_p]:text-slate-700"
+                                dangerouslySetInnerHTML={{__html: descriptionHtml}}
+                            />
+                        </div>
+
+                        {!isDescriptionExpanded && hasExpandableDescription && (
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[28px] bg-gradient-to-t from-white to-transparent" />
+                        )}
+                    </div>
+
+                    {hasExpandableDescription && (
+                        <button
+                            type="button"
+                            onClick={() => setIsDescriptionExpanded((prev) => !prev)}
+                            className="mx-auto mt-4 flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-brand-blue transition hover:bg-brand-blue/5"
+                        >
+                            {isDescriptionExpanded ? "Thu gọn" : "Xem thêm"}
+                            <span className={`transition-transform ${isDescriptionExpanded ? "rotate-180" : ""}`}>
+                                ▾
+                            </span>
+                        </button>
+                    )}
+                </section>
+            )}
+
+            {groupedSpecifications.length > 0 && (
+                <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                    <h3 className="text-xl font-bold text-slate-900">Thông số kỹ thuật</h3>
+
+                    <div className="mt-5 space-y-3">
+                        {groupedSpecifications.map((group) => {
+                            const isOpen = Boolean(openSpecGroups[group.groupName])
+
+                            return (
+                                <div
+                                    key={group.groupName}
+                                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleSpecGroup(group.groupName)}
+                                        className="flex w-full items-center justify-between bg-slate-50 px-4 py-3 text-left"
+                                    >
+                                        <span className="font-semibold text-slate-800">{group.groupName}</span>
+                                        <span className="text-slate-500">{isOpen ? "-" : "+"}</span>
+                                    </button>
+
+                                    {isOpen && (
+                                        <div className="divide-y divide-slate-100">
+                                            {group.specs.map((spec) => (
+                                                <div
+                                                    key={`${group.groupName}-${spec.id ?? spec.specKey}`}
+                                                    className="grid grid-cols-[170px_1fr] gap-3 px-4 py-3 text-sm"
+                                                >
+                                                    <p className="font-medium text-slate-700">{spec.specKey}</p>
+                                                    <p className="text-slate-700">{spec.specValue}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+                </section>
+            )}
 
             <section className="rounded-[32px] bg-white p-6 shadow-sm">
                 <h3 className="text-xl font-bold text-slate-900">Đánh giá sản phẩm</h3>

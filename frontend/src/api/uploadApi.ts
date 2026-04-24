@@ -21,8 +21,8 @@ gatewayUploadClient.interceptors.request.use(attachAuthToken)
 directUploadClient.interceptors.request.use(attachAuthToken)
 
 const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg"])
-const MIN_PRODUCT_IMAGE_WIDTH = 800
-const MIN_PRODUCT_IMAGE_HEIGHT = 800
+const MIN_PRODUCT_IMAGE_WIDTH = 100
+const MIN_PRODUCT_IMAGE_HEIGHT = 100
 const MIN_AVATAR_IMAGE_WIDTH = 240
 const MIN_AVATAR_IMAGE_HEIGHT = 240
 

@@ -153,6 +153,54 @@ export default function AdminProductsPage() {
         }
     }, [])
 
+    const enforceSingleThumbnailPerVariant = useCallback(async (imageList: AdminProductImageItem[]) => {
+        const groups = new Map<string, AdminProductImageItem[]>()
+
+        imageList.forEach((image) => {
+            const variantKey = image.variantId == null || String(image.variantId).trim() === ""
+                ? PRODUCT_LEVEL_VARIANT
+                : String(image.variantId)
+
+            const bucket = groups.get(variantKey) ?? []
+            bucket.push(image)
+            groups.set(variantKey, bucket)
+        })
+
+        let updated = false
+
+        for (const groupImages of groups.values()) {
+            const thumbnails = groupImages.filter((image) => image.thumbnail)
+            if (thumbnails.length <= 1) {
+                continue
+            }
+
+            const [keepImage, ...duplicateImages] = thumbnails
+            for (const duplicate of duplicateImages) {
+                await updateProductImage(duplicate.id, {
+                    imageUrl: duplicate.imageUrl,
+                    variantId: duplicate.variantId,
+                    thumbnail: false,
+                    sortOrder: duplicate.sortOrder,
+                })
+            }
+
+            updated = true
+
+            const keepKey = String(keepImage.id)
+            imageList = imageList.map((image) => {
+                if (String(image.id) === keepKey) {
+                    return {...image, thumbnail: true}
+                }
+                if (duplicateImages.some((duplicate) => String(duplicate.id) === String(image.id))) {
+                    return {...image, thumbnail: false}
+                }
+                return image
+            })
+        }
+
+        return {updated, imageList}
+    }, [])
+
     const loadDetail = useCallback(async (productId: number | string) => {
         try {
             setDetailLoading(true)
@@ -165,7 +213,8 @@ export default function AdminProductsPage() {
 
             setVariants(variantData)
             setSpecs(specificationData)
-            setProductImages(imageData)
+            const normalizedImages = await enforceSingleThumbnailPerVariant(imageData)
+            setProductImages(normalizedImages.imageList)
             setInlineImportForms({})
             setInlineImportMessages({})
 
@@ -179,7 +228,7 @@ export default function AdminProductsPage() {
         } finally {
             setDetailLoading(false)
         }
-    }, [loadInventorySnapshots])
+    }, [enforceSingleThumbnailPerVariant, loadInventorySnapshots])
 
     const refreshInventory = useCallback(async (variantList?: AdminVariantItem[]) => {
         const targetVariants = variantList ?? variants
@@ -720,6 +769,20 @@ export default function AdminProductsPage() {
             setInlineImportLoadingId(null)
         }
     }
+
+    const visibleProductImages = useMemo(() => {
+        return productImages.filter((image) => {
+            const imageVariantId = image.variantId == null || String(image.variantId).trim() === ""
+                ? PRODUCT_LEVEL_VARIANT
+                : String(image.variantId)
+
+            if (selectedImageVariantId === PRODUCT_LEVEL_VARIANT) {
+                return imageVariantId === PRODUCT_LEVEL_VARIANT
+            }
+
+            return imageVariantId === selectedImageVariantId
+        })
+    }, [productImages, selectedImageVariantId])
 
     if (tab === "list") {
         return (
@@ -1585,13 +1648,13 @@ export default function AdminProductsPage() {
                             </div>
                         </div>
 
-                        {productImages.length === 0 ? (
+                        {visibleProductImages.length === 0 ? (
                             <div className="rounded-2xl bg-white py-12 text-center text-sm text-gray-400 shadow-sm">
                                 Chưa có ảnh nào. Hãy upload để tạo menu ảnh cho trang chi tiết sản phẩm.
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                                {productImages
+                                {visibleProductImages
                                     .slice()
                                     .sort((a, b) => a.sortOrder - b.sortOrder)
                                     .map((image, index) => (
