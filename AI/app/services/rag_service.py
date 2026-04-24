@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import unicodedata
 from dataclasses import dataclass
 from urllib import error, parse, request
 from typing import Sequence
@@ -101,6 +102,18 @@ class RAGService:
         # Rank retrieval sources from the real user question to avoid noisy
         # always-on context making every reply look the same.
         query_tokens = _tokenize(question)
+        product_hits = _extract_products_from_context(conversation_context)
+
+        if _is_price_question(query_tokens) and product_hits:
+            ranked_products = _rank_products_for_price_question(product_hits, question)
+            answer, shop_source = _build_shop_price_response(question, ranked_products)
+            return RagQueryResponse(
+                question=question,
+                answer=answer,
+                confidence=0.94,
+                mode="shop-price",
+                sources=[shop_source],
+            )
 
         static_sources = self._select_sources(query_tokens, safe_top_k)
         web_sources = self._collect_web_sources(question, query_tokens, settings)
@@ -372,7 +385,8 @@ class RAGService:
 
 def _tokenize(value: str) -> set[str]:
     tokens = set()
-    for token in value.lower().replace("/", " ").replace("-", " ").replace(",", " ").split():
+    normalized_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    for token in normalized_value.lower().replace("/", " ").replace("-", " ").replace(",", " ").split():
         cleaned = "".join(char for char in token if char.isalnum())
         if cleaned:
             tokens.add(cleaned)
@@ -465,6 +479,26 @@ def _rank_products_for_price_question(products: Sequence[dict[str, str | int]], 
         return (-match_score, distance)
 
     return sorted(filtered, key=score)
+
+
+def _build_shop_price_response(question: str, ranked_products: Sequence[dict[str, str | int]]) -> tuple[str, RagSource]:
+    top_products = list(ranked_products[:3])
+
+    if not top_products:
+        answer = (
+            f"Mình chưa tìm thấy sản phẩm phù hợp trong shop cho câu hỏi '{question}'. "
+            "Bạn thử nói rõ thêm tên mẫu, phiên bản hoặc khoảng giá nhé."
+        )
+        return answer, RagSource(title="Dữ liệu sản phẩm trong shop", excerpt="Không tìm thấy sản phẩm phù hợp", score=1.0)
+
+    product_lines = [f"- {item['name']}: {item['price_text']}" for item in top_products]
+    answer = (
+        "Mình xem nhanh giá trong shop cho bạn nhé:\n"
+        + "\n".join(product_lines)
+        + "\nNếu bạn muốn, mình có thể lọc tiếp theo bản thường / Pro / Pro Max, hoặc theo mức giá bạn đang muốn."
+    )
+    excerpt = "; ".join(product_lines[:3])
+    return answer, RagSource(title="Dữ liệu sản phẩm trong shop", excerpt=excerpt, score=1.0)
 
 
 def _score_document(query_tokens: set[str], document: KnowledgeDocument) -> float:
