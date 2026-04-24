@@ -422,6 +422,10 @@ export default function ProductDetailPage() {
                             <img
                                 src={galleryImage}
                                 alt={product.name}
+                                loading="eager"
+                                fetchPriority="high"
+                                decoding="async"
+                                sizes="(min-width: 768px) 50vw, 100vw"
                                 className="h-full w-full object-contain p-2"
                                 data-fallback={getFallbackImageSrc("NovaGear")}
                                 onError={handleImageError}
@@ -466,6 +470,9 @@ export default function ProductDetailPage() {
                                         <img
                                             src={imageUrl || getFallbackImageSrc("NovaGear")}
                                             alt={`${product.name}-${index}`}
+                                            loading="lazy"
+                                            decoding="async"
+                                            sizes="(min-width: 768px) 12vw, 25vw"
                                             className="h-full w-full object-contain p-1"
                                             data-fallback={getFallbackImageSrc("NovaGear")}
                                             onError={handleImageError}

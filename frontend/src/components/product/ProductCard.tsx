@@ -29,6 +29,9 @@ export default function ProductCard({product}: Readonly<Props>) {
                     <img
                         src={product.imageUrl || getFallbackImageSrc("NovaGear")}
                         alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        sizes="(min-width: 1280px) 20vw, (min-width: 768px) 25vw, 50vw"
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                         data-fallback={getFallbackImageSrc("NovaGear")}
                         onError={handleImageError}
