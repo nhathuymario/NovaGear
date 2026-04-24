@@ -128,10 +128,21 @@ export default function ProductDetailPage() {
     }, [selectedVariant?.id])
 
     const galleryImages = useMemo(() => {
+        const selectedId = selectedVariant?.id != null ? String(selectedVariant.id) : null
+        const scopedImages = (product?.images ?? []).filter((img) => {
+            if (!selectedId) {
+                return true
+            }
+            if (img.variantId == null || String(img.variantId).trim() === "") {
+                return true
+            }
+            return String(img.variantId) === selectedId
+        })
+
         const candidates = [
             selectedVariant?.imageUrl,
+            ...scopedImages.map((img) => img.imageUrl),
             product?.thumbnail,
-            ...(product?.images ?? []).map((img) => img.imageUrl),
         ]
 
         const normalized = candidates

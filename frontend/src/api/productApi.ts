@@ -31,6 +31,9 @@ export interface ProductDetailData {
     images: Array<{
         id?: number | string
         imageUrl?: string
+        variantId?: number | string
+        variantSku?: string
+        variantVersionName?: string
         thumbnail?: boolean
     }>
     specifications: Array<{
@@ -99,6 +102,9 @@ type ProductResponse = {
         id?: number | string
         imageUrl?: string
         thumbnail?: boolean
+        variantId?: number | string
+        variantSku?: string
+        variantVersionName?: string
     }>
     specifications?: Array<{
         id?: number | string
@@ -176,6 +182,9 @@ function mapProductDetail(item: ProductResponse): ProductDetailData {
             id: img.id,
             imageUrl: img.imageUrl ?? "",
             thumbnail: Boolean(img.thumbnail),
+            variantId: img.variantId,
+            variantSku: img.variantSku,
+            variantVersionName: img.variantVersionName,
         })),
         specifications: (item.specifications ?? []).map((spec) => ({
             id: spec.id,
