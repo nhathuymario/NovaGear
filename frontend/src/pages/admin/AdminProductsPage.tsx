@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from "react"
+import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {AxiosError} from "axios"
 import {
     type AdminCategorySummary,
@@ -79,6 +79,8 @@ export default function AdminProductsPage() {
     const [submittingProduct, setSubmittingProduct] = useState(false)
     const [togglingFeaturedId, setTogglingFeaturedId] = useState<number | string | null>(null)
     const [thumbnailUploading, setThumbnailUploading] = useState(false)
+    const [descriptionImageUploading, setDescriptionImageUploading] = useState(false)
+    const descriptionTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
     const [selectedProduct, setSelectedProduct] = useState<AdminProductItem | null>(null)
     const [detailTab, setDetailTab] = useState<DetailTab>("variants")
@@ -303,6 +305,69 @@ export default function AdminProductsPage() {
             setThumbnailUploading(false)
         }
     }
+
+    const insertDescriptionText = useCallback((text: string) => {
+        const textarea = descriptionTextareaRef.current
+        if (!textarea) {
+            setProductForm((prev) => ({...prev, description: `${prev.description}${text}`}))
+            return
+        }
+
+        const current = productForm.description ?? ""
+        const start = textarea.selectionStart ?? current.length
+        const end = textarea.selectionEnd ?? current.length
+        const nextValue = `${current.slice(0, start)}${text}${current.slice(end)}`
+
+        setProductForm((prev) => ({...prev, description: nextValue}))
+
+        requestAnimationFrame(() => {
+            const cursor = start + text.length
+            textarea.focus()
+            textarea.setSelectionRange(cursor, cursor)
+        })
+    }, [productForm.description])
+
+    const insertDescriptionImage = useCallback((imageUrl: string) => {
+        const safeUrl = imageUrl.trim()
+        if (!safeUrl) return
+
+        const altText = productForm.name.trim() || "Hình mô tả sản phẩm"
+        const markup = `\n<p><img src="${safeUrl}" alt="${altText}" /></p>\n`
+        insertDescriptionText(markup)
+    }, [insertDescriptionText, productForm.name])
+
+    const handleDescriptionImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        try {
+            setDescriptionImageUploading(true)
+            const url = await uploadProductImage(file)
+            insertDescriptionImage(url)
+        } catch (err) {
+            console.error(err)
+            alert("Upload ảnh vào mô tả thất bại")
+        } finally {
+            setDescriptionImageUploading(false)
+            e.target.value = ""
+        }
+    }
+
+    const handleDescriptionImageUrlInsert = () => {
+        const url = window.prompt("Nhập URL ảnh để chèn vào mô tả")
+        if (!url?.trim()) return
+        insertDescriptionImage(url)
+    }
+
+    const descriptionPreviewHtml = useMemo(() => {
+        const value = (productForm.description ?? "").trim()
+        if (!value) return ""
+
+        return value
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+            .replace(/ on\w+="[^"]*"/gi, "")
+            .replace(/ on\w+='[^']*'/gi, "")
+    }, [productForm.description])
 
     const handleSubmitProduct = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -1041,15 +1106,73 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 <div className="sm:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Mô tả chi
-                                        tiết</label>
-                                    <textarea
-                                        rows={4}
-                                        value={productForm.description}
-                                        onChange={(e) => setProductForm({...productForm, description: e.target.value})}
-                                        placeholder="Mô tả đầy đủ hiển thị trang chi tiết"
-                                        className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
-                                    />
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Mô tả chi tiết</label>
+                                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                                        <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-gray-50 p-2.5 text-xs">
+                                            <button
+                                                type="button"
+                                                onClick={() => insertDescriptionText("<p><strong>Tiêu đề</strong></p>")}
+                                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:border-gray-900"
+                                            >
+                                                Đậm
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertDescriptionText("<p><em>Nội dung nhấn mạnh</em></p>")}
+                                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:border-gray-900"
+                                            >
+                                                Nghiêng
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleDescriptionImageUrlInsert}
+                                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:border-gray-900"
+                                            >
+                                                Chèn ảnh URL
+                                            </button>
+                                            <label className="cursor-pointer">
+                                                <span className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700 transition hover:border-gray-900">
+                                                    {descriptionImageUploading ? "Đang upload..." : "Upload ảnh chèn"}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={handleDescriptionImageUpload}
+                                                    disabled={descriptionImageUploading}
+                                                />
+                                            </label>
+                                            <span className="ml-auto text-[11px] text-gray-400">
+                                                Hỗ trợ HTML, ảnh và nội dung mô tả dài
+                                            </span>
+                                        </div>
+
+                                        <textarea
+                                            ref={descriptionTextareaRef}
+                                            rows={7}
+                                            value={productForm.description}
+                                            onChange={(e) => setProductForm({...productForm, description: e.target.value})}
+                                            placeholder="Viết mô tả chi tiết. Bạn có thể chèn ảnh vào giữa nội dung để hiển thị giống trang sản phẩm."
+                                            className="w-full resize-none border-0 px-4 py-3 text-sm outline-none transition focus:ring-0"
+                                        />
+                                    </div>
+
+                                    <div className="mt-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4">
+                                        <div className="mb-2 flex items-center justify-between">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Xem trước</p>
+                                            <p className="text-[11px] text-gray-400">Ảnh sẽ hiển thị như nội dung thật</p>
+                                        </div>
+                                        {descriptionPreviewHtml ? (
+                                            <div
+                                                className="max-h-72 overflow-auto rounded-xl bg-white p-4 text-sm text-gray-700 [&_img]:my-3 [&_img]:max-w-full [&_img]:rounded-xl [&_p]:mt-3 [&_p]:leading-7 [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-bold"
+                                                dangerouslySetInnerHTML={{__html: descriptionPreviewHtml}}
+                                            />
+                                        ) : (
+                                            <div className="rounded-xl bg-white p-4 text-sm text-gray-400">
+                                                Chưa có nội dung mô tả để xem trước.
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
