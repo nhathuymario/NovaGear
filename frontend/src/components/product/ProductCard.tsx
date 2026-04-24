@@ -25,18 +25,18 @@ export default function ProductCard({product}: Readonly<Props>) {
             className="group overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm transition-shadow duration-300 hover:shadow-2xl"
         >
             <Link to={`/products/${product.slug}`}>
-                <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+                <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 p-3">
                     <img
                         src={product.imageUrl || getFallbackImageSrc("NovaGear")}
                         alt={product.name}
                         loading="lazy"
                         decoding="async"
                         sizes="(min-width: 1280px) 20vw, (min-width: 768px) 25vw, 50vw"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                        className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                         data-fallback={getFallbackImageSrc("NovaGear")}
                         onError={handleImageError}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     {percentOff > 0 && (
                         <span
                             className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-red-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/20">
