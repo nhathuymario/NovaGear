@@ -97,29 +97,30 @@ class RAGService:
     def answer(self, question: str, context: Sequence[str] | None = None, top_k: int = 5) -> RagQueryResponse:
         settings = get_settings()
         safe_top_k = max(1, min(top_k, 10))
+        conversation_context = list(context or [])
         # Rank retrieval sources from the real user question to avoid noisy
         # always-on context making every reply look the same.
         query_tokens = _tokenize(question)
 
         static_sources = self._select_sources(query_tokens, safe_top_k)
-        web_sources = self._collect_web_sources(question, settings)
+        web_sources = self._collect_web_sources(question, query_tokens, settings)
         selected_sources = self._merge_sources(static_sources, web_sources, safe_top_k)
 
         if not settings.gemini_api_key:
             return RagQueryResponse(
                 question=question,
-                answer=self._build_non_gemini_answer(question, selected_sources),
+                answer=self._build_non_gemini_answer(question, conversation_context, selected_sources),
                 confidence=self._confidence_from_sources(selected_sources, gemini=False),
                 mode="mock-rag",
                 sources=selected_sources,
             )
 
         try:
-            answer = self._generate_with_gemini(question, context or [], selected_sources, settings)
+            answer = self._generate_with_gemini(question, conversation_context, selected_sources, settings)
             mode = "gemini"
             confidence = self._confidence_from_sources(selected_sources, gemini=True)
         except Exception:
-            answer = self._build_non_gemini_answer(question, selected_sources)
+            answer = self._build_non_gemini_answer(question, conversation_context, selected_sources)
             mode = "fallback"
             confidence = self._confidence_from_sources(selected_sources, gemini=False)
 
@@ -148,8 +149,14 @@ class RAGService:
         scored_sources.sort(key=lambda item: item.score, reverse=True)
         return scored_sources[:top_k]
 
-    def _collect_web_sources(self, question: str, settings) -> list[RagSource]:
+    def _collect_web_sources(self, question: str, query_tokens: set[str], settings) -> list[RagSource]:
         if not settings.enable_web_search:
+            return []
+
+        if _is_greeting(question, query_tokens):
+            return []
+
+        if len(query_tokens) < 2:
             return []
 
         web_results = self._search_duckduckgo(question, settings.web_search_max_results, settings.web_search_timeout_seconds)
@@ -226,11 +233,36 @@ class RAGService:
             "Chưa tìm thấy tài liệu đủ liên quan. Hãy cung cấp thêm ngữ cảnh hoặc ingest thêm source vào vector store."
         )
 
-    def _build_non_gemini_answer(self, question: str, selected_sources: Sequence[RagSource]) -> str:
+    def _build_non_gemini_answer(
+        self,
+        question: str,
+        context: Sequence[str],
+        selected_sources: Sequence[RagSource],
+    ) -> str:
+        query_tokens = _tokenize(question)
+
+        if _is_greeting(question, query_tokens):
+            return (
+                "Chào bạn! Mình là trợ lý NovaGear. Bạn có thể hỏi mình về giá sản phẩm, bảo hành, giao hàng, "
+                "thanh toán hoặc gợi ý mẫu phù hợp theo ngân sách."
+            )
+
+        if _is_price_question(query_tokens):
+            product_hits = _extract_products_from_context(context)
+            if product_hits:
+                ranked_products = _rank_products_for_price_question(product_hits, question)
+                top_products = ranked_products[:3]
+                product_lines = [f"- {item['name']}: {item['price_text']}" for item in top_products]
+                return (
+                    "Mình tìm nhanh theo dữ liệu sản phẩm trên shop, bạn tham khảo nhé:\n"
+                    + "\n".join(product_lines)
+                    + "\nBạn muốn mình lọc thêm theo tầm giá cụ thể hoặc nhu cầu (học tập, gaming, văn phòng) không?"
+                )
+
         if not selected_sources:
             return (
-                "Mình chưa có Gemini key nên chưa trả lời tự do được. "
-                "Bạn hãy thêm `GEMINI_API_KEY` để AI trả lời mở rộng hơn; hiện tại mình chưa thấy nguồn nội bộ/web đủ khớp câu hỏi này."
+                "Mình chưa thấy nguồn dữ liệu phù hợp để trả lời chính xác câu này. "
+                "Bạn có thể nói rõ hơn nhu cầu (sản phẩm nào, tầm giá, khu vực giao hàng...) để mình hỗ trợ tốt hơn."
             )
 
         top_source = selected_sources[0]
@@ -238,15 +270,15 @@ class RAGService:
 
         if top_source.title.lower().startswith("web:"):
             return (
-                f"Theo nguồn web gần nhất, mình thấy thông tin liên quan đến '{question}': "
+                f"Mình tham khảo nhanh từ web cho câu hỏi '{question}': "
                 f"{top_source.excerpt}. "
                 f"Bạn có thể đối chiếu thêm ở các nguồn: {related_titles}."
             )
 
         return (
-            f"Theo dữ liệu nội bộ hiện có, nội dung gần nhất cho '{question}' là: "
+            f"Với câu hỏi '{question}', thông tin phù hợp nhất hiện tại là: "
             f"{top_source.excerpt}. "
-            f"Nguồn liên quan: {related_titles}."
+            f"Mình đang tham chiếu thêm từ: {related_titles}."
         )
 
     def _confidence_from_sources(self, selected_sources: Sequence[RagSource], *, gemini: bool) -> float:
@@ -295,7 +327,8 @@ class RAGService:
             with request.urlopen(http_request, timeout=settings.gemini_timeout_seconds) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except error.HTTPError as exc:
-            response_payload = json.loads(exc.read().decode("utf-8")) if exc.fp else {"error": {"message": str(exc)}}
+            raw_error = exc.read().decode("utf-8", errors="ignore") if exc.fp else ""
+            response_payload = _safe_json_load(raw_error) or {"error": {"message": str(exc)}}
 
         return self._extract_gemini_text(response_payload)
 
@@ -353,6 +386,87 @@ def _clean_html_text(value: str) -> str:
     return text.strip()
 
 
+def _is_greeting(question: str, query_tokens: set[str]) -> bool:
+    normalized = question.strip().lower()
+    greeting_markers = {"hello", "hi", "helo", "xin", "chao", "alo"}
+
+    if normalized in {"hello", "hi", "alo", "xin chao", "chao"}:
+        return True
+
+    if len(query_tokens) <= 2 and query_tokens & greeting_markers:
+        return True
+
+    return False
+
+
+def _is_price_question(query_tokens: set[str]) -> bool:
+    if {"bao", "hanh"}.issubset(query_tokens):
+        return False
+
+    if {"phi", "ship"}.issubset(query_tokens) or {"giao", "hang"}.issubset(query_tokens):
+        return False
+
+    has_price_signal = "gia" in query_tokens or "price" in query_tokens
+    has_amount_pattern = "bao" in query_tokens and "nhieu" in query_tokens
+    has_product_hint = bool(query_tokens & {"iphone", "ip", "dien", "thoai", "laptop", "macbook", "samsung"})
+    return (has_price_signal or has_amount_pattern) and has_product_hint
+
+
+def _extract_products_from_context(context: Sequence[str]) -> list[dict[str, str | int]]:
+    pattern = re.compile(
+        r"San pham:\s*(?P<name>[^;]+);\s*Gia:\s*(?P<price>[^;]+);\s*Nganh:\s*(?P<category>[^;]+);\s*Mo ta:\s*(?P<desc>.*)",
+        re.IGNORECASE,
+    )
+    products: list[dict[str, str | int]] = []
+
+    for item in context:
+        match = pattern.search(str(item))
+        if not match:
+            continue
+
+        price_text = match.group("price").strip()
+        price_digits = re.sub(r"[^0-9]", "", price_text)
+        price_value = int(price_digits) if price_digits else 0
+
+        products.append(
+            {
+                "name": match.group("name").strip(),
+                "price_text": price_text,
+                "category": match.group("category").strip(),
+                "description": match.group("desc").strip(),
+                "price_value": price_value,
+            }
+        )
+
+    return products
+
+
+def _rank_products_for_price_question(products: Sequence[dict[str, str | int]], question: str) -> list[dict[str, str | int]]:
+    lowered_question = question.lower()
+    wants_iphone = any(token in lowered_question for token in ("iphone", "ip ", " ip", "điện thoại", "dien thoai"))
+
+    filtered = list(products)
+    if wants_iphone:
+        iphone_products = [item for item in filtered if "iphone" in str(item["name"]).lower() or "ip" in str(item["name"]).lower()]
+        if iphone_products:
+            filtered = iphone_products
+
+    def score(item: dict[str, str | int]) -> tuple[int, int]:
+        name = str(item["name"]).lower()
+        category = str(item["category"]).lower()
+        match_score = 0
+        if "laptop" in lowered_question and "laptop" in (name + " " + category):
+            match_score += 3
+        if wants_iphone and ("iphone" in name or "ip" in name):
+            match_score += 4
+        price_value = int(item["price_value"])
+        # Prefer products close to 20M for common budget questions.
+        distance = abs(price_value - 20_000_000)
+        return (-match_score, distance)
+
+    return sorted(filtered, key=score)
+
+
 def _score_document(query_tokens: set[str], document: KnowledgeDocument) -> float:
     if not query_tokens:
         return 0.0
@@ -361,3 +475,16 @@ def _score_document(query_tokens: set[str], document: KnowledgeDocument) -> floa
     if matched == 0:
         return 0.0
     return matched / max(len(keyword_tokens), len(query_tokens))
+
+
+def _safe_json_load(value: str) -> dict | None:
+    if not value.strip():
+        return None
+
+    try:
+        loaded = json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+    return loaded if isinstance(loaded, dict) else None
+
