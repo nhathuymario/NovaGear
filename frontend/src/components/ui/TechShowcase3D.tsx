@@ -1,5 +1,5 @@
 import {Component, Suspense, useEffect, useMemo, useState, type ErrorInfo, type ReactNode} from "react"
-import {Canvas} from "@react-three/fiber"
+import {Canvas, useThree} from "@react-three/fiber"
 import {Float, OrbitControls, useGLTF} from "@react-three/drei"
 import * as THREE from "three"
 
@@ -33,17 +33,26 @@ class ModelErrorBoundary extends Component<ModelErrorBoundaryProps, ModelErrorBo
 
 function IphoneModel({onLoaded}: {onLoaded: () => void}) {
     const {scene} = useGLTF(iphoneModelUrl)
+    const {gl} = useThree()
     const model = useMemo(() => scene.clone(), [scene])
 
     useEffect(() => {
         onLoaded()
         model.traverse((child: THREE.Object3D) => {
             if (child instanceof THREE.Mesh) {
+                // Keep subtle shadowing but avoid self-shadow acne streaks on glossy surfaces.
                 child.castShadow = true
-                child.receiveShadow = true
+                child.receiveShadow = false
+                const materials = Array.isArray(child.material) ? child.material : [child.material]
+                materials.forEach((material) => {
+                    if (material.map) {
+                        material.map.anisotropy = gl.capabilities.getMaxAnisotropy()
+                    }
+                    material.needsUpdate = true
+                })
             }
         })
-    }, [model, onLoaded])
+    }, [gl, model, onLoaded])
 
     return <primitive object={model} position={[0, -1.1, 0]} scale={2.05} />
 }
@@ -96,16 +105,37 @@ export default function TechShowcase3D() {
                     </div>
                 )}
                 <ModelErrorBoundary onError={() => setModelError(true)}>
-                    <Canvas shadows camera={{position: [0, 0.4, 4.5], fov: 34}} className="h-full w-full">
-                        <ambientLight intensity={1} />
-                        <directionalLight position={[3, 5, 4]} intensity={2.2} castShadow />
+                    <Canvas
+                        shadows
+                        dpr={[1, 2]}
+                        gl={{antialias: true, alpha: true, powerPreference: "high-performance", precision: "highp"}}
+                        onCreated={({gl}) => {
+                            gl.outputColorSpace = THREE.SRGBColorSpace
+                            gl.toneMapping = THREE.ACESFilmicToneMapping
+                            gl.toneMappingExposure = 1.05
+                            gl.shadowMap.enabled = true
+                            gl.shadowMap.type = THREE.PCFSoftShadowMap
+                        }}
+                        camera={{position: [0, 0.4, 4.5], fov: 34, near: 0.1, far: 50}}
+                        className="h-full w-full"
+                    >
+                        <ambientLight intensity={0.85} />
+                        <directionalLight
+                            position={[3, 5, 4]}
+                            intensity={2.1}
+                            castShadow
+                            shadow-mapSize-width={2048}
+                            shadow-mapSize-height={2048}
+                            shadow-bias={-0.0002}
+                            shadow-normalBias={0.025}
+                        />
                         <pointLight position={[-2, 1, 2]} intensity={0.9} color="#7dd3fc" />
                         <Suspense fallback={null}>
                             <Float speed={1.15} rotationIntensity={0.18} floatIntensity={0.45}>
                                 <IphoneModel onLoaded={() => setIsModelReady(true)} />
                             </Float>
                         </Suspense>
-                        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.9} />
+                        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.9} enableDamping dampingFactor={0.08} />
                     </Canvas>
                 </ModelErrorBoundary>
             </div>
