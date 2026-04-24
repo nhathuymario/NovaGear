@@ -322,7 +322,9 @@ public class ProductService {
             variantRepository.save(variant);
         }
 
-        if (Boolean.TRUE.equals(saved.getThumbnail())) {
+        if (variant != null && Boolean.TRUE.equals(saved.getThumbnail())) {
+            clearVariantThumbnail(productId, variant.getId(), saved.getId());
+        } else if (variant == null && Boolean.TRUE.equals(saved.getThumbnail())) {
             product.setThumbnail(saved.getImageUrl());
             productRepository.save(product);
         }
@@ -338,6 +340,8 @@ public class ProductService {
         ProductVariant previousVariant = image.getVariant();
         Long previousVariantId = previousVariant != null ? previousVariant.getId() : null;
         String previousImageUrl = image.getImageUrl();
+        Boolean previousThumbnail = image.getThumbnail();
+        Product product = image.getProduct();
 
         if (request.getVariantId() != null) {
             image.setVariant(resolveVariantForProduct(image.getProduct().getId(), request.getVariantId()));
@@ -363,10 +367,16 @@ public class ProductService {
             variantRepository.save(currentVariant);
         }
 
-        if (Boolean.TRUE.equals(saved.getThumbnail())) {
-            Product product = saved.getProduct();
+        if (currentVariant != null && Boolean.TRUE.equals(saved.getThumbnail())) {
+            clearVariantThumbnail(saved.getProduct().getId(), currentVariant.getId(), saved.getId());
+        } else if (currentVariant == null && Boolean.TRUE.equals(saved.getThumbnail())) {
             product.setThumbnail(saved.getImageUrl());
             productRepository.save(product);
+        } else if (Boolean.TRUE.equals(previousThumbnail)
+                && previousVariantId == null
+                && previousImageUrl != null
+                && previousImageUrl.equals(product.getThumbnail())) {
+            refreshProductPrimaryImage(product.getId());
         }
 
         return mapImage(saved);
@@ -383,9 +393,14 @@ public class ProductService {
 
         if (variantId != null && imageUrl != null) {
             ProductVariant variant = variantRepository.findById(variantId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+                    .orElseThrow(() -> new ResourceNotFoundException(VARIANT_NOT_FOUND));
             if (imageUrl.equals(variant.getImageUrl())) {
                 refreshVariantPrimaryImage(productId, variantId);
+            }
+        } else if (variantId == null && imageUrl != null) {
+            Product product = getProduct(productId);
+            if (imageUrl.equals(product.getThumbnail())) {
+                refreshProductPrimaryImage(productId);
             }
         }
     }
@@ -512,7 +527,7 @@ public class ProductService {
 
     private void refreshVariantPrimaryImage(Long productId, Long variantId) {
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy variant"));
+                .orElseThrow(() -> new ResourceNotFoundException(VARIANT_NOT_FOUND));
 
         List<ProductImage> variantImages = imageRepository.findByProductIdAndVariantIdOrderBySortOrderAscIdAsc(productId, variantId);
         if (variantImages.isEmpty()) {
@@ -522,6 +537,34 @@ public class ProductService {
         }
 
         variantRepository.save(variant);
+    }
+
+    private void clearVariantThumbnail(Long productId, Long variantId, Long excludeImageId) {
+        List<ProductImage> thumbnailImages = imageRepository.findByProductIdAndVariantIdAndThumbnailTrueOrderBySortOrderAscIdAsc(productId, variantId);
+
+        for (ProductImage otherImage : thumbnailImages) {
+            if (otherImage.getId() != null && otherImage.getId().equals(excludeImageId)) {
+                continue;
+            }
+            otherImage.setThumbnail(false);
+        }
+
+        if (!thumbnailImages.isEmpty()) {
+            imageRepository.saveAll(thumbnailImages);
+        }
+    }
+
+    private void refreshProductPrimaryImage(Long productId) {
+        Product product = getProduct(productId);
+        List<ProductImage> productLevelImages = imageRepository.findByProductIdAndVariantIsNullOrderBySortOrderAscIdAsc(productId);
+
+        if (productLevelImages.isEmpty()) {
+            product.setThumbnail(null);
+        } else {
+            product.setThumbnail(productLevelImages.get(0).getImageUrl());
+        }
+
+        productRepository.save(product);
     }
 
     private ProductReviewResponse mapReview(ProductReview review) {
