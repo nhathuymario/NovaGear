@@ -29,6 +29,10 @@ function buildVariantLabel(variant: PublicProductVariant) {
         .join(" / ")
 }
 
+function normalizeVariantOption(value?: string) {
+    return String(value ?? "").trim()
+}
+
 function extractApiErrorMessage(error: unknown): string {
     const maybeAxiosError = error as {
         response?: { data?: { message?: string } }
@@ -77,6 +81,8 @@ export default function ProductDetailPage() {
 
     const [product, setProduct] = useState<ProductDetailData | null>(null)
     const [selectedVariantId, setSelectedVariantId] = useState<number | string | null>(null)
+    const [selectedStorage, setSelectedStorage] = useState("")
+    const [selectedColor, setSelectedColor] = useState("")
     const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null)
     const [selectedImageIndex, setSelectedImageIndex] = useState(0)
     const [openSpecGroups, setOpenSpecGroups] = useState<Record<string, boolean>>({})
@@ -109,15 +115,22 @@ export default function ProductDetailPage() {
                 setProduct(detail)
 
                 if (detail.variants.length > 0) {
-                    setSelectedVariantId(detail.variants[0].id)
+                    const firstVariant = detail.variants[0]
+                    setSelectedVariantId(firstVariant.id)
+                    setSelectedStorage(normalizeVariantOption(firstVariant.storage))
+                    setSelectedColor(normalizeVariantOption(firstVariant.color))
                 } else {
                     setSelectedVariantId(null)
+                    setSelectedStorage("")
+                    setSelectedColor("")
                     setSelectedInventory(null)
                 }
             } catch (error) {
                 console.error(error)
                 setProduct(null)
                 setSelectedVariantId(null)
+                setSelectedStorage("")
+                setSelectedColor("")
                 setSelectedInventory(null)
             } finally {
                 setLoading(false)
@@ -136,6 +149,84 @@ export default function ProductDetailPage() {
             ) ?? product.variants[0]
         )
     }, [product, selectedVariantId])
+
+    const storageOptions = useMemo(() => {
+        if (!product) return []
+
+        return Array.from(
+            new Set(
+                product.variants
+                    .map((variant) => normalizeVariantOption(variant.storage))
+                    .filter(Boolean)
+            )
+        )
+    }, [product])
+
+    const colorOptions = useMemo(() => {
+        if (!product) return []
+
+        const targetVariants = selectedStorage
+            ? product.variants.filter(
+                (variant) => normalizeVariantOption(variant.storage) === selectedStorage
+            )
+            : product.variants
+
+        return Array.from(
+            new Set(targetVariants.map((variant) => normalizeVariantOption(variant.color)).filter(Boolean))
+        )
+    }, [product, selectedStorage])
+
+    const filteredVariants = useMemo(() => {
+        if (!product) return []
+
+        return product.variants.filter((variant) => {
+            const variantStorage = normalizeVariantOption(variant.storage)
+            const variantColor = normalizeVariantOption(variant.color)
+
+            if (selectedStorage && variantStorage !== selectedStorage) {
+                return false
+            }
+
+            if (selectedColor && variantColor !== selectedColor) {
+                return false
+            }
+
+            return true
+        })
+    }, [product, selectedStorage, selectedColor])
+
+    useEffect(() => {
+        if (!product || product.variants.length === 0) {
+            return
+        }
+
+        const candidates = filteredVariants
+        const hasSelectedInCandidates = candidates.some(
+            (variant) => String(variant.id) === String(selectedVariantId)
+        )
+
+        if (candidates.length > 0 && !hasSelectedInCandidates) {
+            setSelectedVariantId(candidates[0].id)
+            return
+        }
+
+        if (candidates.length === 0) {
+            const fallbackByStorage = selectedStorage
+                ? product.variants.filter(
+                    (variant) => normalizeVariantOption(variant.storage) === selectedStorage
+                )
+                : product.variants
+
+            const fallback = fallbackByStorage[0] ?? product.variants[0]
+            if (!fallback) {
+                return
+            }
+
+            setSelectedVariantId(fallback.id)
+            setSelectedStorage(normalizeVariantOption(fallback.storage))
+            setSelectedColor(normalizeVariantOption(fallback.color))
+        }
+    }, [product, filteredVariants, selectedVariantId, selectedStorage, selectedColor])
 
     useEffect(() => {
         if (!selectedVariant?.id) {
@@ -209,6 +300,71 @@ export default function ProductDetailPage() {
 
     const handleNextImage = () => {
         setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length)
+    }
+
+    const handleSelectStorage = (storage: string) => {
+        setSelectedStorage(storage)
+
+        if (!product) {
+            return
+        }
+
+        const variantsByStorage = product.variants.filter(
+            (variant) => normalizeVariantOption(variant.storage) === storage
+        )
+
+        if (variantsByStorage.length === 0) {
+            return
+        }
+
+        const nextColor = variantsByStorage.some(
+            (variant) => normalizeVariantOption(variant.color) === selectedColor
+        )
+            ? selectedColor
+            : normalizeVariantOption(variantsByStorage[0].color)
+
+        if (nextColor !== selectedColor) {
+            setSelectedColor(nextColor)
+        }
+
+        const nextVariant =
+            variantsByStorage.find(
+                (variant) => normalizeVariantOption(variant.color) === nextColor
+            ) ?? variantsByStorage[0]
+
+        if (nextVariant) {
+            setSelectedVariantId(nextVariant.id)
+        }
+    }
+
+    const handleSelectColor = (color: string) => {
+        setSelectedColor(color)
+
+        if (!product) {
+            return
+        }
+
+        const variantsByColor = product.variants.filter(
+            (variant) => normalizeVariantOption(variant.color) === color
+        )
+
+        if (variantsByColor.length === 0) {
+            return
+        }
+
+        const nextVariant = selectedStorage
+            ? variantsByColor.find(
+                (variant) => normalizeVariantOption(variant.storage) === selectedStorage
+            ) ?? variantsByColor[0]
+            : variantsByColor[0]
+
+        if (nextVariant) {
+            setSelectedVariantId(nextVariant.id)
+            const nextStorage = normalizeVariantOption(nextVariant.storage)
+            if (nextStorage && nextStorage !== selectedStorage) {
+                setSelectedStorage(nextStorage)
+            }
+        }
     }
 
     useEffect(() => {
@@ -571,8 +727,62 @@ export default function ProductDetailPage() {
                         <div>
                             <h3 className="font-bold">Phiên bản</h3>
 
+                            {storageOptions.length > 0 && (
+                                <div className="mt-3">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        Bộ nhớ
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {storageOptions.map((storage) => {
+                                            const isActive = storage === selectedStorage
+                                            return (
+                                                <button
+                                                    key={storage}
+                                                    type="button"
+                                                    onClick={() => handleSelectStorage(storage)}
+                                                    className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
+                                                        isActive
+                                                            ? "border-brand-dark bg-brand-dark/10 text-brand-dark"
+                                                            : "border-slate-200 text-slate-700 hover:border-slate-400"
+                                                    }`}
+                                                >
+                                                    {storage}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {colorOptions.length > 0 && (
+                                <div className="mt-3">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        Màu sắc
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {colorOptions.map((color) => {
+                                            const isActive = color === selectedColor
+                                            return (
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() => handleSelectColor(color)}
+                                                    className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
+                                                        isActive
+                                                            ? "border-brand-dark bg-brand-dark/10 text-brand-dark"
+                                                            : "border-slate-200 text-slate-700 hover:border-slate-400"
+                                                    }`}
+                                                >
+                                                    {color}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="mt-3 grid gap-3">
-                                {product.variants.map((variant) => {
+                                {(filteredVariants.length > 0 ? filteredVariants : product.variants).map((variant) => {
                                     const label =
                                         buildVariantLabel(variant) ||
                                         variant.sku ||
@@ -585,7 +795,11 @@ export default function ProductDetailPage() {
                                         <button
                                             key={variant.id}
                                             type="button"
-                                            onClick={() => setSelectedVariantId(variant.id)}
+                                            onClick={() => {
+                                                setSelectedVariantId(variant.id)
+                                                setSelectedStorage(normalizeVariantOption(variant.storage))
+                                                setSelectedColor(normalizeVariantOption(variant.color))
+                                            }}
                                             className={`rounded-2xl border p-4 text-left transition ${
                                                 isSelected
                                                     ? "border-brand-dark bg-gray-50"

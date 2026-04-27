@@ -50,6 +50,18 @@ import {
 
 const PRODUCT_LEVEL_VARIANT = "__PRODUCT_LEVEL__"
 
+function normalizeMatrixOption(value?: string) {
+    return String(value ?? "").trim().toLowerCase()
+}
+
+function normalizeDisplayOption(value?: string) {
+    return String(value ?? "").trim()
+}
+
+function buildMatrixKey(storage?: string, color?: string) {
+    return `${normalizeMatrixOption(storage)}__${normalizeMatrixOption(color)}`
+}
+
 function getApiErrorMessage(error: unknown, fallback: string): string {
     const axiosError = error as AxiosError<{ message?: string; data?: Record<string, string> }>
     const responseData = axiosError.response?.data
@@ -98,6 +110,7 @@ export default function AdminProductsPage() {
     const [galleryUploading, setGalleryUploading] = useState(false)
     const [gallerySaving, setGallerySaving] = useState(false)
     const [selectedImageVariantId, setSelectedImageVariantId] = useState<string>(PRODUCT_LEVEL_VARIANT)
+    const [keepVariantFormOpen, setKeepVariantFormOpen] = useState(false)
 
     const [editingSpec, setEditingSpec] = useState<AdminSpecificationItem | null>(null)
     const [specForm, setSpecForm] = useState<AdminSpecificationPayload>(INITIAL_SPEC_FORM)
@@ -441,6 +454,52 @@ export default function AdminProductsPage() {
         setShowVariantForm(true)
     }
 
+    const createSkuSuggestion = useCallback((storage?: string, color?: string) => {
+        if (!selectedProduct) {
+            return ""
+        }
+
+        const productSlug = slugify(selectedProduct.name || "variant")
+        const storageSlug = slugify(normalizeDisplayOption(storage) || "std")
+        const colorSlug = slugify(normalizeDisplayOption(color) || "std")
+        const base = `${productSlug}-${storageSlug}-${colorSlug}`.replace(/-+/g, "-")
+        let candidate = base
+        let index = 1
+
+        const existingSkus = new Set(variants.map((variant) => variant.sku.trim().toLowerCase()))
+        while (existingSkus.has(candidate.toLowerCase())) {
+            index += 1
+            candidate = `${base}-${index}`
+        }
+
+        return candidate
+    }, [selectedProduct, variants])
+
+    const openCreateVariantWithCombo = useCallback((storage: string, color: string) => {
+        const normalizedStorage = normalizeDisplayOption(storage)
+        const normalizedColor = normalizeDisplayOption(color)
+
+        const template =
+            variants.find((variant) => normalizeDisplayOption(variant.storage) === normalizedStorage) ||
+            variants.find((variant) => normalizeDisplayOption(variant.color) === normalizedColor) ||
+            variants[0]
+
+        setEditingVariant(null)
+        setVariantForm({
+            sku: createSkuSuggestion(normalizedStorage, normalizedColor),
+            color: normalizedColor,
+            ram: template?.ram ?? "",
+            storage: normalizedStorage,
+            versionName: template?.versionName ?? "",
+            price: template?.price ?? 0,
+            salePrice: template?.salePrice,
+            stockQuantity: 0,
+            imageUrl: "",
+            status: (template?.status as AdminVariantPayload["status"]) ?? "ACTIVE",
+        })
+        setShowVariantForm(true)
+    }, [createSkuSuggestion, variants])
+
     const openEditVariant = (v: AdminVariantItem) => {
         setEditingVariant(v)
         setVariantForm({
@@ -520,6 +579,19 @@ export default function AdminProductsPage() {
             stockQuantity: Math.floor(normalizedStock),
         }
 
+        const duplicatedCombo = variants.find((variant) => {
+            if (editingVariant && String(variant.id) === String(editingVariant.id)) {
+                return false
+            }
+
+            return buildMatrixKey(variant.storage, variant.color) === buildMatrixKey(payload.storage, payload.color)
+        })
+
+        if (duplicatedCombo) {
+            alert(`Bi trung to hop Bo nho + Mau voi SKU ${duplicatedCombo.sku}. Moi to hop chi duoc tao 1 variant.`)
+            return
+        }
+
         try {
             setSubmittingVariant(true)
 
@@ -540,8 +612,17 @@ export default function AdminProductsPage() {
             }
 
             await loadDetail(selectedProduct.id)
-            setShowVariantForm(false)
-            setEditingVariant(null)
+            if (keepVariantFormOpen && !editingVariant) {
+                setVariantForm((prev) => ({
+                    ...prev,
+                    sku: createSkuSuggestion(prev.storage, prev.color),
+                    stockQuantity: 0,
+                    imageUrl: "",
+                }))
+            } else {
+                setShowVariantForm(false)
+                setEditingVariant(null)
+            }
             alert(editingVariant ? "Cập nhật variant thành công" : "Thêm variant thành công")
         } catch (err) {
             console.error(err)
@@ -848,6 +929,50 @@ export default function AdminProductsPage() {
             return imageVariantId === selectedImageVariantId
         })
     }, [productImages, selectedImageVariantId])
+
+    const storageOptions = useMemo(() => {
+        return Array.from(
+            new Set(variants.map((variant) => normalizeDisplayOption(variant.storage)).filter(Boolean))
+        ).sort((a, b) => a.localeCompare(b, "vi"))
+    }, [variants])
+
+    const colorOptions = useMemo(() => {
+        return Array.from(
+            new Set(variants.map((variant) => normalizeDisplayOption(variant.color)).filter(Boolean))
+        ).sort((a, b) => a.localeCompare(b, "vi"))
+    }, [variants])
+
+    const matrixStorageAxis = useMemo(() => {
+        const seed = normalizeDisplayOption(variantForm.storage)
+        const merged = seed && !storageOptions.includes(seed) ? [...storageOptions, seed] : storageOptions
+        return merged.sort((a, b) => a.localeCompare(b, "vi"))
+    }, [storageOptions, variantForm.storage])
+
+    const matrixColorAxis = useMemo(() => {
+        const seed = normalizeDisplayOption(variantForm.color)
+        const merged = seed && !colorOptions.includes(seed) ? [...colorOptions, seed] : colorOptions
+        return merged.sort((a, b) => a.localeCompare(b, "vi"))
+    }, [colorOptions, variantForm.color])
+
+    const variantMatrix = useMemo(() => {
+        const map = new Map<string, AdminVariantItem>()
+        variants.forEach((variant) => {
+            map.set(buildMatrixKey(variant.storage, variant.color), variant)
+        })
+        return map
+    }, [variants])
+
+    const missingMatrixCombos = useMemo(() => {
+        const missing: Array<{ storage: string; color: string }> = []
+        matrixStorageAxis.forEach((storage) => {
+            matrixColorAxis.forEach((color) => {
+                if (!variantMatrix.has(buildMatrixKey(storage, color))) {
+                    missing.push({storage, color})
+                }
+            })
+        })
+        return missing
+    }, [matrixStorageAxis, matrixColorAxis, variantMatrix])
 
     if (tab === "list") {
         return (
@@ -1413,8 +1538,14 @@ export default function AdminProductsPage() {
                                             value={variantForm.color}
                                             onChange={(e) => setVariantForm({...variantForm, color: e.target.value})}
                                             placeholder="Midnight, Silver..."
+                                            list="variant-color-options"
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
+                                        <datalist id="variant-color-options">
+                                            {colorOptions.map((color) => (
+                                                <option key={color} value={color} />
+                                            ))}
+                                        </datalist>
                                     </div>
 
                                     <div>
@@ -1435,8 +1566,14 @@ export default function AdminProductsPage() {
                                             value={variantForm.storage}
                                             onChange={(e) => setVariantForm({...variantForm, storage: e.target.value})}
                                             placeholder="256GB, 512GB..."
+                                            list="variant-storage-options"
                                             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-gray-900"
                                         />
+                                        <datalist id="variant-storage-options">
+                                            {storageOptions.map((storage) => (
+                                                <option key={storage} value={storage} />
+                                            ))}
+                                        </datalist>
                                     </div>
 
                                     <div>
@@ -1572,6 +1709,16 @@ export default function AdminProductsPage() {
                                     </p>
                                 </div>
 
+                                <label className="mt-4 inline-flex items-center gap-2 text-sm text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={keepVariantFormOpen}
+                                        onChange={(e) => setKeepVariantFormOpen(e.target.checked)}
+                                        className="h-4 w-4 rounded accent-gray-900"
+                                    />
+                                    Giữ form sau khi thêm để tạo nhanh nhiều tổ hợp
+                                </label>
+
                                 <div className="mt-4 flex gap-2">
                                     <button
                                         type="submit"
@@ -1592,6 +1739,85 @@ export default function AdminProductsPage() {
                                     </button>
                                 </div>
                             </form>
+                        )}
+
+                        {matrixStorageAxis.length > 0 && matrixColorAxis.length > 0 && (
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <h3 className="text-sm font-semibold text-gray-800">Ma trận GB x Màu</h3>
+                                    <p className="text-xs text-gray-500">
+                                        Đã có {variants.length}/{matrixStorageAxis.length * matrixColorAxis.length} tổ hợp
+                                    </p>
+                                </div>
+
+                                {missingMatrixCombos.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {missingMatrixCombos.slice(0, 8).map((combo) => (
+                                            <button
+                                                key={`${combo.storage}-${combo.color}`}
+                                                type="button"
+                                                onClick={() => openCreateVariantWithCombo(combo.storage, combo.color)}
+                                                className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 transition hover:border-gray-900"
+                                            >
+                                                + {combo.storage} / {combo.color}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="mt-3 overflow-x-auto">
+                                    <table className="min-w-full border-collapse text-xs">
+                                        <thead>
+                                        <tr>
+                                            <th className="border border-gray-200 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-600">
+                                                GB \ Mau
+                                            </th>
+                                            {matrixColorAxis.map((color) => (
+                                                <th
+                                                    key={color}
+                                                    className="border border-gray-200 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-600"
+                                                >
+                                                    {color}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {matrixStorageAxis.map((storage) => (
+                                            <tr key={storage}>
+                                                <td className="border border-gray-200 bg-gray-50 px-3 py-2 font-semibold text-gray-700">
+                                                    {storage}
+                                                </td>
+                                                {matrixColorAxis.map((color) => {
+                                                    const cell = variantMatrix.get(buildMatrixKey(storage, color))
+                                                    return (
+                                                        <td key={`${storage}-${color}`} className="border border-gray-200 px-2 py-1.5">
+                                                            {cell ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openEditVariant(cell)}
+                                                                    className="w-full rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-left text-[11px] text-emerald-700 transition hover:border-emerald-300"
+                                                                >
+                                                                    {cell.sku}
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openCreateVariantWithCombo(storage, color)}
+                                                                    className="w-full rounded-md border border-dashed border-gray-300 px-2 py-1 text-left text-[11px] text-gray-500 transition hover:border-gray-600 hover:text-gray-700"
+                                                                >
+                                                                    Them
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    )
+                                                })}
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         )}
 
                         {variants.length === 0 && !showVariantForm ? (
