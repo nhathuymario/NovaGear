@@ -2,6 +2,7 @@ package uth.nhathuy.Order.controller;
 
 import uth.nhathuy.Order.entity.Order;
 import uth.nhathuy.Order.repository.OrderRepository;
+import uth.nhathuy.Order.exception.ResourceNotFoundException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ public class InternalOrderController {
     @GetMapping("/{orderId}")
     public OrderInfoResponse getOrder(@PathVariable Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         return OrderInfoResponse.builder()
                 .id(order.getId())
@@ -36,7 +37,7 @@ public class InternalOrderController {
             @RequestParam String status
     ) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         order.setPaymentStatus(status);
         orderRepository.save(order);
