@@ -27,6 +27,8 @@ public class AdminOrderController {
             @PathVariable Long orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request
     ) {
-        return ResponseEntity.ok(orderService.updateStatus(orderId, request));
+        // Admin update: we can set userId to null or use a placeholder like -1L for admin
+        // Or better: extract userId from order itself
+        return ResponseEntity.ok(orderService.updateStatus(orderId, 0L, request));
     }
 }
