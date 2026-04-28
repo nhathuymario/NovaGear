@@ -1,27 +1,34 @@
 package uth.nhathuy.Order.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import uth.nhathuy.Order.client.NotificationClient;
 import uth.nhathuy.Order.dto.*;
 import uth.nhathuy.Order.entity.Order;
 import uth.nhathuy.Order.entity.OrderItem;
 import uth.nhathuy.Order.entity.OrderStatus;
 import uth.nhathuy.Order.exception.ResourceNotFoundException;
 import uth.nhathuy.Order.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final RestTemplate restTemplate;
+    private final NotificationClient notificationClient;
 
     @Value("${services.cart.url}")
     private String cartServiceUrl;
@@ -87,7 +94,9 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders:myOrders", key = "#userId")
     public List<OrderResponse> getMyOrders(Long userId) {
+        log.debug("Fetching orders for user {} from DB (cache miss)", userId);
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::mapToOrderResponse)
@@ -95,25 +104,20 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders:detail", key = "#userId + ':' + #orderId")
     public OrderResponse getMyOrderDetail(Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-
-        if (!order.getUserId().equals(userId)) {
-            throw new ResourceNotFoundException("Không tìm thấy đơn hàng");
-        }
 
         return mapToOrderResponse(order);
     }
 
     @Transactional
+    @CacheEvict(value = "orders:myOrders", key = "#userId")
     public OrderResponse cancelMyOrder(Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
 
-        if (!order.getUserId().equals(userId)) {
-            throw new ResourceNotFoundException("Không tìm thấy đơn hàng");
-        }
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
             return mapToOrderResponse(order);
@@ -131,26 +135,61 @@ public class OrderService {
         order.setPaymentStatus("CANCELLED");
         order.setUpdatedAt(LocalDateTime.now());
 
-        return mapToOrderResponse(orderRepository.save(order));
-    }
+        Order savedOrder = orderRepository.save(order);
 
-    @Transactional(readOnly = true)
-    public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll()
-                .stream()
-                .map(this::mapToOrderResponse)
-                .toList();
+        // Notify via WebSocket
+        try {
+            notificationClient.notifyOrderUpdate(
+                    new NotificationClient.OrderUpdateNotification(
+                            "ORDER_CANCELLED",
+                            orderId,
+                            userId,
+                            Map.of("reason", "User requested cancellation")
+                    )
+            );
+        } catch (Exception e) {
+            log.warn("Failed to notify order cancellation", e);
+        }
+
+        return mapToOrderResponse(savedOrder);
     }
 
     @Transactional
-    public OrderResponse updateStatus(Long orderId, UpdateOrderStatusRequest request) {
+    @CacheEvict(value = "orders:myOrders", key = "#userId")
+    public OrderResponse updateStatus(Long orderId, Long userId, UpdateOrderStatusRequest request) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
 
         order.setStatus(request.status());
         order.setUpdatedAt(LocalDateTime.now());
 
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Notify user of status change
+        try {
+            notificationClient.notifyOrderUpdate(
+                    new NotificationClient.OrderUpdateNotification(
+                            "ORDER_STATUS_CHANGED",
+                            orderId,
+                            userId,
+                            Map.of("newStatus", request.status().toString())
+                    )
+            );
+        } catch (Exception e) {
+            log.warn("Failed to notify order status change", e);
+        }
+
+        return mapToOrderResponse(savedOrder);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "orders:list", key = "'all'")
+    public List<OrderResponse> getAllOrders() {
+        log.debug("Fetching all orders from DB (cache miss)");
+        return orderRepository.findAll()
+                .stream()
+                .map(this::mapToOrderResponse)
+                .toList();
     }
 
     private CartResponseDto getCartFromCartService(Long userId, String username, String token) {
@@ -180,6 +219,7 @@ public class OrderService {
         headers.set("X-Role", "ROLE_USER");
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
+
 
         restTemplate.exchange(
                 cartServiceUrl + "/api/cart/clear",
