@@ -33,7 +33,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/login/oauth2/",
             "/api/products/public",
             "/api/ai",
-            "/api/inventory/internal/variant/"
+            "/api/inventory/internal/variant/",
+            "/ws"
     );
 
     @Override
