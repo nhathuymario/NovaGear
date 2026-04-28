@@ -28,6 +28,9 @@ export default function PaymentPage() {
             ])
             setOrder(orderData)
             setPayment(paymentData)
+        } catch (err) {
+            console.error("Failed to load order data:", err)
+            setMessage((err as any)?.message || "Không thể tải thông tin đơn hàng. Vui lòng thử lại.")
         } finally {
             setLoading(false)
         }
@@ -114,7 +117,27 @@ export default function PaymentPage() {
     }
 
     if (loading) return <div>Đang tải thông tin thanh toán...</div>
-    if (!order) return <div>Không tìm thấy đơn hàng</div>
+    if (!order) {
+        return (
+            <div className="rounded-2xl bg-white p-8 shadow-sm">
+                <h1 className="text-2xl font-bold">Thanh toán đơn hàng</h1>
+                {message && (
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {message}
+                    </div>
+                )}
+                {!message && (
+                    <p className="mt-3 text-brand-gray">Không tìm thấy đơn hàng</p>
+                )}
+                <button
+                    onClick={() => navigate("/orders")}
+                    className="mt-5 rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                >
+                    Quay lại danh sách đơn hàng
+                </button>
+            </div>
+        )
+    }
 
     return (
         <div className="grid gap-6 md:grid-cols-[1fr_360px]">
