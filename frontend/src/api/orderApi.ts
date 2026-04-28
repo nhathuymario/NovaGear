@@ -159,8 +159,18 @@ export async function getMyOrders(): Promise<Order[]> {
 }
 
 export async function getOrderDetail(orderId: number | string): Promise<Order> {
-    const res = await axiosClient.get(`/orders/${orderId}`)
-    return mapOrder(res.data)
+    try {
+        const res = await axiosClient.get(`/orders/${orderId}`)
+        return mapOrder(res.data)
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            throw new Error(`Không tìm thấy đơn hàng ${orderId}`)
+        }
+        if (error?.response?.status === 403 || error?.response?.status === 401) {
+            throw new Error(`Bạn không có quyền truy cập đơn hàng này`)
+        }
+        throw error
+    }
 }
 
 export async function cancelMyOrder(orderId: number | string): Promise<Order> {
