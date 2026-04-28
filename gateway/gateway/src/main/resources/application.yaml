@@ -84,6 +84,11 @@ spring:
           predicates:
             - Path=/api/notifications/**
 
+        - id: notification-service-ws
+          uri: ws://localhost:8088
+          predicates:
+            - Path=/ws,/ws/**
+
         - id: ai-service
           uri: ${AI_SERVICE_URL:http://localhost:8000}
           predicates:
