@@ -8,6 +8,17 @@ spring:
   profiles:
     active: seed
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60s
+      cache-null-values: false
+
   datasource:
     url: jdbc:postgresql://localhost:5432/order_db
     username: postgres
@@ -28,3 +39,7 @@ services:
     url: http://localhost:8084
   inventory:
     url: http://localhost:8087
+
+realtime:
+  redis:
+    channel: ${REALTIME_REDIS_CHANNEL:novagear:realtime}
