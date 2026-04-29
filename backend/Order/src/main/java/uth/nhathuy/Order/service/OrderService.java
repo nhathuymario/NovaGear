@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +63,7 @@ public class OrderService {
                 .address(request.address())
                 .note(request.note())
                 .status(OrderStatus.PENDING)
+                .paymentStatus("UNPAID")
                 .totalAmount(cart.totalAmount())
                 .build();
 
@@ -94,7 +95,6 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "orders:myOrders", key = "#userId")
     public List<OrderResponse> getMyOrders(Long userId) {
         log.debug("Fetching orders for user {} from DB (cache miss)", userId);
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
@@ -104,7 +104,6 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "orders:detail", key = "#userId + ':' + #orderId")
     public OrderResponse getMyOrderDetail(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
@@ -113,7 +112,10 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders:myOrders", key = "#userId")
+    @Caching(evict = {
+            @CacheEvict(value = "orders:myOrders", key = "#userId"),
+            @CacheEvict(value = "orders:list", allEntries = true)
+    })
     public OrderResponse cancelMyOrder(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
@@ -153,9 +155,13 @@ public class OrderService {
 
         return mapToOrderResponse(savedOrder);
     }
-
+ 
     @Transactional
-    @CacheEvict(value = "orders:myOrders", key = "#userId")
+    @Caching(evict = {
+            @CacheEvict(value = "orders:myOrders", allEntries = true),
+            @CacheEvict(value = "orders:detail", allEntries = true),
+            @CacheEvict(value = "orders:list", allEntries = true)
+    })
     public OrderResponse updateStatus(Long orderId, Long userId, UpdateOrderStatusRequest request) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
@@ -183,7 +189,6 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "orders:list", key = "'all'")
     public List<OrderResponse> getAllOrders() {
         log.debug("Fetching all orders from DB (cache miss)");
         return orderRepository.findAll()
@@ -258,6 +263,7 @@ public class OrderService {
 
     private OrderResponse mapToOrderResponse(Order order) {
         List<OrderItem> orderItems = order.getItems() == null ? List.of() : order.getItems();
+        String paymentStatus = normalizePaymentStatus(order.getPaymentStatus());
 
         List<OrderItemResponse> items = orderItems.stream()
                 .map(item -> OrderItemResponse.builder()
@@ -282,10 +288,17 @@ public class OrderService {
                 .address(order.getAddress())
                 .note(order.getNote())
                 .status(order.getStatus())
-                .paymentStatus(order.getPaymentStatus())
+                .paymentStatus(paymentStatus)
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(items)
                 .build();
+    }
+
+    private String normalizePaymentStatus(String paymentStatus) {
+        if (paymentStatus == null || paymentStatus.isBlank()) {
+            return "UNPAID";
+        }
+        return paymentStatus.trim().toUpperCase();
     }
 }
