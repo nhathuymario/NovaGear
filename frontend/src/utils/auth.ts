@@ -49,8 +49,17 @@ export function getStoredUser(): AuthUser | null {
     }
 }
 
+export function normalizeRole(role?: string | null): string | undefined {
+    if (!role) return undefined
+    return role.replace(/^ROLE_/, "").trim().toUpperCase()
+}
+
 export function setStoredUser(user: AuthUser) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    const normalizedUser: AuthUser = {
+        ...user,
+        role: normalizeRole(user.role),
+    }
+    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser))
     emitAuthChange()
 }
 

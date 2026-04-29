@@ -4,6 +4,7 @@ import {
     clearAuth,
     getRefreshToken,
     getToken,
+    normalizeRole,
     setRefreshToken,
     setStoredUser,
     setToken,
@@ -59,7 +60,7 @@ axiosClient.interceptors.response.use(
                 username: payload.username ?? nested.username,
                 email: payload.email ?? nested.email,
                 fullName: payload.fullName ?? nested.fullName ?? payload.username ?? nested.username,
-                role: role ?? undefined,
+                role: normalizeRole(role ?? undefined),
             }
 
             if (!newToken) {
