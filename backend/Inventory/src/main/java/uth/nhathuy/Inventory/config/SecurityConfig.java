@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .logout(logout -> logout.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/inventory/internal/variant/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(gatewayHeaderAuthFilter, UsernamePasswordAuthenticationFilter.class)
