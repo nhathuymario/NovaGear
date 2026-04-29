@@ -22,6 +22,9 @@ public class Payment {
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
+    @Column(name = "provider_order_code", unique = true)
+    private Long providerOrderCode;
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 

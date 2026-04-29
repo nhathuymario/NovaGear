@@ -36,37 +36,30 @@ public class PaymentService {
         Payment existingPayment = paymentRepository.findByOrderId(request.getOrderId()).orElse(null);
         if (existingPayment != null) {
             if (!existingPayment.getUserId().equals(currentUserId)) {
-                throw new SecurityException("Không có quyền truy cập payment này");
+                throw new SecurityException("Khong co quyen truy cap payment nay");
             }
 
-            if (requestedMethod == PaymentMethod.BANK_TRANSFER
-                    && existingPayment.getStatus() == PaymentStatus.PENDING
-                    && existingPayment.getMethod() == PaymentMethod.BANK_TRANSFER
-                    && existingPayment.getPaymentUrl() != null
-                    && !existingPayment.getPaymentUrl().isBlank()) {
-                return mapToResponse(existingPayment);
-            }
-
-            if (requestedMethod == PaymentMethod.BANK_TRANSFER
-                    && existingPayment.getStatus() == PaymentStatus.PENDING
-                    && (existingPayment.getMethod() == PaymentMethod.COD
-                    || existingPayment.getPaymentUrl() == null
-                    || existingPayment.getPaymentUrl().isBlank())) {
-                String txRef = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-                String checkoutUrl = createPayOSCheckoutUrl(
-                        existingPayment.getOrderId(),
-                        existingPayment.getAmount(),
-                        txRef
-                );
-
-                existingPayment.setMethod(PaymentMethod.BANK_TRANSFER);
-                existingPayment.setTransactionRef(txRef);
-                existingPayment.setPaymentUrl(checkoutUrl);
+            if (requestedMethod == PaymentMethod.COD
+                    && existingPayment.getStatus() != PaymentStatus.SUCCESS
+                    && existingPayment.getStatus() != PaymentStatus.REFUNDED) {
+                existingPayment.setMethod(PaymentMethod.COD);
+                existingPayment.setStatus(PaymentStatus.PENDING);
+                existingPayment.setProviderOrderCode(null);
+                existingPayment.setTransactionRef(null);
+                existingPayment.setPaymentUrl(null);
+                existingPayment.setPaidAt(null);
                 existingPayment.setNote(request.getNote());
                 existingPayment.setUpdatedAt(LocalDateTime.now());
 
-                Payment upgraded = paymentRepository.save(existingPayment);
-                return mapToResponse(upgraded);
+                Payment codPayment = paymentRepository.save(existingPayment);
+                return mapToResponse(codPayment);
+            }
+
+            if (requestedMethod == PaymentMethod.BANK_TRANSFER
+                    && existingPayment.getStatus() != PaymentStatus.SUCCESS
+                    && existingPayment.getStatus() != PaymentStatus.REFUNDED) {
+                Payment refreshed = refreshOnlineCheckout(existingPayment, request.getNote());
+                return mapToResponse(refreshed);
             }
 
             return mapToResponse(existingPayment);
@@ -75,28 +68,29 @@ public class PaymentService {
         OrderResponse order = orderClient.getOrderById(request.getOrderId());
 
         if (order == null) {
-            throw new ResourceNotFoundException("Không tìm thấy order");
+            throw new ResourceNotFoundException("Khong tim thay order");
         }
 
         if (!order.getUserId().equals(currentUserId)) {
-            throw new SecurityException("Bạn không thể thanh toán đơn của người khác");
+            throw new SecurityException("Ban khong the thanh toan don cua nguoi khac");
         }
 
         if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
-            throw new IllegalStateException("Đơn hàng đã thanh toán");
+            throw new IllegalStateException("Don hang da thanh toan");
         }
 
         String txRef = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         PaymentMethod method = requestedMethod;
+        Long providerOrderCode = method == PaymentMethod.BANK_TRANSFER ? generateProviderOrderCode() : null;
 
-        // Generate PayOS checkout URL if payment method is BANK_TRANSFER
         String paymentUrl = null;
         if (method == PaymentMethod.BANK_TRANSFER) {
-            paymentUrl = createPayOSCheckoutUrl(order.getId(), order.getTotalAmount(), txRef);
+            paymentUrl = createPayOSCheckoutUrl(order.getId(), providerOrderCode, order.getTotalAmount(), txRef);
         }
 
         Payment payment = Payment.builder()
                 .orderId(order.getId())
+                .providerOrderCode(providerOrderCode)
                 .userId(order.getUserId())
                 .amount(order.getTotalAmount())
                 .method(method)
@@ -122,11 +116,40 @@ public class PaymentService {
         }
     }
 
-    private String createPayOSCheckoutUrl(Long orderId, java.math.BigDecimal amount, String txRef) {
+    private Payment refreshOnlineCheckout(Payment payment, String note) {
+        String txRef = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        Long providerOrderCode = generateProviderOrderCode();
+        String checkoutUrl = createPayOSCheckoutUrl(
+                payment.getOrderId(),
+                providerOrderCode,
+                payment.getAmount(),
+                txRef
+        );
+
+        payment.setMethod(PaymentMethod.BANK_TRANSFER);
+        payment.setStatus(PaymentStatus.PENDING);
+        payment.setProviderOrderCode(providerOrderCode);
+        payment.setTransactionRef(txRef);
+        payment.setPaymentUrl(checkoutUrl);
+        payment.setPaidAt(null);
+        payment.setNote(note);
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        return paymentRepository.save(payment);
+    }
+
+    private Long generateProviderOrderCode() {
+        long now = System.currentTimeMillis();
+        long randomSuffix = Math.abs(UUID.randomUUID().hashCode()) % 1000;
+        return now * 1000 + randomSuffix;
+    }
+
+    private String createPayOSCheckoutUrl(Long orderId, Long providerOrderCode, java.math.BigDecimal amount, String txRef) {
         OrderResponse order = orderClient.getOrderById(orderId);
         try {
             PayOSClient.CreateCheckoutResponse checkoutResponse = payOSClient.createCheckout(
                     orderId,
+                    providerOrderCode,
                     amount.longValue(),
                     orderId + "_" + txRef,
                     order != null ? order.getReceiverName() : null,
@@ -156,10 +179,10 @@ public class PaymentService {
 
     public PaymentResponse getMyPaymentByOrderId(Long userId, Long orderId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy payment"));
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay payment"));
 
         if (!payment.getUserId().equals(userId)) {
-            throw new SecurityException("Không có quyền truy cập payment này");
+            throw new SecurityException("Khong co quyen truy cap payment nay");
         }
 
         return mapToResponse(payment);
@@ -168,7 +191,7 @@ public class PaymentService {
     @Transactional
     public PaymentResponse mockCallback(Long orderId, PaymentStatus status, String note) {
         Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy payment"));
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay payment"));
 
         payment.setStatus(status);
         payment.setNote(note);
@@ -197,6 +220,7 @@ public class PaymentService {
         return PaymentResponse.builder()
                 .id(payment.getId())
                 .orderId(payment.getOrderId())
+                .providerOrderCode(payment.getProviderOrderCode())
                 .userId(payment.getUserId())
                 .amount(payment.getAmount())
                 .method(payment.getMethod())
@@ -209,15 +233,6 @@ public class PaymentService {
                 .build();
     }
 
-    private String buildMockPaymentUrl(Long orderId, String txRef) {
-        return "http://localhost:8086/api/payments/mock-callback?orderId=" + orderId
-                + "&status=SUCCESS"
-                + "&note=" + txRef;
-    }
-
-    /**
-     * PayOS Webhook handler - called from PayOS when payment is confirmed
-     */
     @Transactional
     public PaymentResponse handlePayOSWebhook(PayOSClient.WebhookData webhookData) {
         if (webhookData == null || !webhookData.isSuccess()) {
@@ -225,19 +240,19 @@ public class PaymentService {
             return null;
         }
 
-        Long orderId = webhookData.getOrderCode();
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for order " + orderId));
+        Long providerOrderCode = webhookData.getOrderCode();
+        Payment payment = paymentRepository.findByProviderOrderCode(providerOrderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for provider order code " + providerOrderCode));
+        Long orderId = payment.getOrderId();
 
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setNote("PayOS: " + webhookData.getReference());
-        payment.setPaidAt(java.time.LocalDateTime.now());
+        payment.setPaidAt(LocalDateTime.now());
 
         Payment saved = paymentRepository.save(payment);
-        
-        // Update order payment status
+
         orderClient.updatePaymentStatus(orderId, "PAID");
-        
+
         log.info("PayOS webhook processed for order {}, payment {}", orderId, payment.getId());
         return mapToResponse(saved);
     }
