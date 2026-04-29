@@ -21,7 +21,7 @@ export function useOrderNotifications() {
 
   const { isConnected, usePolling, lastMessage, subscribe } =
     useRealtimeConnection({
-      wsUrl: "ws://localhost:8088/api/ws",
+      wsUrl: "",
       pollInterval: 5000,
       autoConnect: true,
     })

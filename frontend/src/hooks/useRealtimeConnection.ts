@@ -1,17 +1,12 @@
 import { useEffect, useRef, useCallback, useState } from "react"
-
-/**
- * Hook để connect WebSocket với fallback polling
- * 
- * Sử dụng: 
- * const { isConnected, lastMessage } = useRealtimeConnection()
- */
+import axiosClient from "../api/axiosClient"
+import { getToken } from "../utils/auth"
 
 interface UseRealtimeOptions {
   wsUrl?: string
-  pollUrl?: string
-  pollInterval?: number // milliseconds
+  pollInterval?: number
   autoConnect?: boolean
+  pollEndpoints?: string[]
 }
 
 interface RealtimeMessage {
@@ -23,9 +18,13 @@ interface RealtimeMessage {
 
 export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
   const {
-    wsUrl = "ws://localhost:8088/api/ws",
-    pollInterval = 5000, // 5 seconds default
+    wsUrl = "",
+    pollInterval = 5000,
     autoConnect = true,
+    pollEndpoints = [
+      "/notifications/orders/me?limit=5",
+      "/notifications/payments/me?limit=5",
+    ],
   } = options
 
   const [isConnected, setIsConnected] = useState(false)
@@ -34,8 +33,9 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
 
   const wsRef = useRef<WebSocket | null>(null)
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollFailureCountRef = useRef(0)
+  const pollPausedUntilRef = useRef(0)
 
-  // Cleanup function
   const cleanup = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close()
@@ -45,22 +45,79 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
       clearInterval(pollTimerRef.current)
       pollTimerRef.current = null
     }
+    pollFailureCountRef.current = 0
+    pollPausedUntilRef.current = 0
     setIsConnected(false)
     setUsePolling(false)
   }, [])
 
-  // Try WebSocket connection first
+  const startPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      return
+    }
+
+    setUsePolling(true)
+    console.log("[Polling] Started, interval:", pollInterval)
+
+    pollTimerRef.current = setInterval(async () => {
+      if (Date.now() < pollPausedUntilRef.current) {
+        return
+      }
+
+      try {
+        const responses = await Promise.all(
+          pollEndpoints.map((endpoint) =>
+            axiosClient.get(endpoint).then((response) => response.data).catch(() => null)
+          )
+        )
+        const failedResponses = responses.filter((data) => data === null).length
+        if (failedResponses === responses.length) {
+          pollFailureCountRef.current += 1
+          if (pollFailureCountRef.current >= 3) {
+            pollPausedUntilRef.current = Date.now() + 30000
+            pollFailureCountRef.current = 0
+          }
+          return
+        }
+
+        pollFailureCountRef.current = 0
+
+        for (const data of responses) {
+          if (Array.isArray(data) && data.length > 0) {
+            setLastMessage({
+              type: "poll",
+              channel: "polling",
+              data,
+              timestamp: Date.now(),
+            })
+          }
+        }
+      } catch (error) {
+        pollFailureCountRef.current += 1
+        if (pollFailureCountRef.current >= 3) {
+          pollPausedUntilRef.current = Date.now() + 30000
+          pollFailureCountRef.current = 0
+        }
+        console.warn("[Polling] Error fetching updates", error)
+      }
+    }, pollInterval)
+  }, [pollEndpoints, pollInterval])
+
   const connectWebSocket = useCallback(() => {
+    if (!wsUrl) {
+      startPolling()
+      return
+    }
+
     try {
-      // Format: ws://host/api/ws -> /api/ws
-      const socket = new WebSocket(wsUrl)
+      const token = getToken()
+      const socketUrl = buildWebSocketUrl(wsUrl, token)
+      const socket = new WebSocket(socketUrl)
 
       socket.onopen = () => {
         console.log("[WS] Connected")
         setIsConnected(true)
         setUsePolling(false)
-
-        // Send ping to verify connection
         socket.send(JSON.stringify({ type: "ping" }))
       }
 
@@ -73,8 +130,8 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
             data,
             timestamp: Date.now(),
           })
-        } catch (e) {
-          console.warn("[WS] Failed to parse message", e)
+        } catch (error) {
+          console.warn("[WS] Failed to parse message", error)
         }
       }
 
@@ -87,7 +144,6 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
         console.log("[WS] Connection closed, trying polling fallback...")
         setIsConnected(false)
         wsRef.current = null
-        // Fallback to polling
         startPolling()
       }
 
@@ -96,41 +152,8 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
       console.error("[WS] Connection failed", error)
       startPolling()
     }
-  }, [wsUrl])
+  }, [startPolling, wsUrl])
 
-  // Polling fallback
-  const startPolling = useCallback(() => {
-    setUsePolling(true)
-    console.log("[Polling] Started, interval:", pollInterval)
-
-    pollTimerRef.current = setInterval(async () => {
-      try {
-        // Poll từ các endpoints
-        const responses = await Promise.all([
-          fetch("/api/notifications/orders/me?limit=5").catch(() => null),
-          fetch("/api/notifications/payments/me?limit=5").catch(() => null),
-        ])
-
-        for (const response of responses) {
-          if (response?.ok) {
-            const data = await response.json()
-            if (Array.isArray(data) && data.length > 0) {
-              setLastMessage({
-                type: "poll",
-                channel: "polling",
-                data,
-                timestamp: Date.now(),
-              })
-            }
-          }
-        }
-      } catch (error) {
-        console.warn("[Polling] Error fetching updates", error)
-      }
-    }, pollInterval)
-  }, [pollInterval])
-
-  // Initialize connection
   useEffect(() => {
     if (!autoConnect) return
 
@@ -139,23 +162,18 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
     return () => {
       cleanup()
     }
-  }, [autoConnect, connectWebSocket, cleanup])
+  }, [autoConnect, cleanup, connectWebSocket])
 
-  // Subscribe to a channel
-  const subscribe = useCallback(
-    (channel: string) => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({
-            type: "subscribe",
-            channel,
-          })
-        )
-      }
-      // Polling fallback handled by main component
-    },
-    []
-  )
+  const subscribe = useCallback((channel: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "subscribe",
+          channel,
+        })
+      )
+    }
+  }, [])
 
   return {
     isConnected,
@@ -167,3 +185,15 @@ export function useRealtimeConnection(options: UseRealtimeOptions = {}) {
   }
 }
 
+function buildWebSocketUrl(wsUrl: string, token: string | null) {
+  if (!token) return wsUrl
+
+  try {
+    const url = new URL(wsUrl, window.location.origin)
+    url.searchParams.set("token", token)
+    return url.toString()
+  } catch {
+    const separator = wsUrl.includes("?") ? "&" : "?"
+    return `${wsUrl}${separator}token=${encodeURIComponent(token)}`
+  }
+}
