@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import type { AuthUser } from "../types/auth"
-import { clearAuth, getStoredUser, getToken, onAuthChange, setStoredUser } from "../utils/auth"
+import { clearAuth, getStoredUser, getToken, normalizeRole, onAuthChange, setStoredUser } from "../utils/auth"
 import { getMeApi } from "../api/authApi"
 
 export function useAuth() {
@@ -32,9 +32,10 @@ export function useAuth() {
             const me = await getMeApi()
             const mappedUser: AuthUser = {
                 id: me?.id,
+                username: me?.username,
                 email: me?.email,
                 fullName: me?.fullName ?? me?.name ?? me?.username,
-                role: Array.isArray(me?.roles) ? me.roles[0] : me?.role,
+                role: normalizeRole(Array.isArray(me?.roles) ? me.roles[0] : me?.role),
             }
             setStoredUser(mappedUser)
             setUser(mappedUser)
