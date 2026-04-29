@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
-import { useNavigate, useParams, Link } from "react-router-dom"
-import { cancelMyOrder, getOrderDetail } from "../api/orderApi"
-import type { Order } from "../types/order"
-import { getToken } from "../utils/auth"
-import { getFallbackImageSrc, handleImageError } from "../utils/image"
-import { readPaymentSync } from "../utils/paymentSync"
+import {useEffect, useState} from "react"
+import {Link, useNavigate, useParams} from "react-router-dom"
+import {cancelMyOrder, getOrderDetail} from "../api/orderApi"
+import type {Order} from "../types/order"
+import {getToken} from "../utils/auth"
+import {getFallbackImageSrc, handleImageError} from "../utils/image"
+import {readPaymentSync} from "../utils/paymentSync"
 
 function getStatusText(status: Order["status"]) {
     switch (status) {
@@ -28,7 +28,7 @@ function formatCurrency(value: number) {
 }
 
 export default function OrderDetailPage() {
-    const { id = "" } = useParams()
+    const {id = ""} = useParams()
     const navigate = useNavigate()
     const token = getToken()
     const [order, setOrder] = useState<Order | null>(null)
@@ -204,7 +204,7 @@ export default function OrderDetailPage() {
                             {order.status === "PENDING" && (
                                 <Link
                                     to={`/payment/${order.id}`}
-                                    className="block w-full rounded-xl bg-brand-dark py-3 text-center font-semibold text-white transition-all hover:bg-opacity-90 active:scale-[0.98]"
+                                    className="block w-full rounded-xl bg-brand-yellow py-3 text-center font-semibold text-brand-dark transition-all hover:bg-yellow-300 active:scale-[0.98]"
                                 >
                                     Thanh toán ngay
                                 </Link>
@@ -221,7 +221,8 @@ export default function OrderDetailPage() {
                             )}
 
                             {actionMessage && (
-                                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                                <div
+                                    className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
                                     {actionMessage}
                                 </div>
                             )}
