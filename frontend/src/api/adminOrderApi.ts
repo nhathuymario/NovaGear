@@ -31,11 +31,13 @@ type RawOrder = {
 }
 
 function mapOrder(raw: RawOrder): Order {
+    const paymentStatus = String(raw.paymentStatus ?? "UNPAID").trim().toUpperCase() || "UNPAID"
+
     return {
         id: raw.id ?? "",
         orderCode: raw.orderCode ?? "",
         status: (raw.status as Order["status"]) ?? "PENDING",
-        paymentStatus: raw.paymentStatus ?? "",
+        paymentStatus,
         totalAmount: Number(raw.totalAmount ?? 0),
         shippingAddress: raw.shippingAddress ?? raw.address ?? "",
         receiverName: raw.receiverName ?? raw.customerName ?? "",

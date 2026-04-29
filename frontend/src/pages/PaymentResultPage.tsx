@@ -1,7 +1,7 @@
-import { Link, useSearchParams } from "react-router-dom"
-import { useEffect, useMemo, useState } from "react"
-import { getPaymentByOrderId, mockPaymentSuccess } from "../api/paymentApi"
-import { markPaymentSync } from "../utils/paymentSync"
+import {Link, useSearchParams} from "react-router-dom"
+import {useEffect, useMemo, useState} from "react"
+import {getPaymentByOrderId, mockPaymentSuccess} from "../api/paymentApi"
+import {markPaymentSync} from "../utils/paymentSync"
 
 // 1. Định nghĩa interface cho cấu trúc một config
 interface StatusConfig {
@@ -101,19 +101,19 @@ export default function PaymentResultPage() {
             icon: "✓",
             colorClass: "bg-green-100 text-green-600",
             title: "Thanh toán thành công",
-            desc: "da duoc ghi nhan thanh cong."
+            desc: "Đã được ghi nhận thành công."
         },
         failed: {
             icon: "!",
             colorClass: "bg-red-100 text-red-600",
             title: "Thanh toán thất bại",
-            desc: "chua the thanh toan."
+            desc: "chưa thể thanh toán."
         },
         pending: {
             icon: "…",
             colorClass: "bg-yellow-100 text-yellow-700",
             title: "Thanh toán đang chờ xử lý",
-            desc: "dang cho cap nhat tu he thong."
+            desc: "đang chờ cập nhật từ hệ thống."
         }
     }
 
@@ -122,7 +122,8 @@ export default function PaymentResultPage() {
     return (
         <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 text-center shadow-sm my-10">
             {/* Icon vòng tròn */}
-            <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${currentConfig.colorClass}`}>
+            <div
+                className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${currentConfig.colorClass}`}>
                 <span className="text-3xl font-bold">{currentConfig.icon}</span>
             </div>
 
@@ -136,7 +137,7 @@ export default function PaymentResultPage() {
             </p>
 
             {checking && (
-                <p className="mt-2 text-sm text-slate-500">Dang dong bo trang thai thanh toan...</p>
+                <p className="mt-2 text-sm text-slate-500">Đang đồng bộ trạng thái thanh toán...</p>
             )}
 
             {/* Các nút hành động */}

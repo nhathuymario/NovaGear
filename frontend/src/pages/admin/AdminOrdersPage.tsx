@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
-import { getAdminOrders, updateAdminOrderStatus } from "../../api/adminOrderApi"
-import type { Order } from "../../types/order"
+import {useEffect, useState} from "react"
+import {getAdminOrders, updateAdminOrderStatus} from "../../api/adminOrderApi"
+import type {Order} from "../../types/order"
 
 const statusOptions: Order["status"][] = [
     "PENDING",
@@ -24,6 +24,40 @@ function getStatusLabel(status: Order["status"]) {
             return "CANCELLED"
         default:
             return status
+    }
+}
+
+function getPaymentStatusLabel(paymentStatus?: string) {
+    const value = String(paymentStatus ?? "UNPAID").toUpperCase()
+    switch (value) {
+        case "PAID":
+            return "Đã thanh toán"
+        case "PENDING":
+            return "Chờ thanh toán"
+        case "FAILED":
+            return "Thất bại"
+        case "REFUNDED":
+            return "Đã hoàn tiền"
+        case "UNPAID":
+            return "Chưa thanh toán"
+        default:
+            return value
+    }
+}
+
+function getPaymentStatusClass(paymentStatus?: string) {
+    const value = String(paymentStatus ?? "UNPAID").toUpperCase()
+    switch (value) {
+        case "PAID":
+            return "bg-emerald-50 text-emerald-700 ring-emerald-100"
+        case "PENDING":
+            return "bg-amber-50 text-amber-700 ring-amber-100"
+        case "FAILED":
+            return "bg-rose-50 text-rose-700 ring-rose-100"
+        case "REFUNDED":
+            return "bg-violet-50 text-violet-700 ring-violet-100"
+        default:
+            return "bg-slate-100 text-slate-700 ring-slate-200"
     }
 }
 
@@ -54,7 +88,7 @@ export default function AdminOrdersPage() {
             setSavingId(id)
             await updateAdminOrderStatus(id, status)
             setItems((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, status } : item))
+                prev.map((item) => (item.id === id ? {...item, status} : item))
             )
             alert("Cập nhật trạng thái đơn thành công")
         } catch (error) {
@@ -70,9 +104,9 @@ export default function AdminOrdersPage() {
     return (
         <div className="space-y-6">
             <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-bold">Quản lý đơn hàng</h1>
+                <h1 className="text-2xl font-bold">Quản lí đơn hàng</h1>
                 <p className="mt-1 text-sm text-brand-gray">
-                    Theo dõi đơn hàng và cập nhật trạng thái từ order-service.
+                    Theo dõi đơn hàng và cập nhật trạng thái.
                 </p>
             </div>
 
@@ -83,10 +117,11 @@ export default function AdminOrdersPage() {
                         <tr>
                             <th className="px-4 py-3">Mã đơn</th>
                             <th className="px-4 py-3">Khách hàng</th>
-                            <th className="px-4 py-3">SĐT</th>
+                            <th className="px-4 py-3">SDT</th>
                             <th className="px-4 py-3">Địa chỉ</th>
                             <th className="px-4 py-3">Tổng tiền</th>
-                            <th className="px-4 py-3">Trạng thái</th>
+                            <th className="px-4 py-3">Thanh toán</th>
+                            <th className="px-4 py-3">Trạng thái đơn</th>
                             <th className="px-4 py-3">Ngày tạo</th>
                         </tr>
                         </thead>
@@ -96,11 +131,17 @@ export default function AdminOrdersPage() {
                                 <td className="px-4 py-3 font-medium">
                                     {item.orderCode || `#${item.id}`}
                                 </td>
-                                <td className="px-4 py-3">{item.receiverName || "—"}</td>
-                                <td className="px-4 py-3">{item.receiverPhone || "—"}</td>
-                                <td className="px-4 py-3">{item.shippingAddress || "—"}</td>
+                                <td className="px-4 py-3">{item.receiverName || "-"}</td>
+                                <td className="px-4 py-3">{item.receiverPhone || "-"}</td>
+                                <td className="px-4 py-3">{item.shippingAddress || "-"}</td>
                                 <td className="px-4 py-3 font-semibold text-brand-red">
-                                    {item.totalAmount.toLocaleString("vi-VN")}đ
+                                    {item.totalAmount.toLocaleString("vi-VN")}d
+                                </td>
+                                <td className="px-4 py-3">
+                                        <span
+                                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${getPaymentStatusClass(item.paymentStatus)}`}>
+                                            {getPaymentStatusLabel(item.paymentStatus)}
+                                        </span>
                                 </td>
                                 <td className="px-4 py-3">
                                     <select
@@ -116,13 +157,13 @@ export default function AdminOrdersPage() {
                                         ))}
                                     </select>
                                 </td>
-                                <td className="px-4 py-3">{item.createdAt || "—"}</td>
+                                <td className="px-4 py-3">{item.createdAt || "-"}</td>
                             </tr>
                         ))}
 
                         {items.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-brand-gray">
+                                <td colSpan={8} className="px-4 py-8 text-center text-brand-gray">
                                     Không có đơn hàng nào
                                 </td>
                             </tr>

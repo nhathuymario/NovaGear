@@ -22,10 +22,8 @@ export default function PaymentPage() {
         if (!orderId) return
 
         try {
-            const [orderData, paymentData] = await Promise.all([
-                getOrderDetail(orderId),
-                getPaymentByOrderId(orderId).catch(() => null),
-            ])
+            const orderData = await getOrderDetail(orderId)
+            const paymentData = await getPaymentByOrderId(orderId).catch(() => null)
             setOrder(orderData)
             setPayment(paymentData)
         } catch (err) {
@@ -65,11 +63,11 @@ export default function PaymentPage() {
             const status = (err as any)?.response?.status
             const serverMessage = String((err as any)?.response?.data?.message || "")
             if (status === 409 && order?.id) {
-                const isExistingPaymentConflict = serverMessage.toLowerCase().includes("da co payment")
-                        || serverMessage.toLowerCase().includes("ton tai")
+                const isExistingPaymentConflict = serverMessage.toLowerCase().includes("đã có payment")
+                    || serverMessage.toLowerCase().includes("tồn tại")
 
                 if (!isExistingPaymentConflict) {
-                    setMessage(serverMessage || "Khong the tao thanh toan luc nay. Vui long thu lai.")
+                    setMessage(serverMessage || "Không thê thanh toán lúc này. Vui lòng thử lại.")
                     return
                 }
 
@@ -90,7 +88,7 @@ export default function PaymentPage() {
                 }
             }
             if (status === 502) {
-                setMessage(serverMessage || "Cong thanh toan tam thoi loi ket noi. Vui long thu lai sau.")
+                setMessage(serverMessage || "Cổng thanh toán tạm thời lỗi kết nối. Vui lòng thử lại sau.")
                 return
             }
 
