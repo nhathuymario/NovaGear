@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { getMeApi } from "../api/authApi"
-import { setRefreshToken, setStoredUser, setToken } from "../utils/auth"
+import {useEffect, useMemo} from "react"
+import {useNavigate, useSearchParams} from "react-router-dom"
+import {getMeApi} from "../api/authApi"
+import {setRefreshToken, setStoredUser, setToken} from "../utils/auth"
 
 function normalizeRole(rawRole?: string | string[] | null): string {
     if (!rawRole) return "USER"
@@ -30,7 +30,7 @@ export default function OAuthCallbackPage() {
     useEffect(() => {
         const completeOAuthLogin = async () => {
             if (!token) {
-                navigate("/login?error=google_auth_failed", { replace: true })
+                navigate("/login?error=google_auth_failed", {replace: true})
                 return
             }
 
@@ -50,9 +50,9 @@ export default function OAuthCallbackPage() {
                 })
 
                 const normalizedRole = normalizeRole(me?.roles ?? me?.role)
-                navigate(normalizedRole === "ADMIN" ? "/admin" : "/", { replace: true })
+                navigate(normalizedRole === "ADMIN" ? "/admin" : "/", {replace: true})
             } catch {
-                navigate("/login?error=google_profile_failed", { replace: true })
+                navigate("/login?error=google_profile_failed", {replace: true})
             }
         }
 
@@ -61,7 +61,7 @@ export default function OAuthCallbackPage() {
 
     return (
         <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-lg font-semibold text-slate-800">Dang xu ly dang nhap Google...</p>
+            <p className="text-lg font-semibold text-slate-800">Đang xử lí đăng nhập Google...</p>
         </div>
     )
 }
