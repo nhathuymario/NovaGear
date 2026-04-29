@@ -184,7 +184,7 @@ services:
       SERVICES_ORDER_SERVICE_URL: http://order-service:8086
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
       PAYOS_RETURN_URL: http://localhost:5173/payment/result
-      PAYOS_CANCEL_URL: http://localhost:5173/order
+      PAYOS_CANCEL_URL: http://localhost:5173/payment/result
     ports:
       - "8087:8087"
     networks:
