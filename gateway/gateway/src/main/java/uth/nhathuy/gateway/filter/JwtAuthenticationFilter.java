@@ -32,9 +32,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/oauth2/",
             "/login/oauth2/",
             "/api/products/public",
-            "/api/ai",
-            "/api/inventory/internal/variant/",
-            "/ws"
+            "/api/ai"
     );
 
     @Override
@@ -49,13 +47,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String token = extractToken(exchange);
+        if (token == null || token.isBlank()) {
             return unauthorized(exchange, "Missing or invalid Authorization header");
         }
-
-        String token = authHeader.substring(7);
 
         if (!jwtUtil.isValid(token)) {
             return unauthorized(exchange, "Invalid token");
@@ -87,6 +82,20 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return false;
         }
         return PUBLIC_PATHS.stream().anyMatch(normalizedPath::startsWith);
+    }
+
+    private String extractToken(ServerWebExchange exchange) {
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        String path = normalizePath(exchange.getRequest().getURI().getPath());
+        if (path.startsWith("/ws")) {
+            return exchange.getRequest().getQueryParams().getFirst("token");
+        }
+
+        return null;
     }
 
     private String normalizePath(String path) {
