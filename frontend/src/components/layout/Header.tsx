@@ -2,7 +2,9 @@ import {type SyntheticEvent, useEffect, useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {ChevronDown, LayoutGrid, Package, Search, ShoppingCart} from "lucide-react"
 import {getAiSearchSuggestions, type AiSearchResult} from "../../api/aiApi"
+import {OrderNotificationBell} from "../OrderNotificationBell"
 import {useAuth} from "../../hooks/useAuth"
+import {normalizeRole} from "../../utils/auth"
 import {getSiteContent} from "../../utils/siteContent"
 
 export default function Header() {
@@ -12,6 +14,7 @@ export default function Header() {
     const [showSuggestions, setShowSuggestions] = useState(false)
     const navigate = useNavigate()
     const {isAuthenticated, user, logout} = useAuth()
+    const normalizedRole = normalizeRole(user?.role)
 
     useEffect(() => {
         const trimmedKeyword = keyword.trim()
@@ -173,6 +176,7 @@ export default function Header() {
                     </Link>
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
+                            {normalizedRole !== "ADMIN" ? <OrderNotificationBell /> : null}
                             <button
                                 onClick={() => navigate("/profile")}
                                 className="group inline-flex max-w-[220px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
@@ -185,7 +189,7 @@ export default function Header() {
                                         {user?.fullName || user?.email || "Tài khoản"}
                                     </span>
                                     <span className="block text-[11px] text-slate-500">
-                                        {user?.role === "ADMIN" ? "Quản trị viên" : "Khách hàng"}
+                                        {normalizedRole === "ADMIN" ? "Quản trị viên" : "Khách hàng"}
                                     </span>
                                 </span>
                                 <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-slate-600"/>
