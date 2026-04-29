@@ -27,7 +27,7 @@ public class InternalOrderController {
                 .userId(order.getUserId())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus().name())
-                .paymentStatus(order.getPaymentStatus())
+                .paymentStatus(normalizePaymentStatus(order.getPaymentStatus()))
                 .build();
     }
 
@@ -41,6 +41,13 @@ public class InternalOrderController {
 
         order.setPaymentStatus(status);
         orderRepository.save(order);
+    }
+
+    private String normalizePaymentStatus(String paymentStatus) {
+        if (paymentStatus == null || paymentStatus.isBlank()) {
+            return "UNPAID";
+        }
+        return paymentStatus.trim().toUpperCase();
     }
 
     @Data
