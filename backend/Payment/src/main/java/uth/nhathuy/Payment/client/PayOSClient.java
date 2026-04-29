@@ -47,8 +47,11 @@ public class PayOSClient {
     @Value("${payos.return-url:http://localhost:5173/payment/result}")
     private String returnUrl;
 
-    @Value("${payos.cancel-url:http://localhost:5173/order}")
+    @Value("${payos.cancel-url:http://localhost:5173/payment/result}")
     private String cancelUrl;
+
+    @Value("${payos.mock-enabled:false}")
+    private boolean mockEnabled;
 
     private final RestTemplate restTemplate;
 
@@ -65,6 +68,7 @@ public class PayOSClient {
      */
     public CreateCheckoutResponse createCheckout(
             Long orderId,
+            Long providerOrderCode,
             Long amount,
             String orderCode,
             String buyerName,
@@ -73,7 +77,7 @@ public class PayOSClient {
             String buyerAddress
     ) {
         try {
-            long safeOrderCode = orderId != null ? orderId : System.currentTimeMillis();
+            long safeOrderCode = providerOrderCode != null ? providerOrderCode : System.currentTimeMillis();
             CreateCheckoutRequest request = CreateCheckoutRequest.builder()
                     .orderCode(safeOrderCode)
                     .amount(amount)
@@ -83,7 +87,7 @@ public class PayOSClient {
                     .buyerPhone(defaultIfBlank(buyerPhone, "0900000000"))
                     .buyerAddress(defaultIfBlank(buyerAddress, "Vietnam"))
                     .returnUrl(returnUrl + "?orderId=" + orderId + "&status=success")
-                    .cancelUrl(cancelUrl)
+                    .cancelUrl(cancelUrl + "?orderId=" + orderId + "&status=cancelled")
                     .items(List.of(CheckoutItem.builder()
                             .name("Don hang " + (orderId == null ? "N/A" : orderId))
                             .quantity(1)
@@ -95,8 +99,11 @@ public class PayOSClient {
 
             log.info("Creating PayOS checkout for order {}: {} VND", orderId, amount);
 
-            // If credentials are placeholders, run in local mock mode with a reachable URL.
-            if (isMockMode()) {
+            if (!hasRealCredentials()) {
+                if (!mockEnabled) {
+                    throw new IllegalStateException("PayOS chua duoc cau hinh. Hay set PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY hoac bat PAYOS_MOCK_ENABLED=true de test local.");
+                }
+
                 String localMockUrl = returnUrl + "?orderId=" + orderId + "&status=pending&provider=payos-mock";
                 return CreateCheckoutResponse.builder()
                         .code("00")
@@ -229,13 +236,15 @@ public class PayOSClient {
         return sb.toString();
     }
 
-    private boolean isMockMode() {
-        return apiKey == null
-                || clientId == null
-                || apiKey.isBlank()
-                || clientId.isBlank()
-                || apiKey.startsWith("SANDBOX_")
-                || clientId.startsWith("SANDBOX_");
+    private boolean hasRealCredentials() {
+        return apiKey != null
+                && clientId != null
+                && checksumKey != null
+                && !apiKey.isBlank()
+                && !clientId.isBlank()
+                && !checksumKey.isBlank()
+                && !apiKey.startsWith("SANDBOX_")
+                && !clientId.startsWith("SANDBOX_");
     }
 
     // DTOs
