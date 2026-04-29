@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router-dom"
 import {motion} from "framer-motion"
 import {Package, RefreshCw, ShieldCheck, Truck} from "lucide-react"
 import {addToCart} from "../api/cartApi"
-import {getPublicInventoryByVariant, type InventoryItem,} from "../api/inventoryApi"
+import {type InventoryItem,} from "../api/inventoryApi"
 import {
     getProductDetailBySlug,
     getProductReviewsBySlug,
@@ -234,21 +234,16 @@ export default function ProductDetailPage() {
             return
         }
 
-        const loadInventory = async () => {
-            try {
-                setInventoryLoading(true)
-                const inventory = await getPublicInventoryByVariant(selectedVariant.id)
-                setSelectedInventory(inventory)
-            } catch (error) {
-                console.error(error)
-                setSelectedInventory(null)
-            } finally {
-                setInventoryLoading(false)
-            }
-        }
-
-        loadInventory()
-    }, [selectedVariant?.id])
+        setInventoryLoading(false)
+        setSelectedInventory({
+            id: selectedVariant.id,
+            variantId: selectedVariant.id,
+            productName: product?.name ?? "",
+            stockQuantity: Number(selectedVariant.stockQuantity ?? 0),
+            reservedQuantity: 0,
+            availableQuantity: Number(selectedVariant.stockQuantity ?? 0),
+        })
+    }, [product?.name, selectedVariant])
 
     const galleryImages = useMemo(() => {
         const selectedId = selectedVariant?.id != null ? String(selectedVariant.id) : null
