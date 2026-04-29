@@ -100,6 +100,8 @@ NovaGear hướng tới:
 
 ## 🏗️ Kiến trúc hệ thống
 
+![NovaGear Architecture](docs/images/architecture-diagram.png)
+
 ```text
 NovaGear
 ├── frontend/                      # React + TypeScript + Vite
@@ -114,8 +116,6 @@ NovaGear
     ├── Order/                     # Spring Boot Order service
     └── Payment/                   # Spring Boot Payment service
 ```
-
-> Nếu bạn có thêm DB/migration/docker-compose, mình sẽ bổ sung mục kiến trúc “đúng chuẩn production” hơn.
 
 ---
 
