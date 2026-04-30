@@ -29,12 +29,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final RestTemplate restTemplate;
     private final NotificationClient notificationClient;
+    private final OrderNotificationEventPublisher orderNotificationEventPublisher;
 
     @Value("${services.cart.url}")
     private String cartServiceUrl;
 
     @Value("${services.inventory.url}")
     private String inventoryServiceUrl;
+
+    @Value("${features.kafka-notifications-enabled:false}")
+    private boolean kafkaNotificationsEnabled;
 
     @Transactional
     public CheckoutResponse checkout(Long userId, String username, CheckoutRequest request, String token) {
@@ -88,6 +92,13 @@ public class OrderService {
 
         clearCart(userId, username, token);
 
+        notifyOrderUpdate(
+                "ORDER_CREATED",
+                savedOrder.getId(),
+                savedOrder.getUserId(),
+                Map.of("status", savedOrder.getStatus().name())
+        );
+
         return CheckoutResponse.builder()
                 .orderId(savedOrder.getId())
                 .message("Đặt hàng thành công")
@@ -139,19 +150,12 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Notify via WebSocket
-        try {
-            notificationClient.notifyOrderUpdate(
-                    new NotificationClient.OrderUpdateNotification(
-                            "ORDER_CANCELLED",
-                            orderId,
-                            userId,
-                            Map.of("reason", "User requested cancellation")
-                    )
-            );
-        } catch (Exception e) {
-            log.warn("Failed to notify order cancellation", e);
-        }
+        notifyOrderUpdate(
+                "ORDER_CANCELLED",
+                orderId,
+                userId,
+                Map.of("reason", "User requested cancellation")
+        );
 
         return mapToOrderResponse(savedOrder);
     }
@@ -171,19 +175,12 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Notify user of status change
-        try {
-            notificationClient.notifyOrderUpdate(
-                    new NotificationClient.OrderUpdateNotification(
-                            "ORDER_STATUS_CHANGED",
-                            orderId,
-                            userId,
-                            Map.of("newStatus", request.status().toString())
-                    )
-            );
-        } catch (Exception e) {
-            log.warn("Failed to notify order status change", e);
-        }
+        notifyOrderUpdate(
+                "ORDER_STATUS_CHANGED",
+                orderId,
+                userId,
+                Map.of("newStatus", request.status().toString())
+        );
 
         return mapToOrderResponse(savedOrder);
     }
@@ -300,5 +297,20 @@ public class OrderService {
             return "UNPAID";
         }
         return paymentStatus.trim().toUpperCase();
+    }
+
+    private void notifyOrderUpdate(String eventType, Long orderId, Long userId, Map<String, Object> data) {
+        if (kafkaNotificationsEnabled) {
+            orderNotificationEventPublisher.publishOrderEvent(eventType, orderId, userId, data);
+            return;
+        }
+
+        try {
+            notificationClient.notifyOrderUpdate(
+                    new NotificationClient.OrderUpdateNotification(eventType, orderId, userId, data)
+            );
+        } catch (Exception e) {
+            log.warn("Failed to notify order event {}", eventType, e);
+        }
     }
 }

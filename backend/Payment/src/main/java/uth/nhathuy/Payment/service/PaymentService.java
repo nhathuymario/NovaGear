@@ -18,6 +18,7 @@ import uth.nhathuy.Payment.repository.PaymentRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -28,6 +29,10 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderClient orderClient;
     private final PayOSClient payOSClient;
+    private final PaymentNotificationEventPublisher paymentNotificationEventPublisher;
+
+    @org.springframework.beans.factory.annotation.Value("${features.kafka-notifications-enabled:false}")
+    private boolean kafkaNotificationsEnabled;
 
     @Transactional
     public PaymentResponse createPayment(Long currentUserId, CreatePaymentRequest request) {
@@ -52,6 +57,7 @@ public class PaymentService {
                 existingPayment.setUpdatedAt(LocalDateTime.now());
 
                 Payment codPayment = paymentRepository.save(existingPayment);
+                notifyPaymentEvent("PAYMENT_UPDATED", codPayment, Map.of("method", codPayment.getMethod().name()));
                 return mapToResponse(codPayment);
             }
 
@@ -59,6 +65,7 @@ public class PaymentService {
                     && existingPayment.getStatus() != PaymentStatus.SUCCESS
                     && existingPayment.getStatus() != PaymentStatus.REFUNDED) {
                 Payment refreshed = refreshOnlineCheckout(existingPayment, request.getNote());
+                notifyPaymentEvent("PAYMENT_CHECKOUT_REFRESHED", refreshed, Map.of("method", refreshed.getMethod().name()));
                 return mapToResponse(refreshed);
             }
 
@@ -101,6 +108,7 @@ public class PaymentService {
                 .build();
 
         Payment saved = paymentRepository.save(payment);
+        notifyPaymentEvent("PAYMENT_CREATED", saved, Map.of("method", saved.getMethod().name()));
         return mapToResponse(saved);
     }
 
@@ -206,6 +214,11 @@ public class PaymentService {
         }
 
         Payment saved = paymentRepository.save(payment);
+        notifyPaymentEvent(
+                "PAYMENT_STATUS_CHANGED",
+                saved,
+                note != null ? Map.of("note", note) : Map.of()
+        );
         return mapToResponse(saved);
     }
 
@@ -252,8 +265,23 @@ public class PaymentService {
         Payment saved = paymentRepository.save(payment);
 
         orderClient.updatePaymentStatus(orderId, "PAID");
+        notifyPaymentEvent("PAYMENT_STATUS_CHANGED", saved, Map.of("providerOrderCode", providerOrderCode));
 
         log.info("PayOS webhook processed for order {}, payment {}", orderId, payment.getId());
         return mapToResponse(saved);
+    }
+
+    private void notifyPaymentEvent(String eventType, Payment payment, Map<String, Object> data) {
+        if (!kafkaNotificationsEnabled || payment == null) {
+            return;
+        }
+
+        paymentNotificationEventPublisher.publishPaymentEvent(
+                eventType,
+                payment.getOrderId(),
+                payment.getUserId(),
+                payment.getStatus() != null ? payment.getStatus().name() : null,
+                data
+        );
     }
 }

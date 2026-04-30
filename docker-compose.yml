@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
@@ -25,6 +23,71 @@ services:
     networks:
       - novagear-network
 
+  kafka:
+    image: apache/kafka:4.1.2
+    container_name: novagear-kafka
+    restart: unless-stopped
+    environment:
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "29092:29092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - novagear-network
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: novagear-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/config.yml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/observability/loki-config.yml:/etc/loki/config.yml:ro
+    networks:
+      - novagear-network
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: novagear-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    volumes:
+      - ./docker/observability/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/novagear
+    networks:
+      - novagear-network
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    container_name: novagear-grafana
+    restart: unless-stopped
+    depends_on:
+      - loki
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - novagear-network
+
   auth-service:
     build:
       context: ./backend/Auth
@@ -42,8 +105,11 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      LOGGING_FILE_NAME: /app/logs/auth-service.log
     ports:
       - "8081:8081"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -61,8 +127,11 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      LOGGING_FILE_NAME: /app/logs/user-service.log
     ports:
       - "8082:8082"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -81,8 +150,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       UPLOAD_DIR: /app/uploads
+      LOGGING_FILE_NAME: /app/logs/product-service.log
     volumes:
       - ./uploads:/app/uploads
+      - ./logs:/app/logs
     ports:
       - "8083:8083"
     networks:
@@ -104,8 +175,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVICES_PRODUCT_SERVICE_URL: http://product-service:8083
+      LOGGING_FILE_NAME: /app/logs/cart-service.log
     ports:
       - "8084:8084"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -130,8 +204,11 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SERVICES_PRODUCT_SERVICE_URL: http://product-service:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
+      LOGGING_FILE_NAME: /app/logs/inventory-service.log
     ports:
       - "8085:8085"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -147,6 +224,7 @@ services:
       - inventory-service
       - product-service
       - notification-service
+      - kafka
     environment:
       SERVER_PORT: 8086
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
@@ -157,8 +235,16 @@ services:
       SERVICES_INVENTORY_SERVICE_URL: http://inventory-service:8085
       SERVICES_PRODUCT_SERVICE_URL: http://product-service:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_NOTIFICATION_TOPIC: novagear.notifications
+      FEATURES_KAFKA_NOTIFICATIONS_ENABLED: "true"
+      LOGGING_FILE_NAME: /app/logs/order-service.log
     ports:
       - "8086:8086"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -173,6 +259,7 @@ services:
       - redis
       - order-service
       - notification-service
+      - kafka
     environment:
       SERVER_PORT: 8087
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
@@ -185,8 +272,14 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
       PAYOS_RETURN_URL: http://localhost:5173/payment/result
       PAYOS_CANCEL_URL: http://localhost:5173/payment/result
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_NOTIFICATION_TOPIC: novagear.notifications
+      FEATURES_KAFKA_NOTIFICATIONS_ENABLED: "true"
+      LOGGING_FILE_NAME: /app/logs/payment-service.log
     ports:
       - "8087:8087"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -199,6 +292,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - kafka
     environment:
       SERVER_PORT: 8088
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
@@ -211,8 +305,14 @@ services:
 
       REALTIME_REDIS_CHANNEL: realtime-events
       FEATURES_REDIS_REALTIME_ENABLED: "true"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_NOTIFICATION_TOPIC: novagear.notifications
+      FEATURES_KAFKA_NOTIFICATIONS_ENABLED: "true"
+      LOGGING_FILE_NAME: /app/logs/notification-service.log
     ports:
       - "8088:8088"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -242,8 +342,11 @@ services:
       ORDER_SERVICE_URL: http://order-service:8086
       PAYMENT_SERVICE_URL: http://payment-service:8087
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
+      LOGGING_FILE_NAME: /app/logs/gateway-service.log
     ports:
       - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - novagear-network
 
@@ -264,6 +367,8 @@ services:
 
 volumes:
   postgres_data:
+  kafka_data:
+  grafana_data:
 
 networks:
   novagear-network:
