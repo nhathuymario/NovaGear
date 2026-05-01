@@ -1,113 +1,230 @@
+import {useState} from "react"
 import {Link, Outlet, useLocation, useNavigate} from "react-router-dom"
-import {LogOut, ShieldUser} from "lucide-react"
+import {
+    BarChart3,
+    ChevronLeft,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Package,
+    Settings,
+    ShoppingCart,
+    Tags,
+    Users,
+    Warehouse,
+    Bell,
+    Search,
+    Menu,
+} from "lucide-react"
 import {useAuth} from "../../hooks/useAuth"
 
 type NavItem = {
     to: string
     label: string
+    icon: typeof LayoutDashboard
+}
+
+const NAV_ITEMS: NavItem[] = [
+    {to: "/admin", label: "Dashboard", icon: LayoutDashboard},
+    {to: "/admin/products", label: "Sản phẩm", icon: Package},
+    {to: "/admin/categories", label: "Danh mục", icon: Tags},
+    {to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart},
+    {to: "/admin/inventory", label: "Tồn kho", icon: Warehouse},
+    {to: "/admin/users", label: "Người dùng", icon: Users},
+    {to: "/admin/policies", label: "Chính sách", icon: FileText},
+]
+
+const PAGE_TITLES: Record<string, string> = {
+    "/admin": "Dashboard",
+    "/admin/products": "Quản lý sản phẩm",
+    "/admin/categories": "Quản lý danh mục",
+    "/admin/orders": "Quản lý đơn hàng",
+    "/admin/inventory": "Quản lý tồn kho",
+    "/admin/users": "Quản lý người dùng",
+    "/admin/policies": "Quản lý chính sách",
 }
 
 export default function AdminLayout() {
     const location = useLocation()
     const navigate = useNavigate()
     const {user, logout} = useAuth()
+    const [collapsed, setCollapsed] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
 
-    const items: NavItem[] = [
-        {to: "/admin", label: "Dashboard"},
-        {to: "/admin/products", label: "Sản phẩm"},
-        {to: "/admin/categories", label: "Danh mục"},
-        {to: "/admin/orders", label: "Đơn hàng"},
-        {to: "/admin/inventory", label: "Tồn kho"},
-        {to: "/admin/users", label: "Người dùng"},
-        {to: "/admin/policies", label: "Chính sách"},
-    ]
-
-    const pageTitleMap: Record<string, string> = {
-        "/admin": "Dashboard",
-        "/admin/products": "Quản lý sản phẩm",
-        "/admin/categories": "Quản lý danh muc",
-        "/admin/orders": "Quản lý đơn hàng",
-        "/admin/inventory": "Quản lý tồn kho",
-        "/admin/users": "Quản lý người dùng",
-        "/admin/policies": "Quản lý chính sách",
-    }
-
-    const activeTitle = pageTitleMap[location.pathname] ?? "Admin"
+    const activeTitle = PAGE_TITLES[location.pathname] ?? "Admin"
 
     const handleLogout = () => {
         logout()
         navigate("/login")
     }
 
-    return (
-        <div className="h-screen overflow-hidden bg-slate-100">
-            <div className="grid h-full w-full gap-5 px-3 py-4 sm:px-4 lg:grid-cols-[260px_1fr] lg:px-5">
-                <aside
-                    className="h-full rounded-[28px] bg-gradient-to-b from-indigo-600 via-blue-600 to-indigo-700 p-5 text-white shadow-xl">
-                    <div className="border-b border-white/15 pb-5">
-                        <div className="flex items-center gap-2">
-                            <span
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-sm font-extrabold">NG</span>
-                            <div>
-                                <p className="text-xs uppercase tracking-[0.2em] text-white/70">NovaGear</p>
-                                <h2 className="text-xl font-bold">Admin Panel</h2>
-                            </div>
+    const isActive = (path: string) =>
+        path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path)
+
+    const sidebarContent = (
+        <>
+            {/* Logo */}
+            <div className={`border-b border-white/10 p-4 ${collapsed ? "text-center" : ""}`}>
+                <Link to="/admin" className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-admin-accent text-sm font-black text-white shadow-lg shadow-admin-accent/25">
+                        NG
+                    </div>
+                    {!collapsed && (
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.2em] text-white/50">NovaGear</p>
+                            <h2 className="text-base font-bold text-white">Admin Panel</h2>
+                        </div>
+                    )}
+                </Link>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 space-y-1 p-3">
+                <p className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/30 ${collapsed ? "text-center" : ""}`}>
+                    {collapsed ? "•••" : "Menu chính"}
+                </p>
+                {NAV_ITEMS.map((item) => {
+                    const active = isActive(item.to)
+                    return (
+                        <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setMobileOpen(false)}
+                            className={`admin-sidebar-item ${active ? "active" : ""} ${collapsed ? "justify-center px-2" : ""}`}
+                            title={collapsed ? item.label : undefined}
+                        >
+                            <item.icon className="h-[18px] w-[18px] shrink-0" />
+                            {!collapsed && <span>{item.label}</span>}
+                        </Link>
+                    )
+                })}
+
+                <div className="my-4 border-t border-white/10" />
+
+                <p className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/30 ${collapsed ? "text-center" : ""}`}>
+                    {collapsed ? "•••" : "Khác"}
+                </p>
+                <Link
+                    to="/"
+                    className={`admin-sidebar-item ${collapsed ? "justify-center px-2" : ""}`}
+                    title={collapsed ? "Về trang chủ" : undefined}
+                >
+                    <BarChart3 className="h-[18px] w-[18px] shrink-0" />
+                    {!collapsed && <span>Về trang chủ</span>}
+                </Link>
+            </nav>
+
+            {/* User section */}
+            {!collapsed && (
+                <div className="border-t border-white/10 p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-admin-accent/30 text-xs font-bold text-white">
+                            {(user?.fullName || user?.email || "A").slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-white">
+                                {user?.fullName || user?.email || "Admin"}
+                            </p>
+                            <p className="text-[10px] text-white/40">Administrator</p>
                         </div>
                     </div>
+                </div>
+            )}
+        </>
+    )
 
-                    <nav className="mt-6 space-y-2">
-                        {items.map((item) => {
-                            const active =
-                                item.to === "/admin"
-                                    ? location.pathname === "/admin"
-                                    : location.pathname.startsWith(item.to)
-
-                            return (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                                        active
-                                            ? "bg-white/15 text-white"
-                                            : "text-white/80 hover:bg-white/10 hover:text-white"
-                                    }`}
-                                >
-                                    {item.label}
-                                </Link>
-                            )
-                        })}
-                    </nav>
+    return (
+        <div className="h-screen overflow-hidden bg-admin-bg">
+            <div className="flex h-full">
+                {/* Desktop sidebar */}
+                <aside
+                    className={`hidden h-full flex-col bg-admin-sidebar transition-all duration-300 lg:flex ${
+                        collapsed ? "w-[72px]" : "w-[260px]"
+                    }`}
+                >
+                    {sidebarContent}
                 </aside>
 
-                <main className="min-w-0 space-y-4 overflow-y-auto pr-1">
-                    <header
-                        className="sticky top-0 z-10 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Admin
-                                    dashboard</p>
-                                <h1 className="mt-1 text-xl font-extrabold text-slate-900">{activeTitle}</h1>
-                            </div>
+                {/* Mobile sidebar overlay */}
+                {mobileOpen && (
+                    <div className="fixed inset-0 z-50 lg:hidden">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
+                        <aside className="relative z-10 flex h-full w-[260px] flex-col bg-admin-sidebar">
+                            {sidebarContent}
+                        </aside>
+                    </div>
+                )}
 
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div
-                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                                    <ShieldUser className="h-4 w-4 text-blue-600"/>
-                                    <span
-                                        className="max-w-[180px] truncate font-semibold">{user?.fullName || user?.email || "Admin"}</span>
-                                </div>
-                                <button
-                                    onClick={handleLogout}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-                                >
-                                    <LogOut className="h-4 w-4"/>
-                                    Đăng xuất
-                                </button>
+                {/* Main content */}
+                <div className="flex min-w-0 flex-1 flex-col">
+                    {/* Top header */}
+                    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    if (window.innerWidth >= 1024) setCollapsed(!collapsed)
+                                    else setMobileOpen(!mobileOpen)
+                                }}
+                                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+                            >
+                                {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                            </button>
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Admin</p>
+                                <h1 className="text-lg font-bold text-slate-900">{activeTitle}</h1>
                             </div>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                            {/* Search */}
+                            <div className="hidden items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
+                                <Search className="mr-2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm kiếm..."
+                                    className="w-48 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                                />
+                            </div>
+
+                            {/* Notifications */}
+                            <button className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100">
+                                <Bell className="h-5 w-5" />
+                                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-red" />
+                            </button>
+
+                            {/* Settings */}
+                            <button className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100">
+                                <Settings className="h-5 w-5" />
+                            </button>
+
+                            {/* User */}
+                            <div className="hidden items-center gap-2 border-l border-slate-200 pl-3 md:flex">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
+                                    {(user?.fullName || user?.email || "A").slice(0, 1).toUpperCase()}
+                                </div>
+                                <div className="hidden lg:block">
+                                    <p className="text-sm font-semibold text-slate-900">
+                                        {user?.fullName || user?.email || "Admin"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Logout */}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
+                            >
+                                <LogOut className="h-3.5 w-3.5" />
+                                <span className="hidden md:inline">Đăng xuất</span>
+                            </button>
+                        </div>
                     </header>
-                    <Outlet/>
-                </main>
+
+                    {/* Content area */}
+                    <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                        <Outlet />
+                    </main>
+                </div>
             </div>
         </div>
     )

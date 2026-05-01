@@ -51,24 +51,25 @@ export default function AdminPoliciesPage() {
 
     return (
         <div className="space-y-5">
-            <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-bold text-slate-900">Quản lí chính sách</h1>
-                <p className="mt-1 text-sm text-slate-600">Cập nhật nội dung chính sách hiển thị ở footer và trang công
-                    khai.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900">Quản lí chính sách</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">Cập nhật nội dung chính sách hiển thị ở footer và trang công khai.</p>
+                </div>
             </div>
 
             <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-                <aside className="rounded-2xl bg-white p-4 shadow-sm">
+                <aside className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                     <div className="space-y-2">
                         {POLICY_DEFINITIONS.map((item) => (
                             <button
                                 key={item.key}
                                 type="button"
                                 onClick={() => setActiveKey(item.key)}
-                                className={`w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition ${
+                                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                                     item.key === activeKey
-                                        ? "bg-slate-900 text-white"
-                                        : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                                        ? "bg-admin-accent text-white"
+                                        : "text-slate-600 hover:bg-slate-50"
                                 }`}
                             >
                                 {item.title}
@@ -77,7 +78,7 @@ export default function AdminPoliciesPage() {
                     </div>
                 </aside>
 
-                <section className="rounded-2xl bg-white p-5 shadow-sm">
+                <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h2 className="text-lg font-bold text-slate-900">{activePolicy?.title}</h2>
                     <p className="mt-1 text-sm text-slate-500">{activePolicy?.summary}</p>
 
@@ -94,7 +95,7 @@ export default function AdminPoliciesPage() {
                         <button
                             type="button"
                             onClick={handleSave}
-                            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                            className="rounded-lg bg-admin-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
                         >
                             Lưu chính sách
                         </button>
@@ -103,7 +104,7 @@ export default function AdminPoliciesPage() {
                 </section>
             </div>
 
-            <section className="rounded-2xl bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-lg font-bold text-slate-900">UI content (Header + Home)</h2>
                 <p className="mt-1 text-sm text-slate-500">
                     Chỉnh sửa các dòng text hiển thị ở header công khai và banner flash deal trang chủ.
@@ -142,7 +143,7 @@ export default function AdminPoliciesPage() {
                     <button
                         type="button"
                         onClick={handleSaveSiteContent}
-                        className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                        className="rounded-lg bg-admin-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
                     >
                         Lưu UI content
                     </button>

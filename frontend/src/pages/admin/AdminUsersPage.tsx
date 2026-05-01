@@ -171,7 +171,7 @@ export default function AdminUsersPage() {
 
     return (
         <div className="space-y-5 pb-4">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h1 className="text-xl font-bold text-slate-900">Quản lí người dùng</h1>
                 {/*<p className="mt-1 text-sm text-slate-500">Du lieu lay tu endpoint admin user cua backend. Co the*/}
                 {/*    khoa/mo khoa tai khoan tai bang ben duoi.</p>*/}
@@ -181,7 +181,7 @@ export default function AdminUsersPage() {
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
                         placeholder="Tìm theo email, username, họ tên..."
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:bg-white"
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-admin-accent focus:bg-white"
                     />
                 </div>
 
@@ -202,22 +202,22 @@ export default function AdminUsersPage() {
                 ) : null}
             </section>
 
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="bg-slate-50 text-left">
-                        <tr>
-                            <th className="px-4 py-3">ID</th>
-                            <th className="px-4 py-3">Email</th>
-                            <th className="px-4 py-3">Username</th>
-                            <th className="px-4 py-3">Họ tên</th>
-                            <th className="px-4 py-3">Phone</th>
-                            <th className="px-4 py-3">Role</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3">Thao tác</th>
+                    <table className="min-w-full divide-y divide-slate-100 text-sm">
+                        <thead>
+                        <tr className="bg-slate-50">
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">ID</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Email</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Username</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Họ tên</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Thao tác</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-50">
                         {tableRows}
                         </tbody>
                     </table>

@@ -99,42 +99,47 @@ export default function AdminOrdersPage() {
         }
     }
 
-    if (loading) return <div>Đang tải đơn hàng admin...</div>
+    if (loading) return (
+        <div className="flex h-[40vh] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-admin-accent border-t-transparent" />
+        </div>
+    )
 
     return (
-        <div className="space-y-6">
-            <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-bold">Quản lí đơn hàng</h1>
-                <p className="mt-1 text-sm text-brand-gray">
-                    Theo dõi đơn hàng và cập nhật trạng thái.
-                </p>
+        <div className="space-y-5">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900">Quản lí đơn hàng</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">Theo dõi đơn hàng và cập nhật trạng thái.</p>
+                </div>
+                <span className="rounded-full bg-admin-accent/10 px-3 py-1 text-xs font-semibold text-admin-accent">{items.length} đơn hàng</span>
             </div>
 
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="bg-gray-50 text-left">
-                        <tr>
-                            <th className="px-4 py-3">Mã đơn</th>
-                            <th className="px-4 py-3">Khách hàng</th>
-                            <th className="px-4 py-3">SDT</th>
-                            <th className="px-4 py-3">Địa chỉ</th>
-                            <th className="px-4 py-3">Tổng tiền</th>
-                            <th className="px-4 py-3">Thanh toán</th>
-                            <th className="px-4 py-3">Trạng thái đơn</th>
-                            <th className="px-4 py-3">Ngày tạo</th>
+                    <table className="min-w-full divide-y divide-slate-100 text-sm">
+                        <thead>
+                        <tr className="bg-slate-50">
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Mã đơn</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Khách hàng</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">SDT</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Địa chỉ</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng tiền</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Thanh toán</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Trạng thái</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Ngày tạo</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-50">
                         {items.map((item) => (
-                            <tr key={item.id} className="border-t align-top">
+                            <tr key={item.id} className="transition hover:bg-slate-50/80">
                                 <td className="px-4 py-3 font-medium">
                                     {item.orderCode || `#${item.id}`}
                                 </td>
                                 <td className="px-4 py-3">{item.receiverName || "-"}</td>
                                 <td className="px-4 py-3">{item.receiverPhone || "-"}</td>
                                 <td className="px-4 py-3">{item.shippingAddress || "-"}</td>
-                                <td className="px-4 py-3 font-semibold text-brand-red">
+                                <td className="px-4 py-3 font-semibold text-admin-accent">
                                     {item.totalAmount.toLocaleString("vi-VN")}d
                                 </td>
                                 <td className="px-4 py-3">
@@ -148,7 +153,7 @@ export default function AdminOrdersPage() {
                                         disabled={savingId === item.id}
                                         value={item.status}
                                         onChange={(e) => handleChangeStatus(item.id, e.target.value as Order["status"])}
-                                        className="rounded-lg border px-3 py-2 outline-none disabled:opacity-60"
+                                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium outline-none disabled:opacity-60"
                                     >
                                         {statusOptions.map((status) => (
                                             <option key={status} value={status}>

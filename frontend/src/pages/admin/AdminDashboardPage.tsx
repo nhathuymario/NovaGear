@@ -1,41 +1,40 @@
 import {useCallback, useEffect, useMemo, useState} from "react"
 import {Link} from "react-router-dom"
-import {AlertTriangle, CircleDollarSign, Clock3, FileText, Package, ShoppingCart, Tags, Warehouse,} from "lucide-react"
+import {
+    AlertTriangle,
+    ArrowDown,
+    ArrowUp,
+    CircleDollarSign,
+    Clock3,
+    Package,
+    RefreshCw,
+    ShoppingCart,
+    TrendingUp,
+    Users,
+    Warehouse,
+} from "lucide-react"
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    BarChart,
+    Bar,
+} from "recharts"
 import {type AdminProductItem, getAdminProducts} from "../../api/adminProductApi"
 import {type AdminCategoryItem, getAdminCategories} from "../../api/adminCategoryApi"
 import {getAdminOrders} from "../../api/adminOrderApi"
 import {getAllInventory, type InventoryItem} from "../../api/inventoryApi"
 import type {Order} from "../../types/order"
-import MetricCard from "../../components/admin/dashboard/MetricCard"
-import QuickActionTile from "../../components/admin/dashboard/QuickActionTile"
-import SectionCard from "../../components/admin/dashboard/SectionCard"
-import OrderStatusBadge from "../../components/admin/dashboard/OrderStatusBadge"
-import SimpleAreaChart from "../../components/admin/dashboard/SimpleAreaChart"
-import SimpleDonutChart from "../../components/admin/dashboard/SimpleDonutChart"
 
 function formatCurrency(value: number) {
-    return value.toLocaleString("vi-VN") + "đ"
-}
-
-function isLowStock(item: InventoryItem) {
-    return item.availableQuantity <= 5
-}
-
-function paymentStatusClass(paymentStatus?: string) {
-    if (paymentStatus === "PAID") return "bg-emerald-50 text-emerald-700 ring-emerald-100"
-    if (paymentStatus === "FAILED") return "bg-rose-50 text-rose-700 ring-rose-100"
-    if (paymentStatus === "REFUNDED") return "bg-violet-50 text-violet-700 ring-violet-100"
-    if (paymentStatus === "PENDING") return "bg-amber-50 text-amber-700 ring-amber-100"
-    return "bg-slate-100 text-slate-700 ring-slate-200"
-}
-
-function paymentStatusText(paymentStatus?: string) {
-    if (!paymentStatus) return "Chua cap nhat"
-    if (paymentStatus === "PAID") return "Da thanh toan"
-    if (paymentStatus === "FAILED") return "That bai"
-    if (paymentStatus === "REFUNDED") return "Da hoan tien"
-    if (paymentStatus === "PENDING") return "Cho thanh toan"
-    return paymentStatus
+    return value.toLocaleString("vi-VN") + "₫"
 }
 
 function formatDate(value?: string) {
@@ -52,6 +51,38 @@ function shortLabel(value?: string) {
     return `${date.getDate()}/${date.getMonth() + 1}`
 }
 
+const STATUS_COLORS: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-800",
+    CONFIRMED: "bg-blue-100 text-blue-800",
+    SHIPPING: "bg-violet-100 text-violet-800",
+    COMPLETED: "bg-emerald-100 text-emerald-800",
+    CANCELLED: "bg-red-100 text-red-800",
+}
+
+const STATUS_LABELS: Record<string, string> = {
+    PENDING: "Chờ xử lý",
+    CONFIRMED: "Đã xác nhận",
+    SHIPPING: "Đang giao",
+    COMPLETED: "Hoàn thành",
+    CANCELLED: "Đã hủy",
+}
+
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+    PAID: "bg-emerald-100 text-emerald-700",
+    PENDING: "bg-amber-100 text-amber-700",
+    FAILED: "bg-red-100 text-red-700",
+    REFUNDED: "bg-violet-100 text-violet-700",
+}
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+    PAID: "Đã thanh toán",
+    PENDING: "Chờ thanh toán",
+    FAILED: "Thất bại",
+    REFUNDED: "Đã hoàn tiền",
+}
+
+const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#64748b"]
+
 export default function AdminDashboardPage() {
     const [products, setProducts] = useState<AdminProductItem[]>([])
     const [categories, setCategories] = useState<AdminCategoryItem[]>([])
@@ -64,20 +95,18 @@ export default function AdminDashboardPage() {
         try {
             setLoading(true)
             setError(null)
-
             const [productData, categoryData, orderData, inventoryData] = await Promise.all([
                 getAdminProducts(),
                 getAdminCategories(),
                 getAdminOrders(),
                 getAllInventory({page: 0, size: 100}),
             ])
-
             setProducts(productData)
             setCategories(categoryData)
             setOrders(orderData)
             setInventoryItems(inventoryData.items ?? [])
-        } catch (loadError) {
-            console.error(loadError)
+        } catch (err) {
+            console.error(err)
             setProducts([])
             setCategories([])
             setOrders([])
@@ -92,108 +121,76 @@ export default function AdminDashboardPage() {
         void loadData()
     }, [loadData])
 
-    const totalRevenue = useMemo(() => {
-        return orders
-            .filter((item) => item.status !== "CANCELLED")
-            .reduce((sum, item) => sum + Number(item.totalAmount || 0), 0)
-    }, [orders])
+    const totalRevenue = useMemo(() =>
+        orders.filter(o => o.status !== "CANCELLED").reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
+    , [orders])
 
-    const pendingOrders = useMemo(() => {
-        return orders.filter((item) => item.status === "PENDING").length
-    }, [orders])
+    const pendingOrders = useMemo(() => orders.filter(o => o.status === "PENDING").length, [orders])
+    const completedOrders = useMemo(() => orders.filter(o => o.status === "COMPLETED").length, [orders])
 
-    const paidOrders = useMemo(() => {
-        return orders.filter((item) => item.paymentStatus === "PAID").length
-    }, [orders])
-
-    const lowStockItems = useMemo(() => {
-        return inventoryItems.filter(isLowStock).slice(0, 6)
-    }, [inventoryItems])
-
-    const recentOrders = useMemo(() => {
-        return [...orders]
-            .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-            .slice(0, 6)
-    }, [orders])
-
-    const activeInventoryCount = useMemo(() => {
-        return inventoryItems.filter((item) => item.status !== "OUT_OF_STOCK").length
-    }, [inventoryItems])
+    const activeInventoryCount = useMemo(() =>
+        inventoryItems.filter(i => i.status !== "OUT_OF_STOCK").length
+    , [inventoryItems])
 
     const stockCoverage = useMemo(() => {
         if (!inventoryItems.length) return 0
         return Math.round((activeInventoryCount / inventoryItems.length) * 100)
     }, [activeInventoryCount, inventoryItems.length])
 
-    const orderStatusDistribution = useMemo(() => {
-        const total = orders.length || 1
-        const stages = ["PENDING", "CONFIRMED", "SHIPPING", "COMPLETED"]
-        return stages.map((stage) => {
-            const count = orders.filter((item) => item.status === stage).length
-            return {
-                stage,
-                count,
-                width: Math.max(6, Math.round((count / total) * 100)),
-            }
-        })
-    }, [orders])
+    const lowStockItems = useMemo(() =>
+        inventoryItems.filter(i => i.availableQuantity <= 5).slice(0, 5)
+    , [inventoryItems])
+
+    const recentOrders = useMemo(() =>
+        [...orders].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 7)
+    , [orders])
 
     const revenueByRecentDays = useMemo(() => {
         const days = 7
         const map = new Map<string, number>()
-
-        for (let i = days - 1; i >= 0; i -= 1) {
-            const current = new Date()
-            current.setHours(0, 0, 0, 0)
-            current.setDate(current.getDate() - i)
-            map.set(current.toISOString().slice(0, 10), 0)
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date()
+            d.setHours(0, 0, 0, 0)
+            d.setDate(d.getDate() - i)
+            map.set(d.toISOString().slice(0, 10), 0)
         }
-
-        orders.forEach((order) => {
-            if (order.status === "CANCELLED" || !order.createdAt) return
-            const key = new Date(order.createdAt).toISOString().slice(0, 10)
-            if (!map.has(key)) return
-            map.set(key, (map.get(key) ?? 0) + Number(order.totalAmount ?? 0))
+        orders.forEach(o => {
+            if (o.status === "CANCELLED" || !o.createdAt) return
+            const key = new Date(o.createdAt).toISOString().slice(0, 10)
+            if (map.has(key)) map.set(key, (map.get(key) ?? 0) + Number(o.totalAmount ?? 0))
         })
-
         return Array.from(map.entries()).map(([iso, value]) => ({
-            label: shortLabel(iso),
-            value,
+            name: shortLabel(iso),
+            revenue: value,
         }))
     }, [orders])
 
     const paymentDonutData = useMemo(() => {
-        const paid = orders.filter((item) => item.paymentStatus === "PAID").length
-        const pending = orders.filter((item) => item.paymentStatus === "PENDING").length
-        const failed = orders.filter((item) => item.paymentStatus === "FAILED").length
+        const paid = orders.filter(o => o.paymentStatus === "PAID").length
+        const pending = orders.filter(o => o.paymentStatus === "PENDING").length
+        const failed = orders.filter(o => o.paymentStatus === "FAILED").length
         const other = Math.max(0, orders.length - paid - pending - failed)
-
         return [
-            {label: "Đã thanh toán", value: paid, color: "#10b981"},
-            {label: "Chờ thanh toán", value: pending, color: "#f59e0b"},
-            {label: "Thất bại", value: failed, color: "#f43f5e"},
-            {label: "Khác", value: other, color: "#64748b"},
+            {name: "Đã TT", value: paid},
+            {name: "Chờ TT", value: pending},
+            {name: "Thất bại", value: failed},
+            {name: "Khác", value: other},
         ]
     }, [orders])
 
-    const inventoryDonutData = useMemo(() => {
-        const outOfStockCount = inventoryItems.filter((item) => item.availableQuantity <= 0).length
-        const lowStockCount = inventoryItems.filter((item) => item.availableQuantity > 0 && item.availableQuantity <= 5).length
-        const healthyCount = inventoryItems.filter((item) => item.availableQuantity > 5).length
-
-        return [
-            {label: "Ổn định", value: healthyCount, color: "#2563eb"},
-            {label: "Sắp hết", value: lowStockCount, color: "#f97316"},
-            {label: "Hết hàng", value: outOfStockCount, color: "#ef4444"},
-        ]
-    }, [inventoryItems])
+    const orderStatusBarData = useMemo(() => {
+        return ["PENDING", "CONFIRMED", "SHIPPING", "COMPLETED", "CANCELLED"].map(status => ({
+            name: STATUS_LABELS[status] || status,
+            count: orders.filter(o => o.status === status).length,
+        }))
+    }, [orders])
 
     if (loading) {
         return (
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <div
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
-                    Đang tải dashboard admin...
+            <div className="flex h-[60vh] items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-admin-accent border-t-transparent" />
+                    <p className="text-sm font-medium text-slate-500">Đang tải dashboard...</p>
                 </div>
             </div>
         )
@@ -201,218 +198,301 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="space-y-6">
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="bg-gradient-to-r from-slate-900 via-blue-800 to-blue-600 p-6 text-white">
-                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">Admin overview</p>
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-extrabold tracking-tight">Dashboard quản trị NovaGear</h1>
-                        </div>
-                        <button
-                            onClick={() => void loadData()}
-                            className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-                        >
-                            Làm mới
-                        </button>
-                    </div>
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Xin chào! 👋</h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Tổng quan hoạt động kinh doanh NovaGear hôm nay
+                    </p>
                 </div>
-                <div className="flex flex-wrap gap-2 p-4">
-                    <span
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{products.length} Sản phẩm</span>
-                    <span
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{categories.length} Danh mục</span>
-                    <span
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{orders.length} Đơn hàng</span>
-                    <span
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{inventoryItems.length} SKU tồn kho</span>
-                </div>
-            </section>
+                <button
+                    onClick={() => void loadData()}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                    <RefreshCw className="h-4 w-4" />
+                    Làm mới
+                </button>
+            </div>
 
-            {error ? (
-                <div
-                    className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <AlertTriangle size={18} className="mt-0.5 shrink-0"/>
+            {error && (
+                <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                     <div>{error}</div>
                 </div>
-            ) : null}
+            )}
 
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard title="Sản phẩm" value={`${products.length}`} hint="Tổng số sản phẩm đang hoạt động"
-                            icon={Package}/>
-                <MetricCard title="Đơn chờ xử lý" value={`${pendingOrders}`} hint="Cần xác nhận trong ngày"
-                            icon={Clock3}/>
-                <MetricCard title="Doanh thu" value={formatCurrency(totalRevenue)} hint="Tổng giá trị đơn hàng"
-                            icon={CircleDollarSign}/>
-                <MetricCard title="Tồn kho khả dụng" value={`${stockCoverage}%`}
-                            hint={`${activeInventoryCount}/${inventoryItems.length} SKU còn hàng`} icon={Warehouse}/>
-            </section>
+            {/* Metric Cards */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard
+                    title="Tổng doanh thu"
+                    value={formatCurrency(totalRevenue)}
+                    icon={CircleDollarSign}
+                    color="bg-emerald-500"
+                    trend={12}
+                />
+                <MetricCard
+                    title="Đơn chờ xử lý"
+                    value={`${pendingOrders}`}
+                    icon={Clock3}
+                    color="bg-amber-500"
+                    trend={-5}
+                />
+                <MetricCard
+                    title="Tổng sản phẩm"
+                    value={`${products.length}`}
+                    icon={Package}
+                    color="bg-blue-500"
+                    trend={8}
+                />
+                <MetricCard
+                    title="Tồn kho khả dụng"
+                    value={`${stockCoverage}%`}
+                    subtitle={`${activeInventoryCount}/${inventoryItems.length} SKU`}
+                    icon={Warehouse}
+                    color="bg-violet-500"
+                />
+            </div>
 
-            <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-                <SectionCard
-                    title="Lối tắt quản trị"
-                    description="Di chuyển nhanh đến các module chính"
-                    action={<Link to="/admin/orders"
-                                  className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mở đơn
-                        hàng</Link>}
-                >
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        <QuickActionTile to="/admin/products" label="Catalog" title="Quản lí sản phẩm" icon={Package}/>
-                        <QuickActionTile to="/admin/categories" label="Catalog" title="Quản lí danh mục" icon={Tags}/>
-                        <QuickActionTile to="/admin/orders" label="Sales" title="Quản lí đơn hàng" icon={ShoppingCart}/>
-                        <QuickActionTile to="/admin/inventory" label="Stock" title="Quản lí tồn kho" icon={Warehouse}/>
-                        <QuickActionTile to="/admin/policies" label="Content" title="Quản lí chính sách"
-                                         icon={FileText}/>
-                    </div>
-
-                    <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="font-semibold text-slate-700">Trạng thái xử lí đơn hàng</span>
-                            <span className="font-medium text-slate-500">Đã thanh toán: {paidOrders}</span>
+            {/* Charts row */}
+            <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
+                {/* Revenue chart */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900">Doanh thu 7 ngày</h3>
+                            <p className="text-xs text-slate-500">Tổng giá trị đơn hàng không hủy</p>
                         </div>
-                        <div className="mt-3 space-y-2">
-                            {orderStatusDistribution.map((stage) => (
-                                <div key={stage.stage} className="flex items-center gap-3">
-                                    <div className="w-24 text-xs font-semibold text-slate-500">{stage.stage}</div>
-                                    <div className="h-2 flex-1 rounded-full bg-slate-200">
-                                        <div className="h-2 rounded-full bg-blue-600"
-                                             style={{width: `${stage.width}%`}}/>
-                                    </div>
-                                    <div
-                                        className="w-8 text-right text-xs font-semibold text-slate-700">{stage.count}</div>
-                                </div>
-                            ))}
+                        <div className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                            <TrendingUp className="h-3 w-3" />
+                            +12%
                         </div>
                     </div>
-                </SectionCard>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <AreaChart data={revenueByRecentDays}>
+                            <defs>
+                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis dataKey="name" tick={{fontSize: 12, fill: "#94a3b8"}} axisLine={false} tickLine={false} />
+                            <YAxis tick={{fontSize: 12, fill: "#94a3b8"}} axisLine={false} tickLine={false}
+                                   tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
+                            <Tooltip
+                                formatter={(value) => [formatCurrency(Number(value)), "Doanh thu"]}
+                                contentStyle={{borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 13}}
+                            />
+                            <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5}
+                                  fill="url(#colorRevenue)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
 
-                <SectionCard
-                    title="Cảnh báo tồn kho"
-                    description={`${lowStockItems.length} SKU cần theo dõi`}
-                    action={<Link to="/admin/inventory"
-                                  className="text-sm font-semibold text-blue-700 hover:text-blue-800">Mở tồn kho</Link>}
-                >
+                {/* Payment donut */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h3 className="text-base font-bold text-slate-900">Trạng thái thanh toán</h3>
+                    <p className="mb-2 text-xs text-slate-500">Phân bố theo tổng đơn hàng</p>
+                    <ResponsiveContainer width="100%" height={220}>
+                        <PieChart>
+                            <Pie data={paymentDonutData} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
+                                 dataKey="value" stroke="none">
+                                {paymentDonutData.map((_, i) => (
+                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip contentStyle={{borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 13}} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div className="mt-2 flex flex-wrap justify-center gap-3">
+                        {paymentDonutData.map((item, i) => (
+                            <div key={item.name} className="flex items-center gap-1.5 text-xs text-slate-600">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{background: PIE_COLORS[i]}} />
+                                {item.name}: {item.value}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Order status bar + Low stock */}
+            <div className="grid gap-5 xl:grid-cols-2">
+                {/* Order status bar chart */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h3 className="mb-1 text-base font-bold text-slate-900">Trạng thái đơn hàng</h3>
+                    <p className="mb-4 text-xs text-slate-500">Phân bố đơn hàng theo trạng thái</p>
+                    <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={orderStatusBarData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis dataKey="name" tick={{fontSize: 11, fill: "#94a3b8"}} axisLine={false} tickLine={false} />
+                            <YAxis tick={{fontSize: 12, fill: "#94a3b8"}} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 13}} />
+                            <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Low stock alerts */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900">Cảnh báo tồn kho</h3>
+                            <p className="text-xs text-slate-500">{lowStockItems.length} SKU cần theo dõi</p>
+                        </div>
+                        <Link to="/admin/inventory" className="text-xs font-semibold text-admin-accent hover:underline">
+                            Xem tất cả
+                        </Link>
+                    </div>
                     <div className="space-y-3">
                         {lowStockItems.length === 0 ? (
-                            <div
-                                className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
-                                Chưa có variant nào sắp hết hàng.
+                            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                                Chưa có SKU nào sắp hết hàng 🎉
                             </div>
                         ) : (
                             lowStockItems.map((item) => {
-                                const value = Math.max(0, Math.min(100, item.availableQuantity * 10))
                                 const variantInfo = [item.color, item.ram, item.storage].filter(Boolean).join(" / ")
+                                const barWidth = Math.max(5, Math.min(100, item.availableQuantity * 10))
                                 return (
-                                    <article key={item.id}
-                                             className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-                                        <div className="flex items-start justify-between gap-3">
+                                    <div key={item.id} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                                        <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-semibold text-slate-900">{item.productName || "Sản phẩm"}</p>
-                                                <p className="mt-0.5 truncate text-xs text-slate-500">
+                                                <p className="truncate text-[11px] text-slate-500">
                                                     {item.sku || "--"}{variantInfo ? ` · ${variantInfo}` : ""}
                                                 </p>
                                             </div>
-                                            <span
-                                                className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                                            <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${
+                                                item.availableQuantity <= 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                                            }`}>
                                                 {item.availableQuantity}
                                             </span>
                                         </div>
-                                        <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-200">
-                                            <div className="h-2 rounded-full bg-rose-500" style={{width: `${value}%`}}/>
+                                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                            <div className={`h-1.5 rounded-full ${
+                                                item.availableQuantity <= 0 ? "bg-red-500" : "bg-amber-500"
+                                            }`} style={{width: `${barWidth}%`}} />
                                         </div>
-                                    </article>
+                                    </div>
                                 )
                             })
                         )}
                     </div>
-                </SectionCard>
-            </section>
+                </div>
+            </div>
 
-            <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-                <SectionCard
-                    title="Biểu đồ doanh thu 7 ngày"
-                    description="Tổng giá trị đơn hàng không hủy theo ngày"
-                >
-                    <SimpleAreaChart
-                        data={revenueByRecentDays}
-                        valueFormatter={(value) => `${Math.round(value / 1000)}k`}
-                    />
-                </SectionCard>
+            {/* Quick stats row */}
+            <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-center">
+                    <ShoppingCart className="mx-auto h-8 w-8 text-blue-500" />
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{orders.length}</p>
+                    <p className="text-xs text-slate-500">Tổng đơn hàng</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-center">
+                    <Users className="mx-auto h-8 w-8 text-violet-500" />
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{categories.length}</p>
+                    <p className="text-xs text-slate-500">Danh mục</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-center">
+                    <Package className="mx-auto h-8 w-8 text-emerald-500" />
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{completedOrders}</p>
+                    <p className="text-xs text-slate-500">Đơn hoàn thành</p>
+                </div>
+            </div>
 
-                <SectionCard
-                    title="Biểu đồ thanh toán"
-                    description="Phân bố trạng thái thanh toán"
-                >
-                    <SimpleDonutChart data={paymentDonutData}/>
-                </SectionCard>
-            </section>
-
-            <SectionCard
-                title="Biểu đồ tồn kho"
-                description="Tỷ lệ SKU ổn định / sắp hết / hết hàng"
-            >
-                <SimpleDonutChart data={inventoryDonutData}/>
-            </SectionCard>
-
-            <SectionCard
-                title="Đơn hàng gần đây"
-                description="Theo dõi nhanh trạng thái và thanh toán"
-                action={<Link to="/admin/orders" className="text-sm font-semibold text-blue-700 hover:text-blue-800">Xem
-                    tất cả</Link>}
-            >
+            {/* Recent orders table */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <div>
+                        <h3 className="text-base font-bold text-slate-900">Đơn hàng gần đây</h3>
+                        <p className="text-xs text-slate-500">Theo dõi nhanh trạng thái và thanh toán</p>
+                    </div>
+                    <Link to="/admin/orders" className="text-xs font-semibold text-admin-accent hover:underline">
+                        Xem tất cả
+                    </Link>
+                </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mã
-                                đơn
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Khách
-                                hàng
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Tổng
-                                tiền
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ngày
-                                tạo
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Trạng
-                                thái
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Thanh
-                                toán
-                            </th>
-                        </tr>
+                    <table className="min-w-full divide-y divide-slate-100 text-sm">
+                        <thead>
+                            <tr className="bg-slate-50">
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Mã đơn</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Khách hàng</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng tiền</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Ngày tạo</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Trạng thái</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Thanh toán</th>
+                            </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
-                        {recentOrders.map((order) => (
-                            <tr key={order.id} className="hover:bg-slate-50/80">
-                                <td className="px-4 py-3 font-semibold text-slate-900">{order.orderCode || `#${order.id}`}</td>
-                                <td className="px-4 py-3 text-slate-700">{order.receiverName || "--"}</td>
-                                <td className="px-4 py-3 font-semibold text-blue-700">{formatCurrency(order.totalAmount)}</td>
-                                <td className="px-4 py-3 text-slate-600">{formatDate(order.createdAt)}</td>
-                                <td className="px-4 py-3"><OrderStatusBadge status={order.status}/></td>
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${paymentStatusClass(order.paymentStatus)}`}>
-                                        {paymentStatusText(order.paymentStatus)}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                        {recentOrders.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="px-4 py-6">
-                                    <div
-                                        className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
-                                        Chưa có đơn hàng nào.
-                                    </div>
-                                </td>
-                            </tr>
-                        ) : null}
+                        <tbody className="divide-y divide-slate-50">
+                            {recentOrders.map((order) => (
+                                <tr key={order.id} className="transition hover:bg-slate-50/80">
+                                    <td className="px-5 py-3.5 font-semibold text-slate-900">
+                                        {order.orderCode || `#${order.id}`}
+                                    </td>
+                                    <td className="px-5 py-3.5 text-slate-700">{order.receiverName || "--"}</td>
+                                    <td className="px-5 py-3.5 font-semibold text-admin-accent">
+                                        {formatCurrency(order.totalAmount)}
+                                    </td>
+                                    <td className="px-5 py-3.5 text-slate-500">{formatDate(order.createdAt)}</td>
+                                    <td className="px-5 py-3.5">
+                                        <span className={`inline-flex rounded-md px-2 py-1 text-[11px] font-semibold ${
+                                            STATUS_COLORS[order.status] || "bg-slate-100 text-slate-700"
+                                        }`}>
+                                            {STATUS_LABELS[order.status] || order.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-3.5">
+                                        <span className={`inline-flex rounded-md px-2 py-1 text-[11px] font-semibold ${
+                                            PAYMENT_STATUS_COLORS[order.paymentStatus || ""] || "bg-slate-100 text-slate-700"
+                                        }`}>
+                                            {PAYMENT_STATUS_LABELS[order.paymentStatus || ""] || order.paymentStatus || "Chưa cập nhật"}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {recentOrders.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-5 py-8">
+                                        <div className="text-center text-sm text-slate-500">Chưa có đơn hàng nào.</div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
-            </SectionCard>
+            </div>
+        </div>
+    )
+}
+
+// ===== MetricCard sub-component =====
+interface MetricCardProps {
+    title: string
+    value: string
+    subtitle?: string
+    icon: typeof Package
+    color: string
+    trend?: number
+}
+
+function MetricCard({title, value, subtitle, icon: Icon, color, trend}: MetricCardProps) {
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="flex items-start justify-between">
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${color} text-white shadow-lg`}>
+                    <Icon className="h-5 w-5" />
+                </div>
+                {trend !== undefined && (
+                    <div className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        trend >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                    }`}>
+                        {trend >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                        {Math.abs(trend)}%
+                    </div>
+                )}
+            </div>
+            <p className="mt-3 text-2xl font-bold text-slate-900">{value}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{subtitle || title}</p>
         </div>
     )
 }
