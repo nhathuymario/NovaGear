@@ -1,17 +1,20 @@
-import {type SyntheticEvent, useEffect, useState} from "react"
+import {type SyntheticEvent, useCallback, useEffect, useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
-import {ChevronDown, LayoutGrid, Package, Search, ShoppingCart} from "lucide-react"
+import {ChevronDown, Menu, Package, Search, ShoppingCart, User, X} from "lucide-react"
 import {getAiSearchSuggestions, type AiSearchResult} from "../../api/aiApi"
 import {OrderNotificationBell} from "../OrderNotificationBell"
 import {useAuth} from "../../hooks/useAuth"
 import {normalizeRole} from "../../utils/auth"
-import {getSiteContent} from "../../utils/siteContent"
+import TopBar from "./TopBar"
+import MegaMenu from "./MegaMenu"
 
 export default function Header() {
     const [keyword, setKeyword] = useState("")
     const [aiSuggestions, setAiSuggestions] = useState<AiSearchResult[]>([])
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [megaMenuOpen, setMegaMenuOpen] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const navigate = useNavigate()
     const {isAuthenticated, user, logout} = useAuth()
     const normalizedRole = normalizeRole(user?.role)
@@ -68,59 +71,70 @@ export default function Header() {
         navigate("/")
     }
 
-    const headerTopText = getSiteContent("headerTopText")
-    const headerHotlineText = getSiteContent("headerHotlineText")
+    const closeMegaMenu = useCallback(() => setMegaMenuOpen(false), [])
 
     return (
-        <header className="sticky top-0 z-50 border-b border-white/70 bg-white/85 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-            <div className="border-b border-slate-100/80 bg-gradient-to-r from-slate-50 via-white to-blue-50/50">
-                <div className="mx-auto flex max-w-[1320px] items-center justify-between px-4 py-2 text-xs text-slate-600 md:px-5">
-                    <p>{headerTopText}</p>
-                    <p className="hidden md:block">{headerHotlineText}</p>
-                </div>
-            </div>
+        <header className="sticky top-0 z-50 bg-white shadow-sm">
+            <TopBar />
 
-            <div className="mx-auto flex max-w-[1320px] flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-5">
-                <Link to="/" className="flex items-center gap-2">
-                    <span className="rounded-2xl bg-brand-yellow px-2.5 py-1.5 text-sm font-black text-brand-dark shadow-sm">NG</span>
-                    <span className="text-xl font-black tracking-tight text-slate-900">NovaGear</span>
-                </Link>
+            {/* Main header bar */}
+            <div className="border-b border-slate-100 bg-gradient-to-r from-brand-yellow via-brand-yellow to-yellow-300">
+                <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-4 py-3">
+                    {/* Logo */}
+                    <Link to="/" className="flex shrink-0 items-center gap-2">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-dark text-sm font-black text-brand-yellow shadow-md">
+                            NG
+                        </div>
+                        <div className="hidden sm:block">
+                            <span className="block text-lg font-black leading-tight text-brand-dark">NovaGear</span>
+                            <span className="block text-[10px] font-semibold leading-tight text-brand-dark/60">Premium Tech Store</span>
+                        </div>
+                    </Link>
 
-                <form onSubmit={handleSearch} className="order-3 w-full md:order-none md:flex-1">
-                    <div className="relative flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 shadow-sm transition focus-within:border-brand-blue focus-within:bg-white focus-within:shadow-md">
-                        <Search className="h-4 w-4 shrink-0 text-slate-400" />
-                        <input
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            onFocus={() => {
-                                if (aiSuggestions.length > 0) {
-                                    setShowSuggestions(true)
-                                }
-                            }}
-                            onBlur={() => {
-                                window.setTimeout(() => setShowSuggestions(false), 150)
-                            }}
-                            placeholder="Bạn tìm gì hôm nay?"
-                            className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-                        />
-                        <button
-                            type="submit"
-                            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-700"
-                        >
-                            <Search className="h-3.5 w-3.5" />
-                            Tìm
-                        </button>
+                    {/* Category button */}
+                    <button
+                        type="button"
+                        onClick={() => setMegaMenuOpen(!megaMenuOpen)}
+                        className="hidden items-center gap-1.5 rounded-lg bg-brand-dark/90 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark md:flex"
+                    >
+                        <Menu className="h-4 w-4" />
+                        Danh mục
+                        <ChevronDown className={`h-3 w-3 transition ${megaMenuOpen ? "rotate-180" : ""}`} />
+                    </button>
 
+                    {/* Search bar */}
+                    <form onSubmit={handleSearch} className="relative flex-1">
+                        <div className="relative flex items-center rounded-lg bg-white shadow-sm">
+                            <input
+                                id="search-input"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                                onFocus={() => {
+                                    if (aiSuggestions.length > 0) setShowSuggestions(true)
+                                }}
+                                onBlur={() => {
+                                    window.setTimeout(() => setShowSuggestions(false), 150)
+                                }}
+                                placeholder="Bạn tìm gì hôm nay?"
+                                className="w-full rounded-l-lg border-none bg-transparent px-4 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                            />
+                            <button
+                                type="submit"
+                                className="flex h-full items-center gap-1.5 rounded-r-lg bg-brand-dark px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                            >
+                                <Search className="h-4 w-4" />
+                                <span className="hidden sm:inline">Tìm kiếm</span>
+                            </button>
+                        </div>
+
+                        {/* AI Search suggestions */}
                         {showSuggestions && (loadingSuggestions || aiSuggestions.length > 0) && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl">
+                            <div className="animate-slide-down absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
                                 <div className="border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                    Goi y AI
+                                    🤖 Gợi ý AI
                                 </div>
-
                                 {loadingSuggestions ? (
-                                    <div className="px-4 py-3 text-sm text-slate-500">
-                                        Dang lay goi y...
-                                    </div>
+                                    <div className="px-4 py-3 text-sm text-slate-500">Đang lấy gợi ý...</div>
                                 ) : (
                                     <div className="max-h-80 overflow-y-auto">
                                         {aiSuggestions.map((suggestion) => (
@@ -128,18 +142,14 @@ export default function Header() {
                                                 key={`${suggestion.title}-${suggestion.reason}`}
                                                 type="button"
                                                 onClick={() => handleSuggestionSelect(suggestion)}
-                                                    className="block w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 last:border-b-0"
+                                                className="block w-full border-b border-slate-50 px-4 py-3 text-left transition hover:bg-brand-yellow/5 last:border-b-0"
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
-                                                        <p className="text-sm font-semibold text-slate-900">
-                                                            {suggestion.title}
-                                                        </p>
-                                                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                                                            {suggestion.excerpt}
-                                                        </p>
+                                                        <p className="text-sm font-semibold text-slate-900">{suggestion.title}</p>
+                                                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{suggestion.excerpt}</p>
                                                     </div>
-                                                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700">
+                                                    <span className="shrink-0 rounded-full bg-brand-blue/10 px-2 py-0.5 text-[11px] font-semibold text-brand-blue">
                                                         {(suggestion.score * 100).toFixed(0)}%
                                                     </span>
                                                 </div>
@@ -149,68 +159,133 @@ export default function Header() {
                                 )}
                             </div>
                         )}
-                    </div>
-                </form>
+                    </form>
 
-                <nav className="flex items-center gap-2 md:gap-3">
-                    <Link
-                        to="/products"
-                        className="inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100"
-                    >
-                        <LayoutGrid className="h-4 w-4"/>
-                        Sản phẩm
-                    </Link>
-                    <Link
-                        to="/cart"
-                        className="inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100"
-                    >
-                        <ShoppingCart className="h-4 w-4"/>
-                        Giỏ hàng
-                    </Link>
-                    <Link
-                        to="/orders"
-                        className="hidden items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-100 md:inline-flex"
-                    >
-                        <Package className="h-4 w-4"/>
-                        Đơn hàng
-                    </Link>
-                    {isAuthenticated ? (
-                        <div className="flex items-center gap-2">
-                            {normalizedRole !== "ADMIN" ? <OrderNotificationBell /> : null}
-                            <button
-                                onClick={() => navigate("/profile")}
-                                className="group inline-flex max-w-[220px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
-                            >
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-yellow to-amber-400 text-xs font-black text-brand-dark">
-                                    {(user?.fullName || user?.email || "T").slice(0, 1).toUpperCase()}
-                                </span>
-                                <span className="min-w-0">
-                                    <span className="block truncate font-semibold text-slate-900">
-                                        {user?.fullName || user?.email || "Tài khoản"}
-                                    </span>
-                                    <span className="block text-[11px] text-slate-500">
-                                        {normalizedRole === "ADMIN" ? "Quản trị viên" : "Khách hàng"}
-                                    </span>
-                                </span>
-                                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-slate-600"/>
-                            </button>
-                            <button
-                                onClick={handleLogout}
-                                className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-700"
-                            >
-                                Đăng xuất
-                            </button>
-                        </div>
-                    ) : (
+                    {/* Right actions */}
+                    <nav className="flex items-center gap-1 md:gap-2">
                         <Link
-                            to="/login"
-                            className="rounded-2xl bg-brand-yellow px-3 py-2 text-sm font-bold text-brand-dark transition hover:-translate-y-0.5 hover:brightness-95"
+                            to="/cart"
+                            id="cart-button"
+                            className="relative flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-brand-dark transition hover:bg-brand-dark/10"
                         >
-                            Đăng nhập
+                            <ShoppingCart className="h-5 w-5" />
+                            <span className="text-[10px] font-semibold">Giỏ hàng</span>
+                        </Link>
+
+                        <Link
+                            to="/orders"
+                            className="hidden flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-brand-dark transition hover:bg-brand-dark/10 md:flex"
+                        >
+                            <Package className="h-5 w-5" />
+                            <span className="text-[10px] font-semibold">Đơn hàng</span>
+                        </Link>
+
+                        {isAuthenticated ? (
+                            <div className="flex items-center gap-1">
+                                {normalizedRole !== "ADMIN" ? <OrderNotificationBell /> : null}
+                                <button
+                                    onClick={() => navigate("/profile")}
+                                    id="profile-button"
+                                    className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-brand-dark transition hover:bg-brand-dark/10"
+                                >
+                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark text-[10px] font-bold text-brand-yellow">
+                                        {(user?.fullName || user?.email || "T").slice(0, 1).toUpperCase()}
+                                    </div>
+                                    <span className="max-w-[60px] truncate text-[10px] font-semibold">
+                                        {user?.fullName || "Tài khoản"}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="hidden rounded-lg bg-brand-dark px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 md:block"
+                                >
+                                    Đăng xuất
+                                </button>
+                            </div>
+                        ) : (
+                            <Link
+                                to="/login"
+                                id="login-button"
+                                className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-brand-dark transition hover:bg-brand-dark/10"
+                            >
+                                <User className="h-5 w-5" />
+                                <span className="text-[10px] font-semibold">Đăng nhập</span>
+                            </Link>
+                        )}
+
+                        {/* Mobile menu toggle */}
+                        <button
+                            type="button"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="rounded-lg p-2 text-brand-dark transition hover:bg-brand-dark/10 md:hidden"
+                        >
+                            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Mega menu dropdown */}
+                <MegaMenu isOpen={megaMenuOpen} onClose={closeMegaMenu} />
+            </div>
+
+            {/* Quick category nav bar */}
+            <div className="hidden border-b border-slate-100 bg-white md:block">
+                <div className="mx-auto flex max-w-[1320px] items-center gap-1 px-4 py-1 text-xs">
+                    {["Laptop", "PC", "Màn hình", "Bàn phím", "Tai nghe", "Chuột", "Phụ kiện"].map((name) => (
+                        <Link
+                            key={name}
+                            to={`/products?category=${encodeURIComponent(name.toLowerCase().replace(/\s/g, '-'))}`}
+                            className="rounded-md px-3 py-1.5 font-medium text-slate-600 transition hover:bg-brand-yellow/10 hover:text-brand-dark"
+                        >
+                            {name}
+                        </Link>
+                    ))}
+                    {isAuthenticated && normalizedRole === "ADMIN" && (
+                        <Link
+                            to="/admin"
+                            className="ml-auto rounded-md bg-brand-blue/10 px-3 py-1.5 font-semibold text-brand-blue transition hover:bg-brand-blue/20"
+                        >
+                            Admin Panel
                         </Link>
                     )}
-                </nav>
+                </div>
             </div>
+
+            {/* Mobile menu */}
+            {mobileMenuOpen && (
+                <div className="animate-slide-down border-b border-slate-200 bg-white p-4 md:hidden">
+                    <nav className="space-y-2">
+                        <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                            Sản phẩm
+                        </Link>
+                        <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                            Đơn hàng
+                        </Link>
+                        {isAuthenticated ? (
+                            <>
+                                <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                    Tài khoản
+                                </Link>
+                                {normalizedRole === "ADMIN" && (
+                                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg bg-brand-blue/10 px-4 py-3 text-sm font-semibold text-brand-blue">
+                                        Admin Panel
+                                    </Link>
+                                )}
+                                <button
+                                    onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
+                                    className="w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
+                                >
+                                    Đăng xuất
+                                </button>
+                            </>
+                        ) : (
+                            <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg bg-brand-yellow px-4 py-3 text-center text-sm font-bold text-brand-dark">
+                                Đăng nhập
+                            </Link>
+                        )}
+                    </nav>
+                </div>
+            )}
         </header>
     )
 }
