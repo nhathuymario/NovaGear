@@ -131,23 +131,23 @@ export default function CheckoutPage() {
 
     if (!token) {
         return (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-                <h1 className="text-2xl font-bold">Thanh toán</h1>
-                <p className="mt-3 text-brand-gray">Bạn cần đăng nhập để thanh toán.</p>
+            <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <h1 className="text-xl font-bold text-slate-900">Thanh toán</h1>
+                <p className="mt-2 text-sm text-slate-500">Bạn cần đăng nhập để thanh toán.</p>
                 <button
                     onClick={() => navigate("/login")}
-                    className="mt-5 rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white"
+                    className="mt-5 rounded-lg bg-brand-yellow px-5 py-3 font-semibold text-brand-dark transition hover:brightness-95"
                 >
-                    Đi tới đăng nhập
+                    Đăng nhập ngay
                 </button>
             </div>
         )
     }
 
     return (
-        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-6 shadow-sm">
-            <h1 className="text-3xl font-bold">Thanh toán</h1>
-            <p className="mt-2 text-sm text-brand-gray">
+        <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h1 className="text-xl font-bold text-slate-900">Thanh toán</h1>
+            <p className="mt-1 text-sm text-slate-500">
                 Chọn một địa chỉ đã lưu để tạo đơn. Thêm hoặc xóa địa chỉ được thực hiện trong trang tài khoản.
             </p>
 
@@ -230,7 +230,7 @@ export default function CheckoutPage() {
                 <button
                     type="submit"
                     disabled={!isValid || loading || cartItemCount <= 0}
-                    className="w-full rounded-xl bg-brand-dark py-3 font-semibold text-white disabled:opacity-60"
+                    className="w-full rounded-lg bg-brand-red py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
                 >
                     {loading ? "Đang tạo đơn..." : "Xác nhận đặt hàng"}
                 </button>
