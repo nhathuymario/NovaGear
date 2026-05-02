@@ -1,5 +1,5 @@
 import {useCallback} from "react"
-import type {PromoItem} from "../../../types/storefront"
+import {type PromoItem, savePromos, getDefaultPromos} from "../../../utils/storefrontConfig"
 
 const ICON_OPTIONS = ["Gift", "Zap", "Flame", "Timer", "Star", "Heart", "Tag", "Percent", "ShoppingBag", "Award"]
 const COLOR_PRESETS = [
@@ -19,6 +19,7 @@ interface Props {
 export default function PromoTab({promos, onChange}: Props) {
     const update = useCallback((updated: PromoItem[]) => {
         onChange(updated)
+        savePromos(updated)
     }, [onChange])
 
     const editField = (id: string, field: keyof PromoItem, value: string) => {
@@ -29,7 +30,7 @@ export default function PromoTab({promos, onChange}: Props) {
         update(promos.map(p => p.id === id ? {...p, colorBg: bg, colorText: text} : p))
     }
 
-    const resetDefaults = () => { update([]) }
+    const resetDefaults = () => { const d = getDefaultPromos(); update(d) }
 
     return (
         <div className="space-y-4">

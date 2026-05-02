@@ -1,6 +1,6 @@
 import {useState, useEffect, useMemo} from "react"
 import {Search, Shuffle, Lock} from "lucide-react"
-import type {FlashSaleConfig} from "../../../types/storefront"
+import {type FlashSaleConfig, saveFlashSaleConfig, getDefaultFlashSaleConfig} from "../../../utils/storefrontConfig"
 import {getProducts} from "../../../api/productApi"
 import type {Product} from "../../../types/product"
 
@@ -27,6 +27,7 @@ export default function FlashSaleTab({config, onChange}: Props) {
     const update = (partial: Partial<FlashSaleConfig>) => {
         const next = {...config, ...partial}
         onChange(next)
+        saveFlashSaleConfig(next)
     }
 
     const toggleProduct = (id: string) => {
@@ -38,7 +39,7 @@ export default function FlashSaleTab({config, onChange}: Props) {
 
     const selectAll = () => update({productIds: products.filter(p => p.salePrice != null && p.salePrice < p.price).map(p => String(p.id))})
     const clearAll = () => update({productIds: []})
-    const resetDefaults = () => { onChange({mode: "fixed", productIds: [], displayCount: 8, countdownHour: 23, countdownMinute: 59}) }
+    const resetDefaults = () => { const d = getDefaultFlashSaleConfig(); onChange(d); saveFlashSaleConfig(d) }
 
     const fmt = (v: number) => v.toLocaleString("vi-VN") + "₫"
 

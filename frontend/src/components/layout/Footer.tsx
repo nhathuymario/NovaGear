@@ -1,8 +1,9 @@
 import {Link} from "react-router-dom"
 import {Phone, Mail, Clock, MapPin, ShieldCheck, Truck, CreditCard, HeadphonesIcon} from "lucide-react"
+import {getLogoUrl} from "../../utils/storefrontConfig"
 
 export default function Footer() {
-    const logoUrl = ""
+    const logoUrl = getLogoUrl()
     return (
         <footer className="mt-8 bg-white border-t border-slate-200">
             {/* Trust badges */}

@@ -7,16 +7,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Flame, Gift, Timer, Zap, Star, H
 import { getProducts, getPublicCategories } from "../api/productApi"
 import type { Product, PublicCategory } from "../types/product"
 import { getSiteContent } from "../utils/siteContent"
-import type { BannerItem, PromoItem } from "../types/storefront"
-
-function shuffleArray<T>(arr: T[]): T[] {
-    const copy = [...arr]
-    for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]]
-    }
-    return copy
-}
+import { getBanners, getFlashSaleConfig, getPromos, shuffleArray, type BannerItem, type PromoItem } from "../utils/storefrontConfig"
 import ProductCard from "../components/product/ProductCard"
 import { ProductGridSkeleton } from "../components/ui/Skeletons"
 
@@ -88,9 +79,9 @@ export default function HomePage() {
     const flashSaleText = getSiteContent("homeFlashSaleText")
 
     // Storefront config
-    const [banners] = useState<BannerItem[]>([])
-    const [flashSaleConfig] = useState({ mode: "random" as const, productIds: [], displayCount: 8, countdownHour: 23, countdownMinute: 59 })
-    const [promos] = useState<PromoItem[]>([])
+    const [banners] = useState<BannerItem[]>(() => getBanners())
+    const [flashSaleConfig] = useState(() => getFlashSaleConfig())
+    const [promos] = useState<PromoItem[]>(() => getPromos())
     const [flashSaleRound, setFlashSaleRound] = useState(0)
 
     const handleCountdownExpire = useCallback(() => {
