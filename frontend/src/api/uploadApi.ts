@@ -122,3 +122,68 @@ export async function uploadProductImage(file: File): Promise<string> {
 export async function uploadAvatarImage(file: File): Promise<string> {
     return uploadFile(file, "avatars")
 }
+
+export async function uploadBannerImage(file: File): Promise<string> {
+    if (!ALLOWED_IMAGE_MIME.has(file.type)) {
+        throw new Error("Chỉ hỗ trợ định dạng JPG, JPEG, PNG, WEBP, GIF")
+    }
+    const {width, height} = await readImageDimensions(file)
+    if (width < 800 || height < 200) {
+        throw new Error(`Ảnh banner quá nhỏ (${width}x${height}). Vui lòng dùng ảnh tối thiểu 800x200.`)
+    }
+    return uploadFileRaw(file, "products")
+}
+
+export async function uploadLogoImage(file: File): Promise<string> {
+    if (!ALLOWED_IMAGE_MIME.has(file.type)) {
+        throw new Error("Chỉ hỗ trợ định dạng JPG, JPEG, PNG, WEBP, GIF")
+    }
+    const {width, height} = await readImageDimensions(file)
+    if (width < 64 || height < 64) {
+        throw new Error(`Logo quá nhỏ (${width}x${height}). Vui lòng dùng ảnh tối thiểu 64x64.`)
+    }
+    return uploadFileRaw(file, "products")
+}
+
+/** Upload without dimension validation (used by banner/logo after custom validation) */
+async function uploadFileRaw(file: File, folder: "products" | "avatars"): Promise<string> {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const doUpload = async (baseClient: typeof gatewayUploadClient) => {
+        const res = await baseClient.post(`/uploads/${folder}`, formData)
+        const url = (
+            res.data?.url ??
+            res.data?.imageUrl ??
+            res.data?.path ??
+            res.data?.data?.url ??
+            ""
+        )
+        return normalizeClientUploadUrl(url)
+    }
+
+    const preferDirectInDev = import.meta.env.DEV
+    const clients = preferDirectInDev
+        ? [directUploadClient, gatewayUploadClient]
+        : [gatewayUploadClient, directUploadClient]
+
+    let lastError: unknown = null
+    for (const client of clients) {
+        try {
+            return await doUpload(client)
+        } catch (error) {
+            if (!axios.isAxiosError(error)) {
+                throw error
+            }
+
+            const status = error.response?.status
+            const retryable = status === 404 || status === 502 || status === 503 || !error.response
+            if (!retryable) {
+                throw error
+            }
+            lastError = error
+        }
+    }
+
+    throw lastError ?? new Error("Upload failed")
+}
