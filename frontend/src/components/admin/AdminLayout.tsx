@@ -1,4 +1,4 @@
-import {useState} from "react"
+import {useState, useEffect} from "react"
 import {Link, Outlet, useLocation, useNavigate} from "react-router-dom"
 import {
     BarChart3,
@@ -7,16 +7,18 @@ import {
     LayoutDashboard,
     LogOut,
     Package,
-    Settings,
+    Palette,
     ShoppingCart,
     Tags,
     Users,
     Warehouse,
-    Bell,
     Search,
     Menu,
+    Sun,
+    Moon,
 } from "lucide-react"
 import {useAuth} from "../../hooks/useAuth"
+import {OrderNotificationBell} from "../OrderNotificationBell"
 
 type NavItem = {
     to: string
@@ -32,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
     {to: "/admin/inventory", label: "Tồn kho", icon: Warehouse},
     {to: "/admin/users", label: "Người dùng", icon: Users},
     {to: "/admin/policies", label: "Chính sách", icon: FileText},
+    {to: "/admin/storefront", label: "Giao diện", icon: Palette},
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -42,6 +45,7 @@ const PAGE_TITLES: Record<string, string> = {
     "/admin/inventory": "Quản lý tồn kho",
     "/admin/users": "Quản lý người dùng",
     "/admin/policies": "Quản lý chính sách",
+    "/admin/storefront": "Quản lý giao diện",
 }
 
 export default function AdminLayout() {
@@ -50,6 +54,11 @@ export default function AdminLayout() {
     const {user, logout} = useAuth()
     const [collapsed, setCollapsed] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem("novagear-admin-theme") === "dark")
+
+    useEffect(() => {
+        localStorage.setItem("novagear-admin-theme", darkMode ? "dark" : "light")
+    }, [darkMode])
 
     const activeTitle = PAGE_TITLES[location.pathname] ?? "Admin"
 
@@ -134,7 +143,7 @@ export default function AdminLayout() {
     )
 
     return (
-        <div className="h-screen overflow-hidden bg-admin-bg">
+        <div className={`h-screen overflow-hidden ${darkMode ? 'admin-dark' : ''}`} style={{background: darkMode ? '#0f172a' : undefined}}>
             <div className="flex h-full">
                 {/* Desktop sidebar */}
                 <aside
@@ -158,7 +167,7 @@ export default function AdminLayout() {
                 {/* Main content */}
                 <div className="flex min-w-0 flex-1 flex-col">
                     {/* Top header */}
-                    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
+                    <header className={`flex h-16 shrink-0 items-center justify-between border-b px-4 lg:px-6 ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => {
@@ -170,31 +179,32 @@ export default function AdminLayout() {
                                 {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                             </button>
                             <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Admin</p>
-                                <h1 className="text-lg font-bold text-slate-900">{activeTitle}</h1>
+                                <p className={`text-[10px] font-semibold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Admin</p>
+                                <h1 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{activeTitle}</h1>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                             {/* Search */}
-                            <div className="hidden items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
-                                <Search className="mr-2 h-4 w-4 text-slate-400" />
+                            <div className={`hidden items-center rounded-lg border px-3 py-2 md:flex ${darkMode ? 'border-slate-600 bg-slate-700' : 'border-slate-200 bg-slate-50'}`}>
+                                <Search className={`mr-2 h-4 w-4 ${darkMode ? 'text-slate-400' : 'text-slate-400'}`} />
                                 <input
                                     type="text"
                                     placeholder="Tìm kiếm..."
-                                    className="w-48 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                                    className={`w-48 bg-transparent text-sm outline-none ${darkMode ? 'text-white placeholder:text-slate-500' : 'placeholder:text-slate-400'}`}
                                 />
                             </div>
 
-                            {/* Notifications */}
-                            <button className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100">
-                                <Bell className="h-5 w-5" />
-                                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-red" />
-                            </button>
+                            {/* Notifications - Real Bell */}
+                            <OrderNotificationBell />
 
-                            {/* Settings */}
-                            <button className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100">
-                                <Settings className="h-5 w-5" />
+                            {/* Dark/Light Mode Toggle */}
+                            <button
+                                onClick={() => setDarkMode(!darkMode)}
+                                className={`rounded-lg p-2 transition ${darkMode ? 'text-amber-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                title={darkMode ? 'Chế độ sáng' : 'Chế độ tối'}
+                            >
+                                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                             </button>
 
                             {/* User */}
@@ -221,7 +231,7 @@ export default function AdminLayout() {
                     </header>
 
                     {/* Content area */}
-                    <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                    <main className={`flex-1 overflow-y-auto p-4 lg:p-6 ${darkMode ? 'bg-slate-900' : 'bg-admin-bg'}`}>
                         <Outlet />
                     </main>
                 </div>
