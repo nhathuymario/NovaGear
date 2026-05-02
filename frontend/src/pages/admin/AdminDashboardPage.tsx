@@ -165,6 +165,42 @@ export default function AdminDashboardPage() {
         }))
     }, [orders])
 
+    // ===== Real trend calculations: this week vs last week =====
+    const trends = useMemo(() => {
+        const now = new Date()
+        const thisWeekStart = new Date(now)
+        thisWeekStart.setDate(now.getDate() - 7)
+        thisWeekStart.setHours(0, 0, 0, 0)
+        const lastWeekStart = new Date(thisWeekStart)
+        lastWeekStart.setDate(thisWeekStart.getDate() - 7)
+
+        const inRange = (dateStr: string | undefined, start: Date, end: Date) => {
+            if (!dateStr) return false
+            const d = new Date(dateStr)
+            return d >= start && d < end
+        }
+
+        const thisWeekOrders = orders.filter(o => inRange(o.createdAt, thisWeekStart, now))
+        const lastWeekOrders = orders.filter(o => inRange(o.createdAt, lastWeekStart, thisWeekStart))
+
+        const thisWeekRevenue = thisWeekOrders.filter(o => o.status !== "CANCELLED").reduce((s, o) => s + Number(o.totalAmount || 0), 0)
+        const lastWeekRevenue = lastWeekOrders.filter(o => o.status !== "CANCELLED").reduce((s, o) => s + Number(o.totalAmount || 0), 0)
+
+        const thisWeekPending = thisWeekOrders.filter(o => o.status === "PENDING").length
+        const lastWeekPending = lastWeekOrders.filter(o => o.status === "PENDING").length
+
+        const calcPercent = (current: number, previous: number): number | undefined => {
+            if (previous === 0 && current === 0) return undefined
+            if (previous === 0) return 100
+            return Math.round(((current - previous) / previous) * 100)
+        }
+
+        return {
+            revenue: calcPercent(thisWeekRevenue, lastWeekRevenue),
+            pending: calcPercent(thisWeekPending, lastWeekPending),
+        }
+    }, [orders])
+
     const paymentDonutData = useMemo(() => {
         const paid = orders.filter(o => o.paymentStatus === "PAID").length
         const pending = orders.filter(o => o.paymentStatus === "PENDING").length
@@ -229,21 +265,20 @@ export default function AdminDashboardPage() {
                     value={formatCurrency(totalRevenue)}
                     icon={CircleDollarSign}
                     color="bg-emerald-500"
-                    trend={12}
+                    trend={trends.revenue}
                 />
                 <MetricCard
                     title="Đơn chờ xử lý"
                     value={`${pendingOrders}`}
                     icon={Clock3}
                     color="bg-amber-500"
-                    trend={-5}
+                    trend={trends.pending}
                 />
                 <MetricCard
                     title="Tổng sản phẩm"
                     value={`${products.length}`}
                     icon={Package}
                     color="bg-blue-500"
-                    trend={8}
                 />
                 <MetricCard
                     title="Tồn kho khả dụng"
@@ -263,9 +298,14 @@ export default function AdminDashboardPage() {
                             <h3 className="text-base font-bold text-slate-900">Doanh thu 7 ngày</h3>
                             <p className="text-xs text-slate-500">Tổng giá trị đơn hàng không hủy</p>
                         </div>
-                        <div className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                            <TrendingUp className="h-3 w-3" />
-                            +12%
+                        <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            trends.revenue !== undefined && trends.revenue >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                        }`}>
+                            {trends.revenue !== undefined && trends.revenue >= 0
+                                ? <TrendingUp className="h-3 w-3" />
+                                : <ArrowDown className="h-3 w-3" />
+                            }
+                            {trends.revenue !== undefined ? `${trends.revenue >= 0 ? '+' : ''}${trends.revenue}%` : '--'}
                         </div>
                     </div>
                     <ResponsiveContainer width="100%" height={260}>
