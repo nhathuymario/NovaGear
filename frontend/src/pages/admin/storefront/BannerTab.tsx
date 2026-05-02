@@ -1,6 +1,6 @@
 import {useState, useCallback} from "react"
 import {Plus, Trash2, GripVertical, Upload, Image as ImageIcon, ChevronUp, ChevronDown} from "lucide-react"
-import {type BannerItem, saveBanners, generateId, getDefaultBanners} from "../../../utils/storefrontConfig"
+import type {BannerItem} from "../../../types/storefront"
 import {uploadBannerImage} from "../../../api/uploadApi"
 
 const GRADIENT_OPTIONS = [
@@ -30,12 +30,11 @@ export default function BannerTab({banners, onChange}: Props) {
 
     const update = useCallback((updated: BannerItem[]) => {
         onChange(updated)
-        saveBanners(updated)
     }, [onChange])
 
     const addBanner = () => {
         update([...banners, {
-            id: generateId(), title: "Banner mới", subtitle: "Mô tả ngắn",
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), title: "Banner mới", subtitle: "Mô tả ngắn",
             imageUrl: "", linkUrl: "/products",
             bgGradient: GRADIENT_OPTIONS[0].value, accentColor: ACCENT_OPTIONS[0].value,
         }])
@@ -69,8 +68,7 @@ export default function BannerTab({banners, onChange}: Props) {
     }
 
     const resetDefaults = () => {
-        const defaults = getDefaultBanners()
-        update(defaults)
+        update([])
     }
 
     return (

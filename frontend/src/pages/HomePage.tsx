@@ -1,15 +1,24 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from "react"
-import {Link} from "react-router-dom"
-import {motion} from "framer-motion"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Link } from "react-router-dom"
+import { motion } from "framer-motion"
 import useEmblaCarousel from "embla-carousel-react"
 import Autoplay from "embla-carousel-autoplay"
-import {ArrowRight, ChevronLeft, ChevronRight, Flame, Gift, Timer, Zap, Star, Heart, Tag, Percent, ShoppingBag, Award} from "lucide-react"
-import {getProducts, getPublicCategories} from "../api/productApi"
-import type {Product, PublicCategory} from "../types/product"
-import {getSiteContent} from "../utils/siteContent"
-import {getBanners, getFlashSaleConfig, getPromos, shuffleArray, type BannerItem, type PromoItem} from "../utils/storefrontConfig"
+import { ArrowRight, ChevronLeft, ChevronRight, Flame, Gift, Timer, Zap, Star, Heart, Tag, Percent, ShoppingBag, Award } from "lucide-react"
+import { getProducts, getPublicCategories } from "../api/productApi"
+import type { Product, PublicCategory } from "../types/product"
+import { getSiteContent } from "../utils/siteContent"
+import type { BannerItem, PromoItem } from "../types/storefront"
+
+function shuffleArray<T>(arr: T[]): T[] {
+    const copy = [...arr]
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    return copy
+}
 import ProductCard from "../components/product/ProductCard"
-import {ProductGridSkeleton} from "../components/ui/Skeletons"
+import { ProductGridSkeleton } from "../components/ui/Skeletons"
 
 const CATEGORY_ICONS: Record<string, string> = {
     "laptop": "💻",
@@ -31,13 +40,13 @@ function getCategoryIcon(slug: string): string {
     return key ? CATEGORY_ICONS[key] : "📦"
 }
 
-const PROMO_ICONS: Record<string, React.ComponentType<{className?: string}>> = {
+const PROMO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
     Gift, Zap, Flame, Timer, Star, Heart, Tag, Percent, ShoppingBag, Award,
 }
 
 // Countdown timer hook - returns timeLeft + fires onExpire once
 function useCountdown(targetHour = 23, targetMinute = 59, onExpire?: () => void) {
-    const [timeLeft, setTimeLeft] = useState({hours: 0, minutes: 0, seconds: 0})
+    const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
     const firedRef = useRef(false)
 
     useEffect(() => {
@@ -79,9 +88,9 @@ export default function HomePage() {
     const flashSaleText = getSiteContent("homeFlashSaleText")
 
     // Storefront config
-    const [banners] = useState<BannerItem[]>(() => getBanners())
-    const [flashSaleConfig] = useState(() => getFlashSaleConfig())
-    const [promos] = useState<PromoItem[]>(() => getPromos())
+    const [banners] = useState<BannerItem[]>([])
+    const [flashSaleConfig] = useState({ mode: "random" as const, productIds: [], displayCount: 8, countdownHour: 23, countdownMinute: 59 })
+    const [promos] = useState<PromoItem[]>([])
     const [flashSaleRound, setFlashSaleRound] = useState(0)
 
     const handleCountdownExpire = useCallback(() => {
@@ -90,8 +99,8 @@ export default function HomePage() {
 
     const countdown = useCountdown(flashSaleConfig.countdownHour, flashSaleConfig.countdownMinute, handleCountdownExpire)
 
-    const [emblaRef, emblaApi] = useEmblaCarousel({loop: true}, [
-        Autoplay({delay: 4000, stopOnInteraction: false}),
+    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+        Autoplay({ delay: 4000, stopOnInteraction: false }),
     ])
 
     const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi])
@@ -153,14 +162,14 @@ export default function HomePage() {
                             >
                                 <span>{getCategoryIcon(cat.slug)}</span>
                                 <span className="flex-1 font-medium">{cat.name}</span>
-                                <ChevronRight className="h-3.5 w-3.5 text-slate-300"/>
+                                <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
                             </Link>
                         ))}
                         <Link
                             to="/products"
                             className="mt-1 flex items-center justify-center gap-1 rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-brand-blue transition hover:bg-brand-blue/10"
                         >
-                            Xem tất cả <ArrowRight className="h-3 w-3"/>
+                            Xem tất cả <ArrowRight className="h-3 w-3" />
                         </Link>
                     </nav>
                 </div>
@@ -187,7 +196,7 @@ export default function HomePage() {
                                             </p>
                                             <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-brand-dark transition hover:bg-brand-yellow">
                                                 Mua ngay
-                                                <ArrowRight className="h-4 w-4"/>
+                                                <ArrowRight className="h-4 w-4" />
                                             </div>
                                         </div>
                                         {banner.imageUrl && <div className="absolute inset-0 bg-black/30" />}
@@ -197,10 +206,10 @@ export default function HomePage() {
                         </div>
                     </div>
                     <button onClick={scrollPrev} className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md transition hover:bg-white">
-                        <ChevronLeft className="h-4 w-4"/>
+                        <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button onClick={scrollNext} className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md transition hover:bg-white">
-                        <ChevronRight className="h-4 w-4"/>
+                        <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>
             </section>
@@ -215,7 +224,7 @@ export default function HomePage() {
                             to={promo.linkUrl}
                             className={`flex items-center gap-3 rounded-xl border border-slate-100 ${promo.colorBg} ${promo.colorText} px-4 py-3 text-sm font-semibold transition hover:shadow-md`}
                         >
-                            <IconComp className="h-5 w-5"/>
+                            <IconComp className="h-5 w-5" />
                             {promo.text}
                         </Link>
                     )
@@ -224,10 +233,10 @@ export default function HomePage() {
 
             {/* ===== CATEGORY GRID (mobile) ===== */}
             <motion.section
-                initial={{opacity: 0, y: 16}}
-                whileInView={{opacity: 1, y: 0}}
-                viewport={{once: true}}
-                transition={{duration: 0.3}}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3 }}
                 className="rounded-xl border border-slate-200 bg-white p-4 lg:hidden"
             >
                 <h2 className="mb-3 text-base font-bold text-slate-900">Danh mục sản phẩm</h2>
@@ -248,16 +257,16 @@ export default function HomePage() {
             {/* ===== FLASH SALE SECTION ===== */}
             {saleProducts.length > 0 && (
                 <motion.section
-                    initial={{opacity: 0, y: 16}}
-                    whileInView={{opacity: 1, y: 0}}
-                    viewport={{once: true}}
-                    transition={{duration: 0.3}}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3 }}
                     className="overflow-hidden rounded-xl border border-red-200 bg-gradient-to-r from-red-50 via-white to-red-50"
                 >
                     <div
                         className="flex flex-wrap items-center justify-between gap-3 border-b border-red-100 bg-gradient-to-r from-brand-red to-red-600 px-4 py-3">
                         <div className="flex items-center gap-3">
-                            <Zap className="h-5 w-5 text-brand-yellow"/>
+                            <Zap className="h-5 w-5 text-brand-yellow" />
                             <h2 className="text-lg font-black text-white">FLASH SALE</h2>
                             <div className="flex items-center gap-1">
                                 <span className="countdown-digit">{pad(countdown.hours)}</span>
@@ -268,14 +277,14 @@ export default function HomePage() {
                             </div>
                         </div>
                         <Link to="/products"
-                              className="text-xs font-semibold text-white/90 transition hover:text-white">
+                            className="text-xs font-semibold text-white/90 transition hover:text-white">
                             Xem tất cả →
                         </Link>
                     </div>
                     <div className="flex gap-3 overflow-x-auto p-4 scrollbar-hide">
                         {saleProducts.map((product) => (
                             <div key={product.id} className="w-[180px] shrink-0 md:w-[200px]">
-                                <ProductCard product={product}/>
+                                <ProductCard product={product} />
                             </div>
                         ))}
                     </div>
@@ -331,10 +340,10 @@ export default function HomePage() {
 
             {/* ===== FEATURED PRODUCTS ===== */}
             <motion.section
-                initial={{opacity: 0, y: 16}}
-                whileInView={{opacity: 1, y: 0}}
-                viewport={{once: true}}
-                transition={{duration: 0.3}}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3 }}
                 className="rounded-xl border border-slate-200 bg-white p-4"
             >
                 <div className="mb-4 flex items-center justify-between">
@@ -343,17 +352,17 @@ export default function HomePage() {
                         <p className="mt-0.5 text-xs text-slate-500">Được yêu thích nhất tại NovaGear</p>
                     </div>
                     <Link to="/products"
-                          className="text-sm font-semibold text-brand-blue transition hover:text-brand-blue/80">
+                        className="text-sm font-semibold text-brand-blue transition hover:text-brand-blue/80">
                         Xem tất cả →
                     </Link>
                 </div>
 
                 {loading ? (
-                    <ProductGridSkeleton count={12}/>
+                    <ProductGridSkeleton count={12} />
                 ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         {featuredProducts.map((product) => (
-                            <ProductCard key={product.id} product={product}/>
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 )}
@@ -365,7 +374,7 @@ export default function HomePage() {
                             className="inline-flex items-center gap-2 rounded-lg border border-brand-blue px-6 py-2.5 text-sm font-semibold text-brand-blue transition hover:bg-brand-blue hover:text-white"
                         >
                             Xem thêm sản phẩm
-                            <ArrowRight className="h-4 w-4"/>
+                            <ArrowRight className="h-4 w-4" />
                         </Link>
                     </div>
                 )}

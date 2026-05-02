@@ -5,7 +5,6 @@ import {getAiSearchSuggestions, type AiSearchResult} from "../../api/aiApi"
 import {OrderNotificationBell} from "../OrderNotificationBell"
 import {useAuth} from "../../hooks/useAuth"
 import {normalizeRole} from "../../utils/auth"
-import {getLogoUrl} from "../../utils/storefrontConfig"
 import TopBar from "./TopBar"
 import MegaMenu from "./MegaMenu"
 
@@ -19,7 +18,7 @@ export default function Header() {
     const navigate = useNavigate()
     const {isAuthenticated, user, logout} = useAuth()
     const normalizedRole = normalizeRole(user?.role)
-    const logoUrl = getLogoUrl()
+    const logoUrl = ""
 
     useEffect(() => {
         const trimmedKeyword = keyword.trim()

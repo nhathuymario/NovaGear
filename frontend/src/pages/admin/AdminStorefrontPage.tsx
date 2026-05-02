@@ -1,9 +1,8 @@
 import {useState, useEffect} from "react"
 import {Image, Zap, Gift, Store} from "lucide-react"
-import {
-    type BannerItem, type FlashSaleConfig, type PromoItem,
-    getBanners, getFlashSaleConfig, getPromos, getLogoUrl,
-} from "../../utils/storefrontConfig"
+import type {
+    BannerItem, FlashSaleConfig, PromoItem,
+} from "../../types/storefront"
 import BannerTab from "./storefront/BannerTab"
 import FlashSaleTab from "./storefront/FlashSaleTab"
 import PromoTab from "./storefront/PromoTab"
@@ -26,10 +25,11 @@ export default function AdminStorefrontPage() {
     const [logoUrl, setLogoUrl] = useState("")
 
     useEffect(() => {
-        setBanners(getBanners())
-        setFlashSale(getFlashSaleConfig())
-        setPromos(getPromos())
-        setLogoUrl(getLogoUrl())
+        // TODO: Fetch from API
+        setBanners([])
+        setFlashSale({mode: "fixed", productIds: [], displayCount: 8, countdownHour: 23, countdownMinute: 59})
+        setPromos([])
+        setLogoUrl("")
     }, [])
 
     return (

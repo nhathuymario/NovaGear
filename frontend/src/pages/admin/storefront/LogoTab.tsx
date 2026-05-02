@@ -1,6 +1,5 @@
 import {useState} from "react"
 import {Upload, Trash2, RotateCcw} from "lucide-react"
-import {saveLogoUrl} from "../../../utils/storefrontConfig"
 import {uploadLogoImage} from "../../../api/uploadApi"
 
 interface Props {
@@ -18,7 +17,6 @@ export default function LogoTab({logoUrl, onChange}: Props) {
         try {
             const url = await uploadLogoImage(file)
             onChange(url)
-            saveLogoUrl(url)
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Upload thất bại")
         } finally {
@@ -26,7 +24,7 @@ export default function LogoTab({logoUrl, onChange}: Props) {
         }
     }
 
-    const removeLogo = () => { onChange(""); saveLogoUrl("") }
+    const removeLogo = () => { onChange("") }
 
     return (
         <div className="space-y-4">
