@@ -1850,13 +1850,15 @@ export default function AdminProductsPage() {
                                             const availableStock = inventory?.availableQuantity ?? displayStock
                                             const reservedStock = inventory?.reservedQuantity ?? 0
 
+                                            const effectiveImageUrl = v.imageUrl || (v.color ? variants.find(other => other.id !== v.id && other.color === v.color && other.imageUrl)?.imageUrl : null)
+
                                             return (
                                                 <tr key={v.id} className="hover:bg-gray-50">
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            {v.imageUrl ? (
+                                                            {effectiveImageUrl ? (
                                                                 <img
-                                                                    src={getImageSrc(v.imageUrl, "Variant")}
+                                                                    src={getImageSrc(effectiveImageUrl, "Variant")}
                                                                     alt={v.sku}
                                                                     className="h-10 w-10 rounded-lg object-cover"
                                                                     data-fallback={getFallbackImageSrc("Variant")}

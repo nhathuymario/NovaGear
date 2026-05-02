@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useState} from "react"
-import {useNavigate, useParams} from "react-router-dom"
+import {Link, useNavigate, useParams} from "react-router-dom"
 import {motion} from "framer-motion"
-import {Package, RefreshCw, ShieldCheck, Truck} from "lucide-react"
+import {ChevronRight, Package, RefreshCw, ShieldCheck, Truck} from "lucide-react"
 import {addToCart} from "../api/cartApi"
 import {type InventoryItem,} from "../api/inventoryApi"
 import {
@@ -246,15 +246,35 @@ export default function ProductDetailPage() {
     }, [product?.name, selectedVariant])
 
     const galleryImages = useMemo(() => {
-        const selectedId = selectedVariant?.id != null ? String(selectedVariant.id) : null
+        let effectiveVariant = selectedVariant
+        let effectiveId = selectedVariant?.id != null ? String(selectedVariant.id) : null
+
+        if (selectedVariant && !selectedVariant.imageUrl && selectedVariant.color) {
+            const hasOwnGalleryImages = (product?.images ?? []).some(
+                (img) => String(img.variantId) === effectiveId
+            )
+            if (!hasOwnGalleryImages) {
+                const sameColorVariant = product?.variants.find(
+                    (v) =>
+                        v.id !== selectedVariant.id &&
+                        v.color === selectedVariant.color &&
+                        (v.imageUrl || (product?.images ?? []).some((img) => String(img.variantId) === String(v.id)))
+                )
+                if (sameColorVariant) {
+                    effectiveVariant = sameColorVariant
+                    effectiveId = String(sameColorVariant.id)
+                }
+            }
+        }
+
         const scopedImages = (product?.images ?? []).filter((img) => {
-            if (!selectedId) {
+            if (!effectiveId) {
                 return true
             }
             if (img.variantId == null || String(img.variantId).trim() === "") {
                 return true
             }
-            return String(img.variantId) === selectedId
+            return String(img.variantId) === effectiveId
         })
 
         const variantImageUrls = new Set(
@@ -270,7 +290,7 @@ export default function ProductDetailPage() {
         const sharedThumbnailIsVariantImage = sharedThumbnail ? variantImageUrls.has(sharedThumbnail) : false
 
         const candidates = [
-            selectedVariant?.imageUrl,
+            effectiveVariant?.imageUrl,
             ...scopedImages.map((img) => img.imageUrl),
             ...(sharedThumbnail && !sharedThumbnailIsVariantImage ? [sharedThumbnail] : []),
         ]
@@ -471,12 +491,6 @@ export default function ProductDetailPage() {
         selectedVariant?.stockQuantity ??
         0
 
-    // const reservedStock = selectedInventory?.reservedQuantity ?? 0
-    const totalStock =
-        selectedInventory?.stockQuantity ??
-        selectedVariant?.stockQuantity ??
-        0
-
     const reviewSummary = reviewData?.summary ?? {
         averageRating: 0,
         totalReviews: 0,
@@ -610,25 +624,33 @@ export default function ProductDetailPage() {
     if (loading) return <ProductDetailSkeleton />
     if (!product) {
         return (
-            <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-sm">
-                <p className="text-2xl font-black text-slate-900">Không tìm thấy sản phẩm</p>
-                <p className="mt-3 text-sm text-slate-500">
-                    Sản phẩm có thể đã bị gỡ hoặc đường dẫn không còn hợp lệ.
-                </p>
+            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <p className="text-xl font-bold text-slate-900">Không tìm thấy sản phẩm</p>
+                <p className="mt-2 text-sm text-slate-500">Sản phẩm có thể đã bị gỡ hoặc đường dẫn không còn hợp lệ.</p>
+                <Link to="/products" className="mt-4 inline-flex rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white">Quay lại</Link>
             </div>
         )
     }
 
     return (
         <motion.div
-            initial={{opacity: 0, y: 18}}
+            initial={{opacity: 0, y: 12}}
             animate={{opacity: 1, y: 0}}
-            transition={{duration: 0.3}}
-            className="space-y-6"
+            transition={{duration: 0.25}}
+            className="space-y-4"
         >
-            <div className="grid gap-6 rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:grid-cols-2 md:p-8">
-                <div className="space-y-4">
-                    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-inner">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Link to="/" className="hover:text-brand-blue">Trang chủ</Link>
+                <ChevronRight className="h-3 w-3" />
+                <Link to="/products" className="hover:text-brand-blue">Sản phẩm</Link>
+                <ChevronRight className="h-3 w-3" />
+                <span className="font-medium text-slate-700 truncate max-w-[200px]">{product.name}</span>
+            </div>
+
+            <div className="grid gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 md:p-6">
+                <div className="space-y-3">
+                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                         <div className="relative aspect-square w-full bg-slate-100">
                             <img
                                 src={galleryImage}
@@ -668,12 +690,12 @@ export default function ProductDetailPage() {
                     </div>
 
                     {galleryImages.length > 1 && (
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-5 gap-2">
                             {galleryImages.slice(0, 8).map((imageUrl, index) => (
                                 <div
                                     key={`${imageUrl}-${index}`}
-                                    className={`aspect-square overflow-hidden rounded-2xl border bg-slate-50 ${
-                                        index === selectedImageIndex ? "border-brand-dark" : "border-transparent"
+                                    className={`aspect-square overflow-hidden rounded-lg border-2 bg-slate-50 ${
+                                        index === selectedImageIndex ? "border-brand-blue" : "border-transparent hover:border-slate-300"
                                     }`}
                                 >
                                     <button type="button" onClick={() => setSelectedImageIndex(index)}
@@ -697,24 +719,29 @@ export default function ProductDetailPage() {
 
                 <div className="space-y-4">
                     <div>
-                        <p className="inline-flex rounded-full bg-brand-yellow/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-brand-dark">
-                            Sản phẩm nổi bật
-                        </p>
-                        <h1 className="mt-3 text-3xl font-black text-slate-900">{product.name}</h1>
+                        {product.brand && (
+                            <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">{product.brand}</p>
+                        )}
+                        <h1 className="mt-1 text-2xl font-bold text-slate-900">{product.name}</h1>
                     </div>
-                    <p className="text-sm leading-7 text-brand-gray">
+                    <p className="text-sm leading-relaxed text-slate-500">
                         {product.shortDescription || product.description}
                     </p>
 
-                    <div className="rounded-[28px] bg-gradient-to-r from-slate-50 to-blue-50 p-4">
-                        <p className="text-3xl font-extrabold text-brand-red">
+                    <div className="rounded-xl bg-red-50/50 border border-red-100 p-4">
+                        <p className="text-2xl font-extrabold text-brand-red">
                             {formatCurrency(finalPrice)}
                         </p>
-
                         {selectedVariant?.salePrice != null && (
-                            <p className="mt-1 text-sm text-gray-400 line-through">
-                                {formatCurrency(originalPrice)}
-                            </p>
+                            <div className="mt-1 flex items-center gap-2">
+                                <p className="text-sm text-slate-400 line-through">{formatCurrency(originalPrice)}</p>
+                                <span className="rounded-md bg-brand-red px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                    -{Math.round(((originalPrice - finalPrice) / originalPrice) * 100)}%
+                                </span>
+                            </div>
+                        )}
+                        {finalPrice >= 3000000 && (
+                            <p className="mt-2 text-xs font-semibold text-brand-blue">Trả góp 0% qua thẻ tín dụng</p>
                         )}
                     </div>
 
@@ -833,73 +860,53 @@ export default function ProductDetailPage() {
 
                     <div className="flex gap-3">
                         <button
-                            onClick={handleAddToCart}
-                            disabled={adding || inventoryLoading || availableStock <= 0}
-                            className="rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white disabled:opacity-60"
-                        >
-                            {adding ? "Đang thêm..." : "Thêm vào giỏ"}
-                        </button>
-
-                        <button
                             onClick={handleBuyNow}
                             disabled={adding || inventoryLoading || availableStock <= 0}
-                            className="rounded-xl border border-brand-dark px-5 py-3 font-semibold text-brand-dark disabled:opacity-60"
+                            className="flex-1 rounded-lg bg-brand-red py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
                         >
-                            Mua ngay
+                            {adding ? "Đang xử lý..." : "MUA NGAY"}
+                        </button>
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={adding || inventoryLoading || availableStock <= 0}
+                            className="flex-1 rounded-lg border-2 border-brand-blue py-3 text-sm font-bold text-brand-blue transition hover:bg-brand-blue hover:text-white disabled:opacity-50"
+                        >
+                            {adding ? "Đang thêm..." : "THÊM VÀO GIỎ"}
                         </button>
                     </div>
 
-                    <div className="rounded-[28px] bg-slate-50 p-4">
-                        <h3 className="font-bold">Tình trạng kho</h3>
-
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         {inventoryLoading ? (
-                            <p className="mt-3 text-sm text-brand-gray">Đang tải tồn kho...</p>
+                            <p className="text-xs text-slate-500">Đang tải tồn kho...</p>
+                        ) : availableStock > 0 ? (
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="h-2 w-2 rounded-full bg-brand-green"></span>
+                                <span className="font-semibold text-brand-green">Còn hàng</span>
+                                <span className="text-slate-400">({availableStock} sản phẩm)</span>
+                            </div>
                         ) : (
-                            <>
-                                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                                    <div>
-                                        <p className="text-sm text-brand-gray">Tổng tồn</p>
-                                        <p className="mt-1 font-semibold">{totalStock}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-brand-gray">Khả dụng</p>
-                                        <p
-                                            className={`mt-1 font-semibold ${
-                                                availableStock > 0 ? "text-green-600" : "text-red-500"
-                                            }`}
-                                        >
-                                            {availableStock}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {availableStock <= 0 && (
-                                    <p className="mt-3 text-sm font-medium text-red-500">
-                                        Phiên bản này hiện đang hết hàng.
-                                    </p>
-                                )}
-                            </>
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                <span className="font-semibold text-red-500">Hết hàng</span>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
-                <h3 className="text-xl font-bold text-slate-900">NovaGear cam kết</h3>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="text-base font-bold text-slate-900">NovaGear cam kết</h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {SHOP_COMMITMENTS.map((item) => {
                         const Icon = item.icon
                         return (
-                            <div
-                                key={item.title}
-                                className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4"
-                            >
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm">
-                                    <Icon className="h-6 w-6" />
+                            <div key={item.title} className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue shadow-sm">
+                                    <Icon className="h-4 w-4" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold text-slate-900">{item.title}</p>
-                                    <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.description}</p>
                                 </div>
                             </div>
                         )
@@ -908,7 +915,7 @@ export default function ProductDetailPage() {
             </section>
 
             {descriptionHtml && (
-                <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 className="text-xl font-bold text-slate-900">Thông tin sản phẩm</h3>
@@ -948,7 +955,7 @@ export default function ProductDetailPage() {
             )}
 
             {groupedSpecifications.length > 0 && (
-                <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 className="text-xl font-bold text-slate-900">Thông số kỹ thuật</h3>
 
                     <div className="mt-5 space-y-3">
@@ -989,7 +996,7 @@ export default function ProductDetailPage() {
                 </section>
             )}
 
-            <section className="rounded-[32px] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="text-xl font-bold text-slate-900">Đánh giá sản phẩm</h3>
 
                 {reviewLoading ? (
@@ -1070,17 +1077,18 @@ export default function ProductDetailPage() {
                 )}
             </section>
 
-            <section className="rounded-[32px] bg-white p-6 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-slate-900">Sản phẩm cùng loại</h3>
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-base font-bold text-slate-900">Sản phẩm tương tự</h3>
+                    <Link to="/products" className="text-xs font-semibold text-brand-blue hover:underline">Xem thêm</Link>
                 </div>
 
                 {relatedLoading ? (
-                    <p className="text-sm text-slate-500">Đang tải sản phẩm cùng loại...</p>
+                    <p className="text-sm text-slate-500">Đang tải...</p>
                 ) : relatedProducts.length === 0 ? (
-                    <p className="text-sm text-slate-500">Chưa có sản phẩm cùng loại.</p>
+                    <p className="text-sm text-slate-500">Chưa có sản phẩm tương tự.</p>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         {relatedProducts.map((item) => (
                             <ProductCard key={item.id} product={item}/>
                         ))}
