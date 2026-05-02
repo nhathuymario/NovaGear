@@ -117,16 +117,14 @@ export default function OrdersPage() {
 
     if (!token) {
         return (
-            <div className="rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm">
-                <h1 className="text-2xl font-black text-slate-900">Đơn hàng của tôi</h1>
-                <p className="mt-3 text-brand-gray">
-                    Bạn cần đăng nhập để xem đơn hàng.
-                </p>
+            <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <h1 className="text-xl font-bold text-slate-900">Đơn hàng của tôi</h1>
+                <p className="mt-2 text-sm text-slate-500">Bạn cần đăng nhập để xem đơn hàng.</p>
                 <button
                     onClick={() => navigate("/login")}
-                    className="mt-5 rounded-2xl bg-brand-dark px-5 py-3 font-semibold text-white transition hover:-translate-y-0.5"
+                    className="mt-5 rounded-lg bg-brand-yellow px-5 py-3 font-semibold text-brand-dark transition hover:brightness-95"
                 >
-                    Đi tới đăng nhập
+                    Đăng nhập ngay
                 </button>
             </div>
         )
@@ -141,9 +139,9 @@ export default function OrdersPage() {
             transition={{duration: 0.28}}
             className="space-y-4"
         >
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-black text-slate-900">Đơn hàng của tôi</h1>
-                <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h1 className="text-lg font-bold text-slate-900">Đơn hàng của tôi</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-medium text-slate-600">Lọc theo thanh toán:</span>
                     {(["ALL", "PAID", "UNPAID", "PENDING", "FAILED", "REFUNDED"] as PaymentFilter[]).map((value) => {
                         const active = paymentFilter === value
@@ -167,7 +165,7 @@ export default function OrdersPage() {
             </div>
 
             {filteredItems.length === 0 ? (
-                <div className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
                     {items.length === 0 ? "Bạn chưa có đơn hàng nào." : "Không có đơn hàng phù hợp với bộ lọc thanh toán."}
                 </div>
             ) : (
@@ -175,7 +173,7 @@ export default function OrdersPage() {
                     <Link
                         key={order.id}
                         to={`/orders/${order.id}`}
-                        className="block rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl"
+                        className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
                     >
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>

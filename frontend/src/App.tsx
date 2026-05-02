@@ -26,6 +26,7 @@ import AdminOrdersPage from "./pages/admin/AdminOrdersPage"
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
 import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
 import AdminUsersPage from "./pages/admin/AdminUsersPage"
+import AdminStorefrontPage from "./pages/admin/AdminStorefrontPage"
 
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
                     <Route path="inventory" element={<AdminInventoryPage/>}/>
                     <Route path="users" element={<AdminUsersPage/>}/>
                     <Route path="policies" element={<AdminPoliciesPage/>}/>
+                    <Route path="storefront" element={<AdminStorefrontPage/>}/>
                 </Route>
             </Route>
 
