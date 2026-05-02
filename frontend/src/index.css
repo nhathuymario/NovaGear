@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -9,22 +10,29 @@
 @theme {
     --color-white: #ffffff;
     --color-brand-yellow: #ffd400;
-    --color-brand-dark: #1f2937;
-    --color-brand-red: #dc2626;
-    --color-brand-light: #f3f4f6;
+    --color-brand-dark: #1a1a2e;
+    --color-brand-red: #e02d2d;
+    --color-brand-light: #f5f5fa;
     --color-brand-gray: #6b7280;
-    --color-brand-bg: #f6f8fc;
+    --color-brand-bg: #f5f5fa;
     --color-brand-surface: #ffffff;
     --color-brand-muted: #eef2f7;
-    --color-brand-blue: #1d4ed8;
+    --color-brand-blue: #2563eb;
+    --color-brand-green: #16a34a;
+    --color-brand-orange: #f97316;
+
+    /* Admin Dashboard */
+    --color-admin-sidebar: #1e293b;
+    --color-admin-sidebar-active: #334155;
+    --color-admin-accent: #6366f1;
+    --color-admin-bg: #f1f5f9;
+    --color-admin-card: #ffffff;
 }
 
 body {
     margin: 0;
     min-width: 320px;
-    background: radial-gradient(circle at 0% 0%, rgba(255, 212, 0, 0.18) 0, rgba(255, 245, 191, 0) 28%),
-    radial-gradient(circle at 100% 0%, rgba(29, 78, 216, 0.14) 0, rgba(219, 234, 254, 0) 24%),
-    linear-gradient(180deg, #fbfcff 0%, var(--color-brand-bg) 52%, #eef3fb 100%);
+    background: var(--color-brand-bg);
     color: #111827;
     font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
     line-height: 1.5;
@@ -50,7 +58,7 @@ textarea {
 }
 
 :focus-visible {
-    outline: 2px solid rgba(29, 78, 216, 0.55);
+    outline: 2px solid rgba(37, 99, 235, 0.55);
     outline-offset: 2px;
 }
 
@@ -64,13 +72,19 @@ img {
     max-width: 100%;
 }
 
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+html {
+    scroll-padding-top: 7rem;
+}
+
+/* ===== Animations ===== */
 @keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .animate-shimmer {
@@ -79,6 +93,86 @@ img {
     animation: shimmer 1.6s linear infinite;
 }
 
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 0, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(255, 212, 0, 0); }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-slide-down {
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(226, 232, 240, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 2px solid rgba(226, 232, 240, 0.5);
+    background: rgba(100, 116, 139, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+}
+
+/* ===== Mega Menu ===== */
+.mega-menu-enter {
+    animation: slideDown 0.2s ease-out forwards;
+}
+
+/* ===== Product Card hover ===== */
+.product-card-hover {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.product-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Flash sale countdown ===== */
+.countdown-digit {
+    background: linear-gradient(135deg, #e02d2d 0%, #cc1c1c 100%);
+    color: white;
+    font-weight: 800;
+    border-radius: 6px;
+    min-width: 32px;
+    text-align: center;
+    padding: 2px 6px;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+/* ===== Hide scrollbar for horizontal scroll ===== */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ===== Reduced motion ===== */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -88,30 +182,206 @@ img {
     }
 }
 
-a {
-    text-decoration: none;
-    color: inherit;
+/* ===== Admin Dashboard specific ===== */
+.admin-sidebar-item {
+    transition: all 0.2s ease;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.65);
+}
+.admin-sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+}
+.admin-sidebar-item.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #ffffff;
+    font-weight: 600;
 }
 
-html {
-    scroll-padding-top: 6rem;
+/* ===== Embla carousel ===== */
+.embla {
+    overflow: hidden;
+}
+.embla__container {
+    display: flex;
+}
+.embla__slide {
+    flex: 0 0 100%;
+    min-width: 0;
 }
 
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+/* ===== Admin Dark Mode ===== */
+/* Cards, panels, white blocks → dark slate */
+.admin-dark .bg-white,
+.admin-dark .bg-admin-card {
+    background-color: #1e293b !important;
 }
 
-::-webkit-scrollbar-track {
-    background: rgba(226, 232, 240, 0.7);
+/* Subtle backgrounds (table headers, sections) */
+.admin-dark .bg-slate-50,
+.admin-dark .bg-gray-50 {
+    background-color: #1a2332 !important;
+}
+.admin-dark .bg-gray-100,
+.admin-dark .bg-slate-100 {
+    background-color: #253245 !important;
 }
 
-::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    border: 2px solid rgba(226, 232, 240, 0.7);
-    background: linear-gradient(180deg, rgba(29, 78, 216, 0.5), rgba(15, 23, 42, 0.55));
+/* Borders — slate + gray */
+.admin-dark .border-slate-200,
+.admin-dark .border-slate-100,
+.admin-dark .border-gray-200,
+.admin-dark .border-gray-100 {
+    border-color: #334155 !important;
+}
+.admin-dark .border-slate-50,
+.admin-dark .border-gray-50 {
+    border-color: #1e293b !important;
+}
+.admin-dark .divide-slate-100 > * + *,
+.admin-dark .divide-slate-50 > * + *,
+.admin-dark .divide-gray-100 > * + *,
+.admin-dark .divide-gray-50 > * + * {
+    border-color: #334155 !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(29, 78, 216, 0.7), rgba(15, 23, 42, 0.75));
+/* Primary text — slate */
+.admin-dark .text-slate-900 { color: #f1f5f9 !important; }
+.admin-dark .text-slate-800 { color: #e2e8f0 !important; }
+.admin-dark .text-slate-700 { color: #cbd5e1 !important; }
+.admin-dark .text-slate-600 { color: #94a3b8 !important; }
+.admin-dark .text-slate-500 { color: #64748b !important; }
+.admin-dark .text-slate-400 { color: #64748b !important; }
+.admin-dark .text-slate-300 { color: #94a3b8 !important; }
+
+/* Primary text — gray */
+.admin-dark .text-gray-900 { color: #f1f5f9 !important; }
+.admin-dark .text-gray-800 { color: #e2e8f0 !important; }
+.admin-dark .text-gray-700 { color: #cbd5e1 !important; }
+.admin-dark .text-gray-600 { color: #94a3b8 !important; }
+.admin-dark .text-gray-500 { color: #64748b !important; }
+.admin-dark .text-gray-400 { color: #4b5e73 !important; }
+.admin-dark .text-gray-300 { color: #64748b !important; }
+
+/* brand-dark text in admin dark mode */
+.admin-dark .text-brand-dark {
+    color: #e2e8f0 !important;
 }
+
+/* Inputs, selects, textareas */
+.admin-dark input:not([type="checkbox"]):not([type="radio"]),
+.admin-dark select,
+.admin-dark textarea {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+.admin-dark input::placeholder,
+.admin-dark textarea::placeholder {
+    color: #475569 !important;
+}
+.admin-dark input:focus,
+.admin-dark select:focus,
+.admin-dark textarea:focus {
+    border-color: #6366f1 !important;
+    background-color: #0f172a !important;
+}
+/* Prevent focus:bg-white from overriding dark */
+.admin-dark .focus\:bg-white:focus {
+    background-color: #0f172a !important;
+}
+
+/* Tables */
+.admin-dark table {
+    color: #cbd5e1;
+}
+.admin-dark th {
+    color: #94a3b8 !important;
+}
+.admin-dark tr:hover {
+    background-color: rgba(51, 65, 85, 0.3) !important;
+}
+.admin-dark thead {
+    background-color: #1a2332 !important;
+}
+.admin-dark td {
+    border-color: #334155 !important;
+}
+
+/* Shadow softener */
+.admin-dark .shadow-sm,
+.admin-dark .shadow-md,
+.admin-dark .shadow-lg,
+.admin-dark .shadow-xl {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Hover states — slate + gray */
+.admin-dark .hover\:bg-slate-50:hover,
+.admin-dark .hover\:bg-gray-50:hover {
+    background-color: #1a2332 !important;
+}
+.admin-dark .hover\:bg-slate-100:hover,
+.admin-dark .hover\:bg-gray-100:hover {
+    background-color: #253245 !important;
+}
+
+/* Dashed borders (empty states) */
+.admin-dark .border-dashed {
+    border-color: #475569 !important;
+}
+
+/* Gray border interactions */
+.admin-dark .border-gray-200,
+.admin-dark .border-gray-300 {
+    border-color: #334155 !important;
+}
+.admin-dark .hover\:border-gray-900:hover,
+.admin-dark .hover\:border-gray-400:hover {
+    border-color: #6366f1 !important;
+}
+.admin-dark .hover\:text-gray-900:hover {
+    color: #f1f5f9 !important;
+}
+
+/* bg-gray-900 tab active → keep visible in dark mode */
+.admin-dark .bg-gray-900 {
+    background-color: #6366f1 !important;
+}
+
+/* Recharts tooltip */
+.admin-dark .recharts-default-tooltip {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+/* Scrollbar dark */
+.admin-dark ::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+.admin-dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-color: #0f172a;
+}
+.admin-dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Admin-accent colored badges keep their color */
+.admin-dark .bg-admin-accent {
+    background-color: #6366f1 !important;
+}
+
+/* SVG icons inside dark panels */
+.admin-dark svg.text-gray-200,
+.admin-dark svg.text-gray-300 {
+    color: #475569 !important;
+}
+
