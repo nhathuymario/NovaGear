@@ -185,12 +185,14 @@ export default function HomePage() {
                                             <p className="mt-3 text-sm text-white/80 md:text-base">
                                                 {banner.subtitle}
                                             </p>
-                                            <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-brand-dark transition hover:bg-brand-yellow">
-                                                Mua ngay
-                                                <ArrowRight className="h-4 w-4" />
-                                            </div>
+                                            {banner.hideButton !== true && (
+                                                <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-brand-dark transition hover:bg-brand-yellow">
+                                                    {banner.buttonText || "Mua ngay"}
+                                                    <ArrowRight className="h-4 w-4" />
+                                                </div>
+                                            )}
                                         </div>
-                                        {banner.imageUrl && <div className="absolute inset-0 bg-black/30" />}
+                                        {banner.imageUrl && banner.dimImage !== false && <div className="absolute inset-0 bg-black/30" />}
                                     </Link>
                                 </div>
                             ))}

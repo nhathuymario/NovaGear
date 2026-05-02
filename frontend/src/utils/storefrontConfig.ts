@@ -14,6 +14,9 @@ export interface BannerItem {
     linkUrl: string         // navigation link
     bgGradient: string      // fallback TailwindCSS gradient classes
     accentColor: string     // text color class
+    dimImage?: boolean      // dim overlay for image
+    buttonText?: string     // custom text for the action button
+    hideButton?: boolean    // hide the action button
 }
 
 export interface FlashSaleConfig {

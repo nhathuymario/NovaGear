@@ -51,7 +51,7 @@ export default function BannerTab({banners, onChange}: Props) {
         update(next)
     }
 
-    const editField = (id: string, field: keyof BannerItem, value: string) => {
+    const editField = (id: string, field: keyof BannerItem, value: any) => {
         update(banners.map(b => b.id === id ? {...b, [field]: value} : b))
     }
 
@@ -146,12 +146,26 @@ export default function BannerTab({banners, onChange}: Props) {
                                                 className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <label className="text-[10px] font-semibold text-slate-500 uppercase">Nội dung nút</label>
+                                                <label className="flex items-center gap-1 cursor-pointer">
+                                                    <input type="checkbox" checked={banner.hideButton !== true} onChange={e => editField(banner.id, "hideButton", !e.target.checked)} className="h-3 w-3 rounded border-slate-300 text-admin-accent cursor-pointer" />
+                                                    <span className="text-[10px] font-semibold text-slate-500 uppercase">Hiện nút</span>
+                                                </label>
+                                            </div>
+                                            <input value={banner.buttonText ?? ""} placeholder="Mua ngay" onChange={e => editField(banner.id, "buttonText", e.target.value)}
+                                                disabled={banner.hideButton === true}
+                                                className={`w-full rounded-lg border px-3 py-1.5 text-sm ${banner.hideButton === true ? "bg-slate-100 border-transparent text-slate-400" : "border-slate-200"}`} />
+                                        </div>
                                         <div>
                                             <label className="text-[10px] font-semibold text-slate-500 uppercase">Link URL</label>
                                             <input value={banner.linkUrl} onChange={e => editField(banner.id, "linkUrl", e.target.value)}
                                                 className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
                                         </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
                                         <div>
                                             <label className="text-[10px] font-semibold text-slate-500 uppercase">Gradient nền</label>
                                             <select value={banner.bgGradient} onChange={e => editField(banner.id, "bgGradient", e.target.value)}
@@ -165,6 +179,12 @@ export default function BannerTab({banners, onChange}: Props) {
                                                 className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm">
                                                 {ACCENT_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                                             </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-slate-500 uppercase">Làm mờ ảnh</label>
+                                            <div className="mt-1.5 flex items-center h-8">
+                                                <input type="checkbox" checked={banner.dimImage !== false} onChange={e => editField(banner.id, "dimImage", e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-admin-accent cursor-pointer" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
