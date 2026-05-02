@@ -87,12 +87,7 @@ const DEFAULT_PROMOS: PromoItem[] = [
     {id: "promo-4", icon: "Timer", text: "Trả góp 0%", colorBg: "bg-emerald-50", colorText: "text-emerald-700", linkUrl: "/products"},
 ]
 
-const DEFAULT_CONFIG: StorefrontConfig = {
-    banners: DEFAULT_BANNERS,
-    flashSale: DEFAULT_FLASH_SALE,
-    promos: DEFAULT_PROMOS,
-    logoUrl: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=150&h=50&fit=crop",
-}
+
 
 // ---------- Read / Write ----------
 
