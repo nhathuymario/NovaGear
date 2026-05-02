@@ -5,6 +5,7 @@ import {getAiSearchSuggestions, type AiSearchResult} from "../../api/aiApi"
 import {OrderNotificationBell} from "../OrderNotificationBell"
 import {useAuth} from "../../hooks/useAuth"
 import {normalizeRole} from "../../utils/auth"
+import {getLogoUrl} from "../../utils/storefrontConfig"
 import TopBar from "./TopBar"
 import MegaMenu from "./MegaMenu"
 
@@ -18,6 +19,7 @@ export default function Header() {
     const navigate = useNavigate()
     const {isAuthenticated, user, logout} = useAuth()
     const normalizedRole = normalizeRole(user?.role)
+    const logoUrl = getLogoUrl()
 
     useEffect(() => {
         const trimmedKeyword = keyword.trim()
@@ -82,9 +84,13 @@ export default function Header() {
                 <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-4 py-3">
                     {/* Logo */}
                     <Link to="/" className="flex shrink-0 items-center gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-dark text-sm font-black text-brand-yellow shadow-md">
-                            NG
-                        </div>
+                        {logoUrl ? (
+                            <img src={logoUrl} alt="NovaGear" className="h-10 w-10 rounded-xl object-contain" />
+                        ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-dark text-sm font-black text-brand-yellow shadow-md">
+                                NG
+                            </div>
+                        )}
                         <div className="hidden sm:block">
                             <span className="block text-lg font-black leading-tight text-brand-dark">NovaGear</span>
                             <span className="block text-[10px] font-semibold leading-tight text-brand-dark/60">Premium Tech Store</span>

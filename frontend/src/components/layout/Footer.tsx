@@ -1,7 +1,9 @@
 import {Link} from "react-router-dom"
 import {Phone, Mail, Clock, MapPin, ShieldCheck, Truck, CreditCard, HeadphonesIcon} from "lucide-react"
+import {getLogoUrl} from "../../utils/storefrontConfig"
 
 export default function Footer() {
+    const logoUrl = getLogoUrl()
     return (
         <footer className="mt-8 bg-white border-t border-slate-200">
             {/* Trust badges */}
@@ -52,9 +54,13 @@ export default function Footer() {
                     {/* Brand */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-yellow text-sm font-black text-brand-dark">
-                                NG
-                            </div>
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="NovaGear" className="h-9 w-9 rounded-xl object-contain" />
+                            ) : (
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-yellow text-sm font-black text-brand-dark">
+                                    NG
+                                </div>
+                            )}
                             <span className="text-lg font-black text-slate-900">NovaGear</span>
                         </div>
                         <p className="text-sm leading-relaxed text-slate-600">
