@@ -83,6 +83,17 @@ export default function LogoTab({logoUrl, onChange}: Props) {
                             <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }} />
                         </label>
 
+                        <div className="mt-3">
+                            <p className="mb-1 text-xs font-semibold text-slate-500 uppercase">Hoặc nhập URL trực tiếp</p>
+                            <input 
+                                type="text"
+                                value={logoUrl}
+                                onChange={e => { onChange(e.target.value); saveLogoUrl(e.target.value) }}
+                                placeholder="https://..."
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-admin-accent"
+                            />
+                        </div>
+
                         <div className="mt-3 flex gap-2">
                             {logoUrl && (
                                 <button onClick={removeLogo} className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">

@@ -127,6 +127,13 @@ export default function BannerTab({banners, onChange}: Props) {
                                         </div>
                                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(banner.id, f) }} />
                                     </label>
+                                    <input 
+                                        type="text" 
+                                        value={banner.imageUrl} 
+                                        onChange={e => editField(banner.id, "imageUrl", e.target.value)}
+                                        placeholder="Hoặc nhập URL ảnh..."
+                                        className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1 text-[10px]"
+                                    />
                                     {banner.imageUrl && (
                                         <button onClick={() => editField(banner.id, "imageUrl", "")} className="mt-1 text-[10px] text-red-500 hover:underline">Xóa ảnh</button>
                                     )}

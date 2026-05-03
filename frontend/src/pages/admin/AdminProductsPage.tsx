@@ -704,6 +704,39 @@ export default function AdminProductsPage() {
         }
     }
 
+    const handleAddProductImageByUrl = async () => {
+        if (!selectedProduct) return
+
+        const url = window.prompt("Nhập URL ảnh:")
+        if (!url?.trim()) return
+
+        const targetVariantId =
+            selectedImageVariantId === PRODUCT_LEVEL_VARIANT
+                ? undefined
+                : Number(selectedImageVariantId)
+
+        try {
+            setGalleryUploading(true)
+
+            const payload: AdminProductImagePayload = {
+                imageUrl: url.trim(),
+                variantId: targetVariantId,
+                thumbnail: productImages.length === 0,
+                sortOrder: productImages.length,
+            }
+            await addProductImage(selectedProduct.id, payload)
+
+            await loadDetail(selectedProduct.id)
+            await loadProducts()
+            alert("Đã thêm ảnh từ URL")
+        } catch (error) {
+            console.error(error)
+            alert("Thêm ảnh thất bại")
+        } finally {
+            setGalleryUploading(false)
+        }
+    }
+
     const handleUploadProductGallery = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files ?? [])
         if (!selectedProduct || files.length === 0) return
@@ -1983,6 +2016,14 @@ export default function AdminProductsPage() {
                                         </option>
                                     ))}
                                 </select>
+                                <button
+                                    type="button"
+                                    onClick={handleAddProductImageByUrl}
+                                    disabled={galleryUploading || gallerySaving}
+                                    className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-900"
+                                >
+                                    Thêm từ URL
+                                </button>
                                 <label className="cursor-pointer">
                                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-gray-700">
                                         {galleryUploading ? "Đang upload..." : "Upload nhiều ảnh"}
