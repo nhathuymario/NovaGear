@@ -1,0 +1,19 @@
+aws_region        = "ap-southeast-1"
+availability_zone = "ap-southeast-1a"
+project_name      = "novagear"
+environment       = "dev"
+instance_type     = "t3.medium"
+
+public_key = "ssh-ed25519 AAAA... replace-me"
+
+ssh_ingress_cidr = "YOUR_IP/32"
+app_ingress_cidrs = [
+  "0.0.0.0/0"
+]
+
+app_setup_script = <<-EOT
+  # Example:
+  # cd /opt/novagear
+  # git clone https://github.com/your-org/NovaGear.git .
+  # docker compose up -d --build
+EOT
