@@ -69,6 +69,11 @@ spring:
           predicates:
             - Path=/api/payments/**,/api/admin/payments/**
 
+        - id: shipping-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/shipments/**,/api/admin/shipments/**
+
         - id: inventory-service-admin
           uri: http://localhost:8087
           predicates:
