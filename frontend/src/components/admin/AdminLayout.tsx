@@ -7,6 +7,7 @@ import {
     LayoutDashboard,
     LogOut,
     Package,
+    Truck,
     Palette,
     ShoppingCart,
     Tags,
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
     {to: "/admin/products", label: "Sản phẩm", icon: Package},
     {to: "/admin/categories", label: "Danh mục", icon: Tags},
     {to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart},
+    {to: "/admin/shipping", label: "Vận chuyển", icon: Truck},
     {to: "/admin/inventory", label: "Tồn kho", icon: Warehouse},
     {to: "/admin/users", label: "Người dùng", icon: Users},
     {to: "/admin/policies", label: "Chính sách", icon: FileText},
@@ -46,6 +48,7 @@ const PAGE_TITLES: Record<string, string> = {
     "/admin/users": "Quản lý người dùng",
     "/admin/policies": "Quản lý chính sách",
     "/admin/storefront": "Quản lý giao diện",
+    "/admin/shipping": "Quản lý vận chuyển",
 }
 
 export default function AdminLayout() {

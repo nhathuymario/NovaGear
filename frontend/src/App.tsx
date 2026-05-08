@@ -27,6 +27,10 @@ import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
 import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
 import AdminUsersPage from "./pages/admin/AdminUsersPage"
 import AdminStorefrontPage from "./pages/admin/AdminStorefrontPage"
+import AdminShippingPage from "./pages/admin/AdminShippingPage"
+import ShipmentList from "./components/shipping/ShipmentList"
+import ShipmentDetail from "./components/shipping/ShipmentDetail"
+import AdminShippingCreatePage from "./pages/admin/AdminShippingCreatePage"
 
 
 export default function App() {
@@ -38,6 +42,10 @@ export default function App() {
                     <Route path="products" element={<AdminProductsPage/>}/>
                     <Route path="categories" element={<AdminCategoriesPage/>}/>
                     <Route path="orders" element={<AdminOrdersPage/>}/>
+                    <Route path="shipping" element={<AdminShippingPage/>}/>
+                    <Route path="shipping/create" element={<AdminShippingCreatePage/>}/>
+                    <Route path="shipping/list" element={<ShipmentList/>}/>
+                    <Route path="shipping/:shipmentId" element={<ShipmentDetail/>}/>
                     <Route path="inventory" element={<AdminInventoryPage/>}/>
                     <Route path="users" element={<AdminUsersPage/>}/>
                     <Route path="policies" element={<AdminPoliciesPage/>}/>

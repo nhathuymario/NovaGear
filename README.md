@@ -30,7 +30,7 @@ theo hướng dễ mở rộng, dễ bảo trì và tách biệt trách nhiệm 
 Các thành phần chính:
 
 - **Frontend**: React + TypeScript (Vite) cho UI/UX hiện đại, routing và quản lý state.
-- **Backend**: nhiều service Spring Boot (Auth/User/Product/Cart/Order/Payment...) phụ trách từng miền nghiệp vụ.
+- **Backend**: nhiều service Spring Boot (Auth/User/Product/Cart/Order/Payment/Shipping...) phụ trách từng miền nghiệp vụ.
 - **Gateway**: API Gateway làm điểm vào duy nhất, định tuyến request và (tuỳ cấu hình) xử lý security/cross-cutting
   concerns.
 
@@ -77,6 +77,7 @@ NovaGear hướng tới:
 
 - Service **Cart** quản lý giỏ hàng.
 - Service **Order** quản lý đặt hàng, trạng thái đơn hàng.
+- Service **Shipping** quản lý giao nhận, tracking, ETA, và timeline vận chuyển.
 
 ### 5️⃣ Payment
 
@@ -114,6 +115,7 @@ NovaGear
     ├── Product/                   # Spring Boot Product service
     ├── Cart/                      # Spring Boot Cart service
     ├── Order/                     # Spring Boot Order service
+    ├── Shipping/                  # Spring Boot Shipping service
     └── Payment/                   # Spring Boot Payment service
 ```
 
@@ -149,6 +151,10 @@ Thư mục `AI/` được tách riêng để triển khai các tính năng AI-fi
 - **AI Search**: gợi ý tìm kiếm và tìm kiếm theo ngữ nghĩa.
 - **Adapter-ready**: có sẵn vị trí để gắn vector DB như `Pinecone`, `Milvus`, `Chroma` và search backend như
   `Meilisearch`, `Elasticsearch`.
+
+---
+
+## Giao diện
 
 ---
 
@@ -193,6 +199,7 @@ Lặp lại tương tự cho:
 - `backend/Product`
 - `backend/Cart`
 - `backend/Order`
+- `backend/Shipping`
 - `backend/Payment`
 
 ### 4) Gateway
