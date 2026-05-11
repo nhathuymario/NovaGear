@@ -85,6 +85,8 @@ export default function AdminProductsPage() {
     const [categories, setCategories] = useState<CategoryOption[]>([])
     const [loading, setLoading] = useState(true)
     const [keyword, setKeyword] = useState("")
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
 
     const [editingProduct, setEditingProduct] = useState<AdminProductItem | null>(null)
     const [productForm, setProductForm] = useState<AdminProductPayload>(INITIAL_PRODUCT_FORM)
@@ -124,12 +126,13 @@ export default function AdminProductsPage() {
     const loadProducts = useCallback(async () => {
         try {
             setLoading(true)
-            const [prods, cats] = await Promise.all([
-                getAdminProducts(),
+            const [pageData, cats] = await Promise.all([
+                getAdminProducts(page, 10),
                 getAdminCategories(),
             ])
 
-            setProducts(prods)
+            setProducts(pageData.content)
+            setTotalPages(pageData.totalPages)
             setCategories(
                 Array.isArray(cats)
                     ? cats.map((c: AdminCategorySummary) => ({id: c.id ?? "", name: c.name ?? ""}))
@@ -142,7 +145,7 @@ export default function AdminProductsPage() {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [page])
 
     useEffect(() => {
         loadProducts()
@@ -1162,6 +1165,36 @@ export default function AdminProductsPage() {
                                 )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {tab === "list" && totalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">
+                            Trang <span className="font-semibold text-gray-900">{page + 1}</span> / {totalPages}
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setPage((p) => Math.max(0, p - 1))
+                                    window.scrollTo({ top: 0, behavior: "smooth" })
+                                }}
+                                disabled={page === 0 || loading}
+                                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Trang trước
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setPage((p) => Math.min(totalPages - 1, p + 1))
+                                    window.scrollTo({ top: 0, behavior: "smooth" })
+                                }}
+                                disabled={page >= totalPages - 1 || loading}
+                                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Trang sau
+                            </button>
                         </div>
                     </div>
                 )}

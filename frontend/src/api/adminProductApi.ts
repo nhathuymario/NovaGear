@@ -69,10 +69,34 @@ function mapAdminProduct(raw: RawAdminProduct): AdminProductItem {
     }
 }
 
-export async function getAdminProducts(): Promise<AdminProductItem[]> {
-    const res = await axiosClient.get("/admin/products")
-    const items = Array.isArray(res.data) ? res.data : res.data?.content ?? []
-    return items.map(mapAdminProduct)
+export interface AdminProductPageResponse {
+    content: AdminProductItem[]
+    totalPages: number
+    totalElements: number
+    number: number
+    size: number
+}
+
+export async function getAdminProducts(page = 0, size = 10): Promise<AdminProductPageResponse> {
+    const res = await axiosClient.get("/admin/products", {
+        params: { page, size }
+    })
+    
+    // Nếu res.data là array (fallback)
+    if (Array.isArray(res.data)) {
+        return {
+            content: res.data.map(mapAdminProduct),
+            totalPages: 1,
+            totalElements: res.data.length,
+            number: 0,
+            size: res.data.length
+        }
+    }
+
+    return {
+        ...res.data,
+        content: (res.data.content || []).map(mapAdminProduct)
+    }
 }
 
 export async function getAdminProductDetail(id: number | string) {

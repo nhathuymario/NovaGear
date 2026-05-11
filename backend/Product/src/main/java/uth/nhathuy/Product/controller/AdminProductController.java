@@ -24,7 +24,7 @@ public class AdminProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "20") int size
     ) {
         requireAdmin(role);
         return ResponseEntity.ok(productService.adminSearch(keyword, categoryId, status, page, size));
