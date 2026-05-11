@@ -23,18 +23,37 @@ export default function ProductListPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortBy, setSortBy] = useState<SortOption>("default")
     const [showMobileFilter, setShowMobileFilter] = useState(false)
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
+    const [totalElements, setTotalElements] = useState(0)
 
     const keyword = searchParams.get("keyword")?.toLowerCase() || ""
     const selectedCategorySlug = searchParams.get("category")?.toLowerCase() || ""
 
+    const currentCategoryId = useMemo(() => {
+        if (!selectedCategorySlug) return undefined
+        return categories.find(c => c.slug?.toLowerCase() === selectedCategorySlug)?.id
+    }, [categories, selectedCategorySlug])
+
     useEffect(() => {
-        Promise.all([getProducts(), getPublicCategories()])
-            .then(([products, categoryList]) => {
-                setItems(products)
+        setLoading(true)
+        Promise.all([
+            getProducts(page, 12, currentCategoryId, keyword),
+            getPublicCategories()
+        ])
+            .then(([pageData, categoryList]) => {
+                setItems(pageData.content)
+                setTotalPages(pageData.totalPages)
+                setTotalElements(pageData.totalElements)
                 setCategories(categoryList)
             })
             .finally(() => setLoading(false))
-    }, [])
+    }, [page, currentCategoryId, keyword])
+
+    // Reset page when category or keyword changes
+    useEffect(() => {
+        setPage(0)
+    }, [selectedCategorySlug, keyword])
 
     const handleCategoryClick = (slug?: string) => {
         const nextParams = new URLSearchParams(searchParams)
@@ -47,30 +66,23 @@ export default function ProductListPage() {
     }
 
     const filtered = useMemo(() => {
-        let result = items.filter((p) => {
-            const name = p.name?.toLowerCase() || ""
-            const desc = p.description?.toLowerCase() || ""
-            const categorySlug = p.categorySlug?.toLowerCase() || ""
-            const matchKeyword = !keyword || name.includes(keyword) || desc.includes(keyword)
-            const matchCategory = !selectedCategorySlug || categorySlug === selectedCategorySlug
-            return matchKeyword && matchCategory
-        })
+        let result = [...items]
 
-        // Sort
+        // Sort (Client side for current page)
         switch (sortBy) {
             case "price_asc":
-                result = [...result].sort((a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price))
+                result.sort((a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price))
                 break
             case "price_desc":
-                result = [...result].sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price))
+                result.sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price))
                 break
             case "name_asc":
-                result = [...result].sort((a, b) => a.name.localeCompare(b.name))
+                result.sort((a, b) => a.name.localeCompare(b.name))
                 break
         }
 
         return result
-    }, [items, keyword, selectedCategorySlug, sortBy])
+    }, [items, sortBy])
 
     const selectedCategoryName =
         categories.find((c) => c.slug?.toLowerCase() === selectedCategorySlug)?.name || ""
@@ -194,7 +206,7 @@ export default function ProductListPage() {
                                 {keyword && (
                                     <span>Tìm: <strong>{keyword}</strong> · </span>
                                 )}
-                                {filtered.length} sản phẩm
+                                {totalElements} sản phẩm
                             </p>
                         </div>
 
@@ -252,10 +264,57 @@ export default function ProductListPage() {
                             </Link>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                            {filtered.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                                {filtered.map((product) => (
+                                    <ProductCard key={product.id} product={product}/>
+                                ))}
+                            </div>
+
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-2 py-4">
+                                    <button
+                                        onClick={() => {
+                                            setPage((p) => Math.max(0, p - 1))
+                                            window.scrollTo({top: 0, behavior: "smooth"})
+                                        }}
+                                        disabled={page === 0 || loading}
+                                        className="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                                    >
+                                        Trước
+                                    </button>
+                                    
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(totalPages)].map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    setPage(i)
+                                                    window.scrollTo({top: 0, behavior: "smooth"})
+                                                }}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition ${
+                                                    page === i
+                                                        ? "bg-brand-blue text-white"
+                                                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setPage((p) => Math.min(totalPages - 1, p + 1))
+                                            window.scrollTo({top: 0, behavior: "smooth"})
+                                        }}
+                                        disabled={page >= totalPages - 1 || loading}
+                                        className="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                                    >
+                                        Sau
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </section>

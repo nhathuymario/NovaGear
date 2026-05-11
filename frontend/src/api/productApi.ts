@@ -213,12 +213,33 @@ function mapProductDetail(item: ProductResponse): ProductDetailData {
     }
 }
 
-export async function getProducts(): Promise<Product[]> {
-    const res = await axiosClient.get("/products/public")
-    const items: ProductResponse[] = Array.isArray(res.data)
-        ? res.data
-        : res.data?.content ?? []
-    return items.map(mapProduct)
+export interface ProductPageResponse {
+    content: Product[]
+    totalPages: number
+    totalElements: number
+    number: number
+    size: number
+}
+
+export async function getProducts(page = 0, size = 10, categoryId?: number | string, keyword?: string): Promise<ProductPageResponse> {
+    const res = await axiosClient.get("/products/public", {
+        params: { page, size, categoryId, keyword }
+    })
+    
+    if (Array.isArray(res.data)) {
+        return {
+            content: res.data.map(mapProduct),
+            totalPages: 1,
+            totalElements: res.data.length,
+            number: 0,
+            size: res.data.length
+        }
+    }
+
+    return {
+        ...res.data,
+        content: (res.data.content || []).map(mapProduct)
+    }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product> {

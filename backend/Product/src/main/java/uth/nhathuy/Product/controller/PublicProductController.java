@@ -34,7 +34,7 @@ public class PublicProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "20") int size
     ) {
         return ResponseEntity.ok(productService.publicSearch(keyword, categoryId, page, size));
     }
