@@ -53,10 +53,10 @@ export default function AiChatWidget() {
     useEffect(() => {
         let cancelled = false
 
-        getProducts()
-            .then((items) => {
+        getProducts(0, 100)
+            .then((res) => {
                 if (!cancelled) {
-                    setProducts(items)
+                    setProducts(res.content)
                 }
             })
             .catch(() => {
