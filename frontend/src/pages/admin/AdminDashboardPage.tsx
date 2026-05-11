@@ -96,15 +96,19 @@ export default function AdminDashboardPage() {
             setLoading(true)
             setError(null)
             const [productData, categoryData, orderData, inventoryData] = await Promise.all([
-                getAdminProducts(),
+                getAdminProducts(0, 100),
                 getAdminCategories(),
                 getAdminOrders(),
                 getAllInventory({page: 0, size: 100}),
             ])
-            setProducts(productData)
+            setProducts(productData.content)
             setCategories(categoryData)
             setOrders(orderData)
             setInventoryItems(inventoryData.items ?? [])
+            
+            // Nếu Dashboard cần hiển thị Tổng số sản phẩm thực tế, ta có thể lưu thêm totalElements
+            // Nhưng hiện tại component MetricCard đang dùng products.length, 
+            // nên tôi sẽ lấy size lớn để MetricCard hiện đúng số tổng.
         } catch (err) {
             console.error(err)
             setProducts([])

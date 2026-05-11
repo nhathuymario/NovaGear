@@ -140,8 +140,8 @@ export default function AdminInventoryPage() {
     const loadProducts = useCallback(async () => {
         try {
             setOptionLoading(true)
-            const data = await getAdminProducts()
-            setProducts(data)
+            const data = await getAdminProducts(0, 100) // Lấy nhiều một chút để chọn trong select
+            setProducts(data.content)
         } catch (error) {
             console.error(error)
             setProducts([])
