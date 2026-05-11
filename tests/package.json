@@ -1,0 +1,38 @@
+{
+  "name": "novagear-tests-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root npm wrapper for NovaGear test commands",
+  "scripts": {
+    "test": "node ./run-test.js test",
+    "test:api": "node ./run-test.js test:api",
+    "test:e2e": "node ./run-test.js test:e2e",
+    "test:cross-browser": "node ./run-test.js test:cross-browser",
+    "test:smoke": "node ./run-test.js test:smoke",
+    "test:admin": "node ./run-test.js test:admin",
+    "test:auth": "node ./run-test.js test:auth",
+    "test:product": "node ./run-test.js test:product",
+    "test:cart": "node ./run-test.js test:cart",
+    "test:order": "node ./run-test.js test:order",
+    "test:payment": "node ./run-test.js test:payment",
+    "test:shipping": "node ./run-test.js test:shipping",
+    "test:inventory": "node ./run-test.js test:inventory",
+    "test:user": "node ./run-test.js test:user",
+    "test:e2e:auth": "node ./run-test.js test:e2e:auth",
+    "test:e2e:home": "node ./run-test.js test:e2e:home",
+    "test:e2e:product": "node ./run-test.js test:e2e:product",
+    "test:e2e:cart": "node ./run-test.js test:e2e:cart",
+    "test:e2e:checkout": "node ./run-test.js test:e2e:checkout",
+    "test:e2e:order": "node ./run-test.js test:e2e:order",
+    "test:e2e:admin": "node ./run-test.js test:e2e:admin",
+    "test:e2e:responsive": "node ./run-test.js test:e2e:responsive",
+    "test:perf": "node ./run-test.js test:perf",
+    "test:perf:stress": "node ./run-test.js test:perf:stress",
+    "test:perf:spike": "node ./run-test.js test:perf:spike",
+    "test:perf:soak": "node ./run-test.js test:perf:soak",
+    "report": "node ./run-test.js report",
+    "report:generate": "node ./run-test.js report:generate",
+    "dry-run": "node ./run-test.js dry-run"
+  }
+}
+
