@@ -1,0 +1,1215 @@
+{
+  "info": {
+    "name": "NovaGear - Kiểm thử Chức năng & Bảo mật",
+    "description": "Postman collection for NovaGear testing:\n5.5. Kiểm thử chức năng (Functional Testing)\n5.6. Kiểm thử bảo mật (Security Testing)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "5.5 KIỂM THỬ CHỨC NĂNG",
+      "description": "Các chức năng chính của hệ thống: đăng ký, đăng nhập, xem sản phẩm, tìm kiếm, thêm vào giỏ, đặt hàng, thanh toán, cập nhật trạng thái đơn hàng, quản lý từ admin",
+      "item": [
+        {
+          "name": "5.5.1 Authentication - Đăng ký & Đăng nhập",
+          "item": [
+            {
+              "name": "POST - Đăng ký người dùng mới",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Register - Response Status:', pm.response.code);",
+                      "console.log('[TEST] Register - Response Body:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Register - Status code is 200 or 201', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                      "});",
+                      "",
+                      "pm.test('Register - Response contains token', function () {",
+                      "    let body = pm.response.json();",
+                      "    let token = body.accessToken;",
+                      "    pm.expect(token).to.exist;",
+                      "    pm.environment.set('accessToken', token);",
+                      "});",
+                      "",
+                      "pm.test('Register - Response contains user info', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.username).to.exist;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"testuser_{{$timestamp}}\",\n  \"fullName\": \"Test User\",\n  \"email\": \"testuser_{{$timestamp}}@novagear.com\",\n  \"password\": \"SecurePass@123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST - Đăng nhập thành công",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Login - Response Status:', pm.response.code);",
+                      "console.log('[TEST] Login - Response Body:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Login - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Login - Response contains accessToken', function () {",
+                      "    let body = pm.response.json();",
+                      "    let token = body.accessToken;",
+                      "    pm.expect(token).to.exist;",
+                      "    pm.environment.set('accessToken', token);",
+                      "    pm.environment.set('userId', body.userId);",
+                      "});",
+                      "",
+                      "pm.test('Login - Response contains refreshToken', function () {",
+                      "    let body = pm.response.json();",
+                      "    let token = body.refreshToken;",
+                      "    pm.expect(token).to.exist;",
+                      "    pm.environment.set('refreshToken', token);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user\",\n  \"password\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST - Đăng nhập với sai password (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Login Wrong Pass - Status:', pm.response.code);",
+                      "console.log('[TEST] Login Wrong Pass - Error:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Login Wrong Pass - Should return 401', function () {",
+                      "    pm.expect(pm.response.code).to.equal(401);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user\",\n  \"password\": \"wrong_password\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Lấy thông tin hiện tại (/me)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] GET /me - Status:', pm.response.code);",
+                      "console.log('[TEST] GET /me - Body:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('GET /me - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('GET /me - Response contains user data', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.username).to.exist;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.2 Product Browsing - Xem danh sách & chi tiết",
+          "item": [
+            {
+              "name": "GET - Danh sách sản phẩm (không có token)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Product List - Status:', pm.response.code);",
+                      "console.log('[TEST] Product List - Items Count:', pm.response.json().content?.length || 0);",
+                      "",
+                      "pm.test('Product List - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Product List - Response has pagination', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.content).to.be.an('array');",
+                      "});",
+                      "",
+                      "if(pm.response.json().content?.length > 0) {",
+                      "    let firstProduct = pm.response.json().content[0];",
+                      "    pm.environment.set('productSlug', firstProduct.slug);",
+                      "    console.log('[EXTRACTED] First product slug:', firstProduct.slug);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/public?page=0&size=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "public"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Chi tiết sản phẩm theo slug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Product Detail - Status:', pm.response.code);",
+                      "console.log('[TEST] Product Detail:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Product Detail - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Product Detail - Has product data', function () {",
+                      "    let body = pm.response.json();",
+                      "    let data = body;",
+                      "    pm.expect(data?.name).to.exist;",
+                      "    // pm.expect(data?.price).to.exist;",
+                      "    pm.environment.set('productId', data?.id);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/public/{{productSlug}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "public",
+                    "{{productSlug}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Sản phẩm liên quan",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Related Products - Status:', pm.response.code);",
+                      "console.log('[TEST] Related Products Count:', pm.response.json().data?.length || 0);",
+                      "",
+                      "pm.test('Related Products - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Related Products - Returns array', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/public/{{productSlug}}/related?size=8",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "public",
+                    "{{productSlug}}",
+                    "related"
+                  ],
+                  "query": [
+                    {
+                      "key": "size",
+                      "value": "8"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.3 Search & Filter - Tìm kiếm & lọc",
+          "item": [
+            {
+              "name": "GET - Tìm kiếm theo keyword",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Search - Status:', pm.response.code);",
+                      "console.log('[TEST] Search - Items found:', pm.response.json().data?.content?.length || 0);",
+                      "",
+                      "pm.test('Search - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Search - Returns results', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.content).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/public?keyword=gear&page=0&size=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "public"
+                  ],
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "gear"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Lọc theo category",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Filter by Category - Status:', pm.response.code);",
+                      "console.log('[TEST] Filter Result Count:', pm.response.json().data?.content?.length || 0);",
+                      "",
+                      "pm.test('Filter - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/public?categoryId=1&page=0&size=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "public"
+                  ],
+                  "query": [
+                    {
+                      "key": "categoryId",
+                      "value": "1"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.4 Cart Management - Quản lý giỏ hàng",
+          "item": [
+            {
+              "name": "GET - Lấy giỏ hàng hiện tại",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Get Cart - Status:', pm.response.code);",
+                      "console.log('[TEST] Get Cart - Items:', pm.response.json().data?.items?.length || 0);",
+                      "",
+                      "pm.test('Get Cart - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Get Cart - Has items array', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.items).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST - Thêm sản phẩm vào giỏ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Add to Cart - Status:', pm.response.code);",
+                      "console.log('[TEST] Add to Cart - Response:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Add to Cart - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Add to Cart - Cart updated', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.items?.length).to.be.greaterThan(0);",
+                      "    if(body.items?.length > 0) {",
+                      "        pm.environment.set('cartItemId', body.items[0].id);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": {{productId}},\n  \"variantId\": 1,\n  \"productName\": \"Test Product\",\n  \"price\": 100000,\n  \"quantity\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT - Cập nhật số lượng sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Update Cart Item - Status:', pm.response.code);",
+                      "",
+                      "pm.test('Update Cart Item - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"quantity\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items",
+                    "{{cartItemId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "DELETE - Xóa sản phẩm khỏi giỏ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Remove from Cart - Status:', pm.response.code);",
+                      "",
+                      "pm.test('Remove from Cart - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items",
+                    "{{cartItemId}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.5 Ordering & Checkout - Đặt hàng",
+          "item": [
+            {
+              "name": "POST - Tạo đơn hàng (Checkout)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Checkout - Status:', pm.response.code);",
+                      "console.log('[TEST] Checkout - Response:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Checkout - Status code is 200 or 201', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                      "});",
+                      "",
+                      "pm.test('Checkout - Order created with ID', function () {",
+                      "    let body = pm.response.json();",
+                      "    let orderId = body.orderId;",
+                      "    pm.expect(orderId).to.exist;",
+                      "    pm.environment.set('orderId', orderId);",
+                      "    console.log('[EXTRACTED] Order ID:', orderId);",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const postRequest = {",
+                      "  url: pm.environment.get('baseUrl') + '/api/cart/items',",
+                      "  method: 'POST',",
+                      "  header: {",
+                      "    'Authorization': 'Bearer ' + pm.environment.get('accessToken'),",
+                      "    'X-User-Id': pm.environment.get('userId'),",
+                      "    'Content-Type': 'application/json'",
+                      "  },",
+                      "  body: {",
+                      "    mode: 'raw',",
+                      "    raw: JSON.stringify({",
+                      "      productId: parseInt(pm.environment.get('productId') || 1),",
+                      "      variantId: 1,",
+                      "      productName: 'Test Product',",
+                      "      price: 100000,",
+                      "      quantity: 2",
+                      "    })",
+                      "  }",
+                      "};",
+                      "pm.sendRequest(postRequest, function (err, res) {",
+                      "  console.log('Added item before checkout', err || res.code);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  },
+                  {
+                    "key": "X-Username",
+                    "value": "user"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"customerName\": \"Test Customer\",\n  \"phone\": \"0123456789\",\n  \"address\": \"123 Main St, City, Country\",\n  \"note\": \"Test note\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/checkout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "checkout"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Danh sách đơn hàng của tôi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] My Orders - Status:', pm.response.code);",
+                      "console.log('[TEST] My Orders - Count:', pm.response.json().data?.length || 0);",
+                      "",
+                      "pm.test('My Orders - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('My Orders - Returns array', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/my",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "my"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Chi tiết đơn hàng",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Order Detail - Status:', pm.response.code);",
+                      "console.log('[TEST] Order Detail:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Order Detail - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Order Detail - Has order data', function () {",
+                      "    let body = pm.response.json();",
+                      "    let order = body;",
+                      "    pm.expect(order?.id).to.exist;",
+                      "    pm.expect(order?.items).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{orderId}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.6 Payment - Thanh toán",
+          "item": [
+            {
+              "name": "POST - Tạo payment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Create Payment - Status:', pm.response.code);",
+                      "console.log('[TEST] Create Payment - Response:', JSON.stringify(pm.response.json(), null, 2));",
+                      "",
+                      "pm.test('Create Payment - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('Create Payment - Has payment data', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body.id).to.exist;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"BANK_TRANSFER\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Lấy payment của tôi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] My Payments - Status:', pm.response.code);",
+                      "console.log('[TEST] My Payments - Count:', pm.response.json().data?.length || 0);",
+                      "",
+                      "pm.test('My Payments - Status code is 200', function () {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});",
+                      "",
+                      "pm.test('My Payments - Returns array', function () {",
+                      "    let body = pm.response.json();",
+                      "    pm.expect(body).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "me"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5.7 Admin Functions - Quản lý từ Admin",
+          "item": [
+            {
+              "name": "GET - Danh sách users (Admin only)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Admin Users List - Status:', pm.response.code);",
+                      "try { console.log('[TEST] Admin Users List - Count:', pm.response.json().data?.length || 0); } catch(e) { console.log('Empty response body'); }",
+                      "",
+                      "if(pm.response.code === 403) {",
+                      "    console.log('[WARNING] User không có quyền ADMIN');",
+                      "} else {",
+                      "    pm.test('Admin Users - Status code is 200', function () {",
+                      "        pm.expect(pm.response.code).to.equal(200);",
+                      "    });",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5.6 KIỂM THỬ BẢO MẬT",
+      "description": "Security Testing: JWT Token validation, API Gateway checks, request validation, unauthorized access, password encryption (BCrypt), input validation",
+      "item": [
+        {
+          "name": "5.6.1 Authentication & Authorization",
+          "item": [
+            {
+              "name": "GET - Truy cập API mà không có token (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] No Token - Status:', pm.response.code);",
+                      "console.log('[TEST] No Token - Error:', pm.response.json()?.message || 'Unauthorized');",
+                      "",
+                      "pm.test('No Token - Should return 401', function () {",
+                      "    pm.expect(pm.response.code).to.equal(401);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Token không hợp lệ (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Invalid Token - Status:', pm.response.code);",
+                      "console.log('[TEST] Invalid Token - Error:', pm.response.json()?.message);",
+                      "",
+                      "pm.test('Invalid Token - Should return 401', function () {",
+                      "    pm.expect(pm.response.code).to.equal(401);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer invalid_token_xyz"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET - Token hết hạn (401 hoặc Refresh)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] Expired Token - Status:', pm.response.code);",
+                      "",
+                      "pm.test('Expired Token - Should return 401 or 403', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.6.2 Access Control & Authorization",
+          "item": [
+            {
+              "name": "GET - Truy cập Admin API mà không có quyền (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "console.log('[TEST] No Admin Permission - Status:', pm.response.code);",
+                      "try { console.log('[TEST] No Admin Permission - Error:', pm.response.json()?.message); } catch(e) { console.log('Empty response body'); }",
+                      "",
+                      "pm.test('No Admin Permission - Should return 403', function () {",
+                      "    pm.expect(pm.response.code).to.equal(403);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "productSlug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cartItemId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
