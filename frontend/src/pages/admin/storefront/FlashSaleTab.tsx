@@ -15,7 +15,7 @@ export default function FlashSaleTab({config, onChange}: Props) {
     const [keyword, setKeyword] = useState("")
 
     useEffect(() => {
-        getProducts().then(setProducts).finally(() => setLoading(false))
+        getProducts(0, 100).then(res => setProducts(res.content)).finally(() => setLoading(false))
     }, [])
 
     const filtered = useMemo(() => {

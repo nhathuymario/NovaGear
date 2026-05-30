@@ -98,9 +98,9 @@ export default function HomePage() {
     const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi])
 
     useEffect(() => {
-        Promise.all([getProducts(), getPublicCategories()])
+        Promise.all([getProducts(0, 50), getPublicCategories()])
             .then(([productData, categoryData]) => {
-                setProducts(productData)
+                setProducts(productData.content)
                 setCategories(categoryData)
             })
             .finally(() => setLoading(false))
