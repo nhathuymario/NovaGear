@@ -94,6 +94,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
         RefreshToken refreshToken = refreshTokenService.verify(request.getRefreshToken());
         User user = refreshToken.getUser();
