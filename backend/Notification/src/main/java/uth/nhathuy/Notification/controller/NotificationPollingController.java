@@ -1,8 +1,7 @@
 package uth.nhathuy.Notification.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+// ...existing code... (removed unused imports)
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationPollingController {
 
-    // TODO: Inject NotificationRepository khi có
-    // private final NotificationRepository notificationRepository;
+    private final uth.nhathuy.Notification.service.NotificationPersistenceService notificationPersistenceService;
+    private final uth.nhathuy.Notification.mapper.NotificationMapper notificationMapper;
 
     /**
      * Polling endpoint: GET /api/notifications/orders/me
@@ -30,8 +29,10 @@ public class NotificationPollingController {
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "20") int limit
     ) {
-        // TODO: Query notifications từ DB, filter by userId
-        return ResponseEntity.ok(List.of());
+        var pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, offset), Math.max(1, limit));
+        var page = notificationPersistenceService.findByUserAndPrefix(userId, "ORDER_", pageable);
+        var dtos = page.getContent().stream().map(notificationMapper::toDto).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     /**
@@ -43,8 +44,10 @@ public class NotificationPollingController {
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "20") int limit
     ) {
-        // TODO: Query payment notifications
-        return ResponseEntity.ok(List.of());
+        var pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, offset), Math.max(1, limit));
+        var page = notificationPersistenceService.findByUserAndPrefix(userId, "PAYMENT_", pageable);
+        var dtos = page.getContent().stream().map(notificationMapper::toDto).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     /**
@@ -55,8 +58,10 @@ public class NotificationPollingController {
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "20") int limit
     ) {
-        // TODO: Query low stock notifications
-        return ResponseEntity.ok(List.of());
+        var pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, offset), Math.max(1, limit));
+        var page = notificationPersistenceService.findByEventPrefix("INVENTORY_", pageable);
+        var dtos = page.getContent().stream().map(notificationMapper::toDto).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     /**
@@ -67,7 +72,10 @@ public class NotificationPollingController {
             @PathVariable Long notificationId,
             @RequestHeader("X-User-Id") Long userId
     ) {
-        // TODO: Update notification status
+        var updated = notificationPersistenceService.markAsRead(notificationId, userId);
+        if (updated == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 }

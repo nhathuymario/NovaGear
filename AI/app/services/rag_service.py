@@ -4,12 +4,11 @@ import html
 import json
 import re
 import unicodedata
-from dataclasses import dataclass
-from urllib import error, parse, request
-from typing import Sequence
-
 from app.core.config import get_settings
 from app.schemas.ai import RagQueryResponse, RagSource
+from dataclasses import dataclass
+from typing import Sequence
+from urllib import error, parse, request
 
 
 @dataclass(frozen=True)
@@ -26,6 +25,8 @@ class WebResult:
     snippet: str
 
 
+# Chứa các thông tin tổng thể về kiến trúc hệ thống
+# tupe là định nghĩa dữ liệu tĩnh để phục vụ tra cứu offline
 _KNOWLEDGE_BASE: tuple[KnowledgeDocument, ...] = (
     KnowledgeDocument(
         title="NovaGear Overview",
@@ -43,7 +44,8 @@ _KNOWLEDGE_BASE: tuple[KnowledgeDocument, ...] = (
         keywords=("faq", "policy", "manual", "warranty", "shipping", "support"),
     ),
 )
-
+# Mỗi document đề có danh sách các keyword liên quan để phục vụ tra cứu nhanh khi người dùng đặt câu hỏi có chứa các từ khóa này.
+# chứa các thông tin quy định về website
 _POLICY_BASE: tuple[KnowledgeDocument, ...] = (
     KnowledgeDocument(
         title="Chính sách bảo hành",
@@ -94,6 +96,7 @@ _DUCKDUCKGO_RESULT_PATTERN = re.compile(
 )
 
 
+# luồng xử lí chính của hàm
 class RAGService:
     def answer(self, question: str, context: Sequence[str] | None = None, top_k: int = 5) -> RagQueryResponse:
         settings = get_settings()
@@ -101,6 +104,8 @@ class RAGService:
         conversation_context = list(context or [])
         # Rank retrieval sources from the real user question to avoid noisy
         # always-on context making every reply look the same.
+        # Hàm _tokenize thực hiện chuẩn hóa chuỗi: Chuyển tiếng Việt có dấu thành không dấu (unicodedata.normalize), viết thường,
+        # xóa ký tự đặc biệt, cắt chuỗi thành các token độc lập.
         query_tokens = _tokenize(question)
         product_hits = _extract_products_from_context(conversation_context)
 
@@ -172,7 +177,8 @@ class RAGService:
         if len(query_tokens) < 2:
             return []
 
-        web_results = self._search_duckduckgo(question, settings.web_search_max_results, settings.web_search_timeout_seconds)
+        web_results = self._search_duckduckgo(question, settings.web_search_max_results,
+                                              settings.web_search_timeout_seconds)
         return [
             RagSource(
                 title=f"Web: {result.title}",
@@ -217,10 +223,10 @@ class RAGService:
         return results
 
     def _merge_sources(
-        self,
-        static_sources: Sequence[RagSource],
-        web_sources: Sequence[RagSource],
-        top_k: int,
+            self,
+            static_sources: Sequence[RagSource],
+            web_sources: Sequence[RagSource],
+            top_k: int,
     ) -> list[RagSource]:
         merged: list[RagSource] = []
         seen_titles: set[str] = set()
@@ -237,9 +243,9 @@ class RAGService:
     def _build_mock_answer(self, selected_sources: Sequence[RagSource]) -> str:
         if selected_sources:
             return (
-                "Dựa trên tài liệu nội bộ, câu hỏi của bạn liên quan đến: "
-                + "; ".join(source.title for source in selected_sources)
-                + ". Hãy xem phần trích dẫn để đối chiếu chi tiết."
+                    "Dựa trên tài liệu nội bộ, câu hỏi của bạn liên quan đến: "
+                    + "; ".join(source.title for source in selected_sources)
+                    + ". Hãy xem phần trích dẫn để đối chiếu chi tiết."
             )
 
         return (
@@ -247,10 +253,10 @@ class RAGService:
         )
 
     def _build_non_gemini_answer(
-        self,
-        question: str,
-        context: Sequence[str],
-        selected_sources: Sequence[RagSource],
+            self,
+            question: str,
+            context: Sequence[str],
+            selected_sources: Sequence[RagSource],
     ) -> str:
         query_tokens = _tokenize(question)
 
@@ -267,9 +273,9 @@ class RAGService:
                 top_products = ranked_products[:3]
                 product_lines = [f"- {item['name']}: {item['price_text']}" for item in top_products]
                 return (
-                    "Mình tìm nhanh theo dữ liệu sản phẩm trên shop, bạn tham khảo nhé:\n"
-                    + "\n".join(product_lines)
-                    + "\nBạn muốn mình lọc thêm theo tầm giá cụ thể hoặc nhu cầu (học tập, gaming, văn phòng) không?"
+                        "Mình tìm nhanh theo dữ liệu sản phẩm trên shop, bạn tham khảo nhé:\n"
+                        + "\n".join(product_lines)
+                        + "\nBạn muốn mình lọc thêm theo tầm giá cụ thể hoặc nhu cầu (học tập, gaming, văn phòng) không?"
                 )
 
         if not selected_sources:
@@ -305,11 +311,11 @@ class RAGService:
         return min(1.0, round(average_score, 2))
 
     def _generate_with_gemini(
-        self,
-        question: str,
-        context: Sequence[str],
-        selected_sources: Sequence[RagSource],
-        settings,
+            self,
+            question: str,
+            context: Sequence[str],
+            selected_sources: Sequence[RagSource],
+            settings,
     ) -> str:
         prompt = self._build_prompt(question, context, selected_sources)
         payload = {
@@ -346,10 +352,10 @@ class RAGService:
         return self._extract_gemini_text(response_payload)
 
     def _build_prompt(
-        self,
-        question: str,
-        context: Sequence[str],
-        selected_sources: Sequence[RagSource],
+            self,
+            question: str,
+            context: Sequence[str],
+            selected_sources: Sequence[RagSource],
     ) -> str:
         source_lines = [
             f"- {index}. {source.title}: {source.excerpt} (score={source.score})"
@@ -455,13 +461,15 @@ def _extract_products_from_context(context: Sequence[str]) -> list[dict[str, str
     return products
 
 
-def _rank_products_for_price_question(products: Sequence[dict[str, str | int]], question: str) -> list[dict[str, str | int]]:
+def _rank_products_for_price_question(products: Sequence[dict[str, str | int]], question: str) -> list[
+    dict[str, str | int]]:
     lowered_question = question.lower()
     wants_iphone = any(token in lowered_question for token in ("iphone", "ip ", " ip", "điện thoại", "dien thoai"))
 
     filtered = list(products)
     if wants_iphone:
-        iphone_products = [item for item in filtered if "iphone" in str(item["name"]).lower() or "ip" in str(item["name"]).lower()]
+        iphone_products = [item for item in filtered if
+                           "iphone" in str(item["name"]).lower() or "ip" in str(item["name"]).lower()]
         if iphone_products:
             filtered = iphone_products
 
@@ -489,13 +497,14 @@ def _build_shop_price_response(question: str, ranked_products: Sequence[dict[str
             f"Mình chưa tìm thấy sản phẩm phù hợp trong shop cho câu hỏi '{question}'. "
             "Bạn thử nói rõ thêm tên mẫu, phiên bản hoặc khoảng giá nhé."
         )
-        return answer, RagSource(title="Dữ liệu sản phẩm trong shop", excerpt="Không tìm thấy sản phẩm phù hợp", score=1.0)
+        return answer, RagSource(title="Dữ liệu sản phẩm trong shop", excerpt="Không tìm thấy sản phẩm phù hợp",
+                                 score=1.0)
 
     product_lines = [f"- {item['name']}: {item['price_text']}" for item in top_products]
     answer = (
-        "Mình xem nhanh giá trong shop cho bạn nhé:\n"
-        + "\n".join(product_lines)
-        + "\nNếu bạn muốn, mình có thể lọc tiếp theo bản thường / Pro / Pro Max, hoặc theo mức giá bạn đang muốn."
+            "Mình xem nhanh giá trong shop cho bạn nhé:\n"
+            + "\n".join(product_lines)
+            + "\nNếu bạn muốn, mình có thể lọc tiếp theo bản thường / Pro / Pro Max, hoặc theo mức giá bạn đang muốn."
     )
     excerpt = "; ".join(product_lines[:3])
     return answer, RagSource(title="Dữ liệu sản phẩm trong shop", excerpt=excerpt, score=1.0)
@@ -521,4 +530,3 @@ def _safe_json_load(value: str) -> dict | None:
         return None
 
     return loaded if isinstance(loaded, dict) else None
-

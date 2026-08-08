@@ -1,9 +1,9 @@
+from app.api.router import api_router
+from app.core.config import get_settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.router import api_router
-from app.core.config import get_settings
-
+# khởi tạo
 settings = get_settings()
 
 app = FastAPI(
@@ -12,10 +12,12 @@ app = FastAPI(
     description="AI service for NovaGear RAG and semantic search",
 )
 
+# cấu hình bảo mật CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
+    # cho phép FE dùng mọi phương thức HTTP (GET, POST, PUT, DELETE) và gửi mọi loại Header cần thiết lên Backend.
     allow_methods=["*"],
     allow_headers=["*"],
 )

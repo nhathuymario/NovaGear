@@ -20,6 +20,7 @@ import java.util.UUID;
 public class RealtimeNotificationService {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationPersistenceService persistenceService;
 
     /**
      * Emit realtime event cho order updates
@@ -34,6 +35,13 @@ public class RealtimeNotificationService {
                 UUID.randomUUID().toString(),
                 data
         );
+
+        // Persist so that offline clients can retrieve via polling later
+        try {
+            persistenceService.persistFromEvent(event);
+        } catch (Exception ex) {
+            log.warn("Failed to persist order event before sending WS: {}", event, ex);
+        }
 
         // Broadcast to admin
         messagingTemplate.convertAndSend("/topic/admin/orders", event);
@@ -63,6 +71,12 @@ public class RealtimeNotificationService {
                 UUID.randomUUID().toString(),
                 data
         );
+
+        try {
+            persistenceService.persistFromEvent(event);
+        } catch (Exception ex) {
+            log.warn("Failed to persist payment event before sending WS: {}", event, ex);
+        }
 
         messagingTemplate.convertAndSend("/topic/admin/orders", event);
 
@@ -94,6 +108,12 @@ public class RealtimeNotificationService {
                         "threshold", threshold
                 )
         );
+
+        try {
+            persistenceService.persistFromEvent(event);
+        } catch (Exception ex) {
+            log.warn("Failed to persist low stock event before sending WS", ex);
+        }
 
         messagingTemplate.convertAndSend("/topic/admin/inventory/low-stock", event);
         log.warn("Low stock alert for product {}: {} remaining", productId, currentStock);

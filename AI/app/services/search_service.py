@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from app.schemas.ai import SearchResponse, SearchResult
 from dataclasses import dataclass
 from typing import Iterable
-
-from app.schemas.ai import SearchResponse, SearchResult
 
 
 @dataclass(frozen=True)
@@ -115,12 +114,16 @@ class SearchService:
 
 
 def _tokenize(value: str) -> set[str]:
+    # chuyển hết về chữ thường
     normalized = value.lower()
     tokens = set()
+    # tách từ sang khoảng trắng khi thay thế các kí tự đặc biệt
     for piece in normalized.replace("/", " ").replace("-", " ").replace(",", " ").split():
+        # chỉ giữ lại các kí tự chữ và số bỏ kí tự đặc biệt
         cleaned = "".join(char for char in piece if char.isalnum())
         if cleaned:
             tokens.add(cleaned)
+    # thêm các từ đồng nghĩa nếu có
     for phrase, related in _SYNONYMS.items():
         if phrase in normalized:
             tokens.update(related)
