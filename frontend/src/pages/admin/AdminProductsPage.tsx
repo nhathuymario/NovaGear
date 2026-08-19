@@ -32,9 +32,11 @@ import {
 } from "../../api/adminProductDetailApi"
 import {getInventoryByVariant, importStock} from "../../api/inventoryApi"
 import {uploadProductImage} from "../../api/uploadApi"
+import {approveAiCatalogDraft, type AiCatalogDraftJob} from "../../api/aiCatalogApi"
 import type {InventoryItem} from "../../types/inventory"
 import {getFallbackImageSrc, getImageSrc, handleImageError} from "../../utils/image"
 import StatusBadge from "./products/StatusBadge"
+import AiProductDraftPanel from "./products/AiProductDraftPanel"
 import {
     DEFAULT_IMPORT_FORM,
     INITIAL_PRODUCT_FORM,
@@ -95,6 +97,7 @@ export default function AdminProductsPage() {
     const [thumbnailUploading, setThumbnailUploading] = useState(false)
     const [descriptionImageUploading, setDescriptionImageUploading] = useState(false)
     const descriptionTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+    const [aiDraftJob, setAiDraftJob] = useState<AiCatalogDraftJob | null>(null)
 
     const [selectedProduct, setSelectedProduct] = useState<AdminProductItem | null>(null)
     const [detailTab, setDetailTab] = useState<DetailTab>("variants")
@@ -268,6 +271,7 @@ export default function AdminProductsPage() {
     const openCreateProduct = () => {
         setEditingProduct(null)
         setProductForm(INITIAL_PRODUCT_FORM)
+        setAiDraftJob(null)
         setTab("form")
     }
 
@@ -320,6 +324,32 @@ export default function AdminProductsPage() {
         } finally {
             setThumbnailUploading(false)
         }
+    }
+
+    const handleApplyAiDraft = async (job: AiCatalogDraftJob, file: File) => {
+        const draft = job.result
+        if (!draft) throw new Error("AI draft không có dữ liệu để điền vào form")
+
+        const normalizedCategory = String(draft.category_hint ?? "").trim().toLowerCase()
+        const matchedCategory = categories.find((category) => {
+            const name = category.name.trim().toLowerCase()
+            return normalizedCategory && (name.includes(normalizedCategory) || normalizedCategory.includes(name))
+        })
+        const thumbnail = await uploadProductImage(file)
+
+        setProductForm((current) => ({
+            ...current,
+            name: draft.name,
+            slug: draft.slug || slugify(draft.name),
+            brand: draft.brand,
+            categoryId: matchedCategory?.id ?? current.categoryId,
+            shortDescription: draft.short_description ?? "",
+            description: draft.description ?? "",
+            thumbnail,
+            status: "DRAFT",
+            featured: false,
+        }))
+        setAiDraftJob(job)
     }
 
     const insertDescriptionText = useCallback((text: string) => {
@@ -395,8 +425,47 @@ export default function AdminProductsPage() {
                 await updateAdminProduct(editingProduct.id, productForm)
                 alert("Cập nhật sản phẩm thành công")
             } else {
-                await createAdminProduct(productForm)
-                alert("Tạo sản phẩm thành công")
+                const response = await createAdminProduct(productForm)
+                const created = response?.data ?? response
+                const createdProductId = created?.id
+
+                if (aiDraftJob?.result && createdProductId) {
+                    const detailRequests: Promise<unknown>[] = []
+                    for (const variant of aiDraftJob.result.variants) {
+                        if (!variant.sku?.trim() || variant.price == null) continue
+                        detailRequests.push(addProductVariant(createdProductId, {
+                            sku: variant.sku.trim(),
+                            color: variant.color ?? "",
+                            ram: variant.ram ?? "",
+                            storage: variant.storage ?? "",
+                            versionName: variant.version_name ?? "",
+                            price: variant.price,
+                            salePrice: variant.sale_price,
+                            stockQuantity: 0,
+                            imageUrl: "",
+                            status: "ACTIVE",
+                        }))
+                    }
+                    for (const specification of aiDraftJob.result.specifications) {
+                        detailRequests.push(addProductSpecification(createdProductId, {
+                            groupName: specification.group_name,
+                            specKey: specification.spec_key,
+                            specValue: specification.spec_value,
+                            sortOrder: specification.sort_order,
+                        }))
+                    }
+
+                    const detailResults = await Promise.allSettled(detailRequests)
+                    const failedDetails = detailResults.filter((result) => result.status === "rejected")
+                    if (failedDetails.length === 0) {
+                        await approveAiCatalogDraft(aiDraftJob.id, createdProductId)
+                        alert("Đã tạo sản phẩm DRAFT từ AI và liên kết đầy đủ dữ liệu nháp")
+                    } else {
+                        alert(`Sản phẩm DRAFT đã được tạo nhưng ${failedDetails.length} chi tiết AI chưa lưu được. Vui lòng kiểm tra lại.`)
+                    }
+                } else {
+                    alert("Tạo sản phẩm thành công")
+                }
             }
 
             await loadProducts()
@@ -439,7 +508,7 @@ export default function AdminProductsPage() {
                 description: item.description ?? "",
                 thumbnail: item.thumbnail ?? "",
                 status: (item.status as AdminProductPayload["status"]) ?? "ACTIVE",
-                featured: !Boolean(item.featured),
+                featured: !item.featured,
             })
             await loadProducts()
             alert(!item.featured ? "Đã đặt sản phẩm nổi bật" : "Đã bỏ nổi bật")
@@ -1222,6 +1291,8 @@ export default function AdminProductsPage() {
                         <p className="text-sm text-gray-500">Điền thông tin cơ bản của sản phẩm</p>
                     </div>
                 </div>
+
+                {!editingProduct && <AiProductDraftPanel onApply={handleApplyAiDraft}/>}
 
                 <form onSubmit={handleSubmitProduct}>
                     <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
