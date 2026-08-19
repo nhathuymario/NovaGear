@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from functools import lru_cache
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     enable_mock_mode: bool = False
     rag_top_k: int = 5
     gemini_api_key: str | None = Field(default=None, validation_alias=AliasChoices("GEMINI_API_KEY", "GOOGLE_API_KEY"))
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_timeout_seconds: float = 20.0
     # cho phép AI search trên google/Bing...
@@ -37,6 +38,17 @@ class Settings(BaseSettings):
     web_search_max_results: int = 3
     # 8 giây
     web_search_timeout_seconds: float = 8.0
+    database_url: str = "sqlite:///./data/novagear_ai.db"
+    ai_upload_dir: str = "./data/uploads"
+    ai_max_upload_bytes: int = 10 * 1024 * 1024
+    ai_job_max_workers: int = 2
+    catalog_web_result_limit: int = 5
+
+    def ensure_runtime_directories(self) -> None:
+        Path(self.ai_upload_dir).mkdir(parents=True, exist_ok=True)
+        if self.database_url.startswith("sqlite"):
+            database_path = self.database_url.removeprefix("sqlite:///")
+            Path(database_path).parent.mkdir(parents=True, exist_ok=True)
 
     # Field_validator làm sạch dữ liệu trước khi gán vào biến
     @field_validator("cors_origins", mode="before")

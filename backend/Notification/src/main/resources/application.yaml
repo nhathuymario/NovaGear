@@ -38,6 +38,9 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
 
+  flyway:
+    baseline-on-migrate: true
+
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}

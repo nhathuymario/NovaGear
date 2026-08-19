@@ -339,6 +339,27 @@ services:
     networks:
       - novagear-network
 
+  ai-service:
+    build:
+      context: ./AI
+      dockerfile: Dockerfile
+    container_name: ai-service
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      DATABASE_URL: sqlite:////app/data/novagear_ai.db
+      AI_UPLOAD_DIR: /app/data/uploads
+      ENABLE_WEB_SEARCH: "true"
+      LOG_LEVEL: INFO
+    volumes:
+      - ai_data:/app/data
+    ports:
+      - "8000:8000"
+    networks:
+      - novagear-network
+
   gateway-service:
     build:
       context: ./gateway/gateway
@@ -355,6 +376,7 @@ services:
       - payment-service
       - shipping-service
       - notification-service
+      - ai-service
     environment:
       SERVER_PORT: 8080
 
@@ -367,6 +389,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8087
       SHIPPING_SERVICE_URL: http://shipping-service:8090
       NOTIFICATION_SERVICE_URL: http://notification-service:8088
+      AI_SERVICE_URL: http://ai-service:8000
       LOGGING_FILE_NAME: /app/logs/gateway-service.log
     ports:
       - "8080:8080"
@@ -395,6 +418,7 @@ volumes:
   kafka_data:
   grafana_data:
   loki_data:
+  ai_data:
 
 networks:
   novagear-network:

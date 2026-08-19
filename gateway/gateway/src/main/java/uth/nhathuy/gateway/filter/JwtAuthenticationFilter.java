@@ -77,6 +77,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private boolean isPublicPath(String path, HttpMethod method) {
         String normalizedPath = normalizePath(path);
+        // Catalog AI mutates admin workflow state and must receive the verified X-Role headers.
+        if (normalizedPath.startsWith("/api/ai/v1/catalog")) {
+            return false;
+        }
         // Reviews submit must pass through JWT validation so gateway can inject X-User-* headers.
         if (method == HttpMethod.POST && normalizedPath.matches("^/api/products/public/[^/]+/reviews$")) {
             return false;

@@ -1,15 +1,25 @@
+from contextlib import asynccontextmanager
+
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.db.database import init_database
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # khởi tạo
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_database()
+    yield
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="AI service for NovaGear RAG and semantic search",
+    lifespan=lifespan,
 )
 
 # cấu hình bảo mật CORS
