@@ -246,6 +246,12 @@ export default function Header() {
                             {name}
                         </Link>
                     ))}
+                    <Link
+                        to="/tech"
+                        className="rounded-md px-3 py-1.5 font-medium text-indigo-600 transition hover:bg-indigo-50"
+                    >
+                        📰 Tin công nghệ
+                    </Link>
                     {isAuthenticated && normalizedRole === "ADMIN" && (
                         <Link
                             to="/admin"

@@ -93,6 +93,7 @@ export default function Footer() {
                             <Link to="/orders" className="block transition hover:text-brand-blue">Lịch sử đơn hàng</Link>
                             <Link to="/cart" className="block transition hover:text-brand-blue">Giỏ hàng</Link>
                             <Link to="/products" className="block transition hover:text-brand-blue">Sản phẩm</Link>
+                            <Link to="/tech" className="block transition hover:text-brand-blue">Tin công nghệ</Link>
                         </div>
                     </div>
 

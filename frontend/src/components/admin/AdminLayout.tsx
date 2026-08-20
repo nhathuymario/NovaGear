@@ -6,6 +6,7 @@ import {
     FileText,
     LayoutDashboard,
     LogOut,
+    Newspaper,
     Package,
     Truck,
     Palette,
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
     {to: "/admin/users", label: "Người dùng", icon: Users},
     {to: "/admin/policies", label: "Chính sách", icon: FileText},
     {to: "/admin/storefront", label: "Giao diện", icon: Palette},
+    {to: "/admin/articles", label: "Bài viết", icon: Newspaper},
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -49,6 +51,7 @@ const PAGE_TITLES: Record<string, string> = {
     "/admin/policies": "Quản lý chính sách",
     "/admin/storefront": "Quản lý giao diện",
     "/admin/shipping": "Quản lý vận chuyển",
+    "/admin/articles": "Quản lý bài viết",
 }
 
 export default function AdminLayout() {

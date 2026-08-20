@@ -110,6 +110,16 @@ spring:
           predicates:
             - Path=/ws,/ws/**
 
+        - id: article-service-public
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/articles/public/**
+
+        - id: article-service-admin
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/admin/articles/**
+
         - id: ai-service
           uri: ${AI_SERVICE_URL:http://localhost:8000}
           predicates:

@@ -17,6 +17,8 @@ import PaymentResultPage from "./pages/PaymentResultPage"
 import ProfilePage from "./pages/ProfilePage"
 import PolicyPage from "./pages/PolicyPage"
 import NotFoundPage from "./pages/NotFoundPage"
+import TechArticlesPage from "./pages/TechArticlesPage"
+import TechArticleDetailPage from "./pages/TechArticleDetailPage"
 import AdminRoute from "./components/admin/AdminRoute"
 import AdminLayout from "./components/admin/AdminLayout"
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage"
@@ -28,6 +30,7 @@ import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
 import AdminUsersPage from "./pages/admin/AdminUsersPage"
 import AdminStorefrontPage from "./pages/admin/AdminStorefrontPage"
 import AdminShippingPage from "./pages/admin/AdminShippingPage"
+import AdminArticlesPage from "./pages/admin/AdminArticlesPage"
 import ShipmentList from "./components/shipping/ShipmentList"
 import ShipmentDetail from "./components/shipping/ShipmentDetail"
 import AdminShippingCreatePage from "./pages/admin/AdminShippingCreatePage"
@@ -50,6 +53,7 @@ export default function App() {
                     <Route path="users" element={<AdminUsersPage/>}/>
                     <Route path="policies" element={<AdminPoliciesPage/>}/>
                     <Route path="storefront" element={<AdminStorefrontPage/>}/>
+                    <Route path="articles" element={<AdminArticlesPage/>}/>
                 </Route>
             </Route>
 
@@ -57,6 +61,8 @@ export default function App() {
                 <Route path="/" element={<HomePage/>}/>
                 <Route path="/products" element={<ProductListPage/>}/>
                 <Route path="/products/:slug" element={<ProductDetailPage/>}/>
+                <Route path="/tech" element={<TechArticlesPage/>}/>
+                <Route path="/tech/:slug" element={<TechArticleDetailPage/>}/>
 
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/register" element={<RegisterPage/>}/>
