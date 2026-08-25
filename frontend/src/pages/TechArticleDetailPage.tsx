@@ -35,6 +35,14 @@ function readingTime(content: string): number {
     return Math.max(1, Math.ceil(content.trim().split(/\s+/).length / 200))
 }
 
+/** Helper to get correct image URL */
+function getImageUrl(url: string): string {
+    if (!url) return "";
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/api')) return url;
+    return `/api${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 /** Simple markdown-to-HTML renderer for article content */
 function renderMarkdown(md: string): string {
     let html = md
@@ -46,6 +54,8 @@ function renderMarkdown(md: string): string {
         .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
         .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        // images
+        .replace(/!\[(.*?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="my-6 rounded-xl shadow-md w-full object-cover" />')
         // inline code
         .replace(/`(.+?)`/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 text-sm font-mono text-indigo-600">$1</code>')
         // blockquote
@@ -57,7 +67,7 @@ function renderMarkdown(md: string): string {
         // horizontal rule
         .replace(/^---$/gm, '<hr class="my-8 border-slate-200" />')
         // links
-        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-indigo-600 underline hover:text-indigo-800">$1</a>')
+        .replace(/(?<!!)\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-indigo-600 underline hover:text-indigo-800">$1</a>')
         // paragraphs — replace double newlines
         .replace(/\n\n/g, '</p><p class="mb-4 leading-relaxed text-slate-700">')
 
@@ -65,6 +75,8 @@ function renderMarkdown(md: string): string {
     html = `<p class="mb-4 leading-relaxed text-slate-700">${html}</p>`
     // Clean up empty paragraphs
     html = html.replace(/<p class="[^"]*"><\/p>/g, "")
+    // Clean up paragraphs around images
+    html = html.replace(/<p[^>]*>\s*(<img[^>]+>)\s*<\/p>/g, "$1")
     // Wrap consecutive <li> items in <ul>
     html = html.replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g, '<ul class="my-4 space-y-1">$1</ul>')
 
@@ -150,6 +162,33 @@ export default function TechArticleDetailPage() {
         )
     }
 
+    // Tiêm hình ảnh vào nội dung (nếu có ảnh mà trong bài chưa có thẻ ảnh nào)
+    let finalContent = article.content || ""
+    if (!finalContent.includes("![") && article.images && article.images.length > 0) {
+        const paragraphs = finalContent.split('\n\n')
+        let imageIdx = 0
+        const sortedImages = [...article.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+        
+        // Cứ mỗi 2-3 đoạn văn chèn 1 hình ảnh
+        for (let i = 2; i < paragraphs.length && imageIdx < sortedImages.length; i += 3) {
+            const img = sortedImages[imageIdx++]
+            paragraphs.splice(i, 0, `![${img.caption || article.title}](${getImageUrl(img.imageUrl)})`)
+        }
+        
+        // Nếu bài ngắn quá mà còn dư ảnh thì nhét xuống cuối bài
+        while (imageIdx < sortedImages.length) {
+            const img = sortedImages[imageIdx++]
+            paragraphs.push(`![${img.caption || article.title}](${getImageUrl(img.imageUrl)})`)
+        }
+        
+        finalContent = paragraphs.join('\n\n')
+    } else if (finalContent.includes("![")) {
+        // Fix url for images that are natively inside the markdown text
+        finalContent = finalContent.replace(/!\[(.*?)\]\((.+?)\)/g, (_match, alt, url) => {
+            return `![${alt}](${getImageUrl(url)})`
+        })
+    }
+
     return (
         <div className="mx-auto max-w-4xl space-y-8 py-4">
             {/* Breadcrumb */}
@@ -176,7 +215,7 @@ export default function TechArticleDetailPage() {
                 {article.cover_image_url ? (
                     <div className="overflow-hidden rounded-2xl">
                         <img
-                            src={article.cover_image_url}
+                            src={getImageUrl(article.cover_image_url)}
                             alt={article.title}
                             className="aspect-[2/1] w-full object-cover"
                         />
@@ -251,36 +290,8 @@ export default function TechArticleDetailPage() {
                 animate={{opacity: 1}}
                 transition={{duration: 0.4, delay: 0.2}}
                 className="prose-novagear"
-                dangerouslySetInnerHTML={{__html: renderMarkdown(article.content)}}
+                dangerouslySetInnerHTML={{__html: renderMarkdown(finalContent)}}
             />
-
-            {/* Image Gallery */}
-            {article.images && article.images.length > 0 && (
-                <section className="mt-8 border-t border-slate-200 pt-8">
-                    <h2 className="mb-5 text-lg font-bold text-slate-900">
-                        Hình ảnh đính kèm
-                    </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                        {article.images.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((img) => (
-                            <div key={img.id || img.imageUrl} className="group overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                <a href={`/api/admin/articles${img.imageUrl}`} target="_blank" rel="noopener noreferrer">
-                                    <img
-                                        src={`/api/admin/articles${img.imageUrl}`}
-                                        alt={img.caption || article.title}
-                                        className="aspect-video w-full object-cover transition duration-300 group-hover:scale-105"
-                                        loading="lazy"
-                                    />
-                                </a>
-                                {img.caption && (
-                                    <div className="p-3 text-center">
-                                        <p className="text-xs text-slate-600 italic">{img.caption}</p>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
 
             {/* Related Articles */}
             {relatedArticles.length > 0 && (

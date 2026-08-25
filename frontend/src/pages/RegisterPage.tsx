@@ -1,6 +1,8 @@
+import { toast } from '../utils/toast'
 import {useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {registerApi} from "../api/authApi"
+
 
 type ApiErrorLike = {
     response?: {
@@ -62,7 +64,7 @@ export default function RegisterPage() {
                 password: form.password,
             })
 
-            alert("Đăng ký thành công")
+            toast.success("Đăng ký thành công")
             navigate("/login")
         } catch (err: unknown) {
             console.error(err)

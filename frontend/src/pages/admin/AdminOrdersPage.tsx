@@ -1,6 +1,8 @@
+import { toast } from '../../utils/toast'
 import {useEffect, useState} from "react"
 import {getAdminOrders, updateAdminOrderStatus} from "../../api/adminOrderApi"
 import type {Order} from "../../types/order"
+
 
 const statusOptions: Order["status"][] = [
     "PENDING",
@@ -90,10 +92,10 @@ export default function AdminOrdersPage() {
             setItems((prev) =>
                 prev.map((item) => (item.id === id ? {...item, status} : item))
             )
-            alert("Cập nhật trạng thái đơn thành công")
+            toast.success("Cập nhật trạng thái đơn thành công")
         } catch (error) {
             console.error(error)
-            alert("Cập nhật trạng thái đơn thất bại")
+            toast.error("Cập nhật trạng thái đơn thất bại")
         } finally {
             setSavingId(null)
         }

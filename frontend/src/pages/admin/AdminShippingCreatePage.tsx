@@ -1,6 +1,8 @@
+import { toast } from '../../utils/toast'
 import { useState } from "react"
 import { createAdminShipment } from "../../api/shippingApi"
 import type { CreateShipmentRequest } from "../../types/shipping"
+
 
 export default function AdminShippingCreatePage() {
     const [form, setForm] = useState<CreateShipmentRequest>({
@@ -29,12 +31,12 @@ export default function AdminShippingCreatePage() {
         try {
             setSaving(true)
             const created = await createAdminShipment(form)
-            alert("Tạo vận chuyển thành công: " + (created.id ?? created.orderCode))
+            toast.success("Tạo vận chuyển thành công: " + (created.id ?? created.orderCode))
             // redirect to detail page
             window.location.href = `/admin/shipping/${created.id}`
         } catch (error) {
             console.error("Failed to create shipment:", error)
-            alert("Tạo vận chuyển thất bại")
+            toast.error("Tạo vận chuyển thất bại")
         } finally {
             setSaving(false)
         }

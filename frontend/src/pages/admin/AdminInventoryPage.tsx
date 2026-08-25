@@ -1,3 +1,4 @@
+import { toast } from '../../utils/toast'
 import {type FormEvent, useCallback, useEffect, useMemo, useState} from "react"
 import {
     adjustStock,
@@ -9,6 +10,7 @@ import {
 } from "../../api/inventoryApi"
 import {type AdminProductItem, getAdminProductDetail, getAdminProducts,} from "../../api/adminProductApi"
 import {type AdminVariantItem, getProductVariants} from "../../api/adminProductDetailApi"
+
 
 type ProductVariantLookup = {
     productName?: string
@@ -145,7 +147,7 @@ export default function AdminInventoryPage() {
         } catch (error) {
             console.error(error)
             setProducts([])
-            alert("Không tải được danh sách sản phẩm")
+            toast.error("Không tải được danh sách sản phẩm")
         } finally {
             setOptionLoading(false)
         }
@@ -165,7 +167,7 @@ export default function AdminInventoryPage() {
         } catch (error) {
             console.error(error)
             setVariants([])
-            alert("Không tải được danh sách biến thể")
+            toast.error("Không tải được danh sách biến thể")
         } finally {
             setVariantLoading(false)
         }
@@ -209,7 +211,7 @@ export default function AdminInventoryPage() {
         } catch (error) {
             console.error(error)
             setTransactions([])
-            alert("Không tải được lịch sử kho")
+            toast.error("Không tải được lịch sử kho")
         }
     }
 
@@ -247,12 +249,12 @@ export default function AdminInventoryPage() {
         e.preventDefault()
 
         if (!importForm.productId || !importForm.variantId) {
-            alert("Vui lòng chọn sản phẩm và biến thể")
+            toast.error("Vui lòng chọn sản phẩm và biến thể")
             return
         }
 
         if (Number(importForm.quantity) < 1) {
-            alert("Số lượng nhập phải lớn hơn 0")
+            toast.info("Số lượng nhập phải lớn hơn 0")
             return
         }
 
@@ -276,10 +278,10 @@ export default function AdminInventoryPage() {
                 note: "",
             }))
 
-            alert("Nhập kho thành công")
+            toast.success("Nhập kho thành công")
         } catch (error) {
             console.error(error)
-            alert("Nhập kho thất bại")
+            toast.error("Nhập kho thất bại")
         } finally {
             setIsImporting(false)
         }
@@ -289,7 +291,7 @@ export default function AdminInventoryPage() {
         e.preventDefault()
 
         if (!adjustForm.variantId) {
-            alert("Vui lòng chọn một dòng tồn kho từ bảng hoặc nhập Variant ID để điều chỉnh")
+            toast.error("Vui lòng chọn một dòng tồn kho từ bảng hoặc nhập Variant ID để điều chỉnh")
             return
         }
 
@@ -307,10 +309,10 @@ export default function AdminInventoryPage() {
                 await handleOpenTransactions(adjustForm.variantId)
             }
 
-            alert("Điều chỉnh kho thành công")
+            toast.success("Điều chỉnh kho thành công")
         } catch (error) {
             console.error(error)
-            alert("Điều chỉnh kho thất bại")
+            toast.error("Điều chỉnh kho thất bại")
         } finally {
             setIsAdjusting(false)
         }

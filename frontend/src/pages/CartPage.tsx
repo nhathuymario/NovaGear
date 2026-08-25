@@ -1,3 +1,4 @@
+import { toast } from '../utils/toast'
 import {useEffect, useMemo, useState} from "react"
 import {Link, useNavigate} from "react-router-dom"
 import {motion} from "framer-motion"
@@ -7,6 +8,7 @@ import {getMyCart, removeCartItem, updateCartItem} from "../api/cartApi"
 import {getToken} from "../utils/auth"
 import {getFallbackImageSrc, handleImageError} from "../utils/image"
 import {CartSkeleton} from "../components/ui/Skeletons"
+
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "₫"
@@ -43,7 +45,7 @@ export default function CartPage() {
             setItems((prev) => prev.map((item) => (item.id === id ? {...item, quantity} : item)))
         } catch (error) {
             console.error(error)
-            alert("Cập nhật số lượng thất bại")
+            toast.error("Cập nhật số lượng thất bại")
         }
     }
 
@@ -53,7 +55,7 @@ export default function CartPage() {
             setItems((prev) => prev.filter((item) => item.id !== id))
         } catch (error) {
             console.error(error)
-            alert("Xóa sản phẩm thất bại")
+            toast.error("Xóa sản phẩm thất bại")
         }
     }
 

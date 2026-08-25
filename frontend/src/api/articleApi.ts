@@ -37,6 +37,7 @@ export interface ArticleGenerateRequest {
     keywords: string[]
     tone: "professional" | "casual" | "review" | "tutorial"
     category: string
+    auto_image?: boolean
 }
 
 export interface ArticleCreateRequest {
@@ -72,6 +73,14 @@ export async function getArticles(
 ): Promise<ArticleListResponse> {
     const params: Record<string, string | number> = {page, limit}
     if (category) params.category = category
+    
+    // Nếu lấy danh sách PUBLIC (chỉ PUBLISHED), dùng public endpoint
+    if (statusFilter === "PUBLISHED") {
+        const res = await axiosClient.get<ArticleListResponse>("/articles/public", {params})
+        return res.data
+    }
+    
+    // Nếu lấy danh sách Admin, dùng admin endpoint
     if (statusFilter) params.status_filter = statusFilter
     const res = await axiosClient.get<ArticleListResponse>("/admin/articles", {params})
     return res.data

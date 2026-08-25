@@ -1,8 +1,10 @@
+import { toast } from '../../utils/toast'
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { getAdminShipmentById, updateShipmentStatus, assignCarrier } from "../../api/shippingApi"
 import type { Shipment, ShipmentStatus, UpdateShipmentStatusRequest, AssignCarrierRequest } from "../../types/shipping"
 import ShipmentStatusTimeline from "./ShipmentStatusTimeline"
+
 
 export default function ShipmentDetail() {
     const { shipmentId } = useParams<{ shipmentId: string }>()
@@ -72,10 +74,10 @@ export default function ShipmentDetail() {
             const updated = await assignCarrier(shipment.id, request)
             setShipment(updated)
             setEditingCarrier(false)
-            alert("Cập nhật carrier thành công")
+            toast.success("Cập nhật carrier thành công")
         } catch (error) {
             console.error("Failed to update carrier:", error)
-            alert("Cập nhật carrier thất bại")
+            toast.error("Cập nhật carrier thất bại")
         } finally {
             setUpdating(false)
         }
@@ -97,10 +99,10 @@ export default function ShipmentDetail() {
                 status: updated.status,
                 note: "",
             })
-            alert("Cập nhật trạng thái thành công")
+            toast.success("Cập nhật trạng thái thành công")
         } catch (error) {
             console.error("Failed to update status:", error)
-            alert("Cập nhật trạng thái thất bại")
+            toast.error("Cập nhật trạng thái thất bại")
         } finally {
             setUpdating(false)
         }

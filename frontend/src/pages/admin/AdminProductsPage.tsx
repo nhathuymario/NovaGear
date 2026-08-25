@@ -1,3 +1,5 @@
+import { toast } from '../../utils/toast'
+import { useUIStore } from '../../store/useUIStore'
 import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 import type {AxiosError} from "axios"
 import {
@@ -38,6 +40,7 @@ import {getFallbackImageSrc, getImageSrc, handleImageError} from "../../utils/im
 import StatusBadge from "./products/StatusBadge"
 import AiProductDraftPanel from "./products/AiProductDraftPanel"
 import {
+
     DEFAULT_IMPORT_FORM,
     INITIAL_PRODUCT_FORM,
     INITIAL_SPEC_FORM,
@@ -82,6 +85,8 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function AdminProductsPage() {
+    const { requestConfirm } = useUIStore();
+
     const [tab, setTab] = useState<Tab>("list")
     const [products, setProducts] = useState<AdminProductItem[]>([])
     const [categories, setCategories] = useState<CategoryOption[]>([])
@@ -269,6 +274,8 @@ export default function AdminProductsPage() {
     }, [products, keyword])
 
     const openCreateProduct = () => {
+    
+
         setEditingProduct(null)
         setProductForm(INITIAL_PRODUCT_FORM)
         setAiDraftJob(null)
@@ -320,13 +327,13 @@ export default function AdminProductsPage() {
             setProductForm((prev) => ({...prev, thumbnail: url}))
         } catch (err) {
             console.error(err)
-            alert("Upload ảnh thất bại")
+            toast.error("Upload ảnh thất bại")
         } finally {
             setThumbnailUploading(false)
         }
     }
 
-    const handleApplyAiDraft = async (job: AiCatalogDraftJob, file: File) => {
+    const handleApplyAiDraft = async (job: AiCatalogDraftJob, file: File | null) => {
         const draft = job.result
         if (!draft) throw new Error("AI draft không có dữ liệu để điền vào form")
 
@@ -335,7 +342,7 @@ export default function AdminProductsPage() {
             const name = category.name.trim().toLowerCase()
             return normalizedCategory && (name.includes(normalizedCategory) || normalizedCategory.includes(name))
         })
-        const thumbnail = await uploadProductImage(file)
+        const thumbnail = file ? await uploadProductImage(file) : productForm.thumbnail
 
         setProductForm((current) => ({
             ...current,
@@ -392,7 +399,7 @@ export default function AdminProductsPage() {
             insertDescriptionImage(url)
         } catch (err) {
             console.error(err)
-            alert("Upload ảnh vào mô tả thất bại")
+            toast.error("Upload ảnh vào mô tả thất bại")
         } finally {
             setDescriptionImageUploading(false)
             e.target.value = ""
@@ -418,12 +425,17 @@ export default function AdminProductsPage() {
     const handleSubmitProduct = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (!productForm.categoryId || String(productForm.categoryId).trim() === "") {
+            toast.error("Vui lòng chọn danh mục sản phẩm trước khi lưu")
+            return
+        }
+
         try {
             setSubmittingProduct(true)
 
             if (editingProduct) {
                 await updateAdminProduct(editingProduct.id, productForm)
-                alert("Cập nhật sản phẩm thành công")
+                toast.success("Cập nhật sản phẩm thành công")
             } else {
                 const response = await createAdminProduct(productForm)
                 const created = response?.data ?? response
@@ -459,12 +471,12 @@ export default function AdminProductsPage() {
                     const failedDetails = detailResults.filter((result) => result.status === "rejected")
                     if (failedDetails.length === 0) {
                         await approveAiCatalogDraft(aiDraftJob.id, createdProductId)
-                        alert("Đã tạo sản phẩm DRAFT từ AI và liên kết đầy đủ dữ liệu nháp")
+                        toast.success("Đã tạo sản phẩm DRAFT từ AI và liên kết đầy đủ dữ liệu nháp")
                     } else {
-                        alert(`Sản phẩm DRAFT đã được tạo nhưng ${failedDetails.length} chi tiết AI chưa lưu được. Vui lòng kiểm tra lại.`)
+                        toast.success(`Sản phẩm DRAFT đã được tạo nhưng ${failedDetails.length} chi tiết AI chưa lưu được. Vui lòng kiểm tra lại.`)
                     }
                 } else {
-                    alert("Tạo sản phẩm thành công")
+                    toast.success("Tạo sản phẩm thành công")
                 }
             }
 
@@ -472,28 +484,28 @@ export default function AdminProductsPage() {
             setTab("list")
         } catch (err) {
             console.error(err)
-            alert("Lưu sản phẩm thất bại")
+            toast.error("Lưu sản phẩm thất bại")
         } finally {
             setSubmittingProduct(false)
         }
     }
 
     const handleDeleteProduct = async (item: AdminProductItem) => {
-        if (!window.confirm(`Xóa sản phẩm "${item.name}"?`)) return
+        if (!await requestConfirm(`Xóa sản phẩm "${item.name}"?`)) return
 
         try {
             await deleteAdminProduct(item.id)
             await loadProducts()
-            alert("Đã xóa sản phẩm")
+            toast.success("Đã xóa sản phẩm")
         } catch (err) {
             console.error(err)
-            alert("Xóa thất bại")
+            toast.error("Xóa thất bại")
         }
     }
 
     const handleToggleFeatured = async (item: AdminProductItem) => {
         if (!item.categoryId) {
-            alert("Sản phẩm này chưa có danh mục hợp lệ để cập nhật nổi bật")
+            toast.info("Sản phẩm này chưa có danh mục hợp lệ để cập nhật nổi bật")
             return
         }
 
@@ -511,10 +523,10 @@ export default function AdminProductsPage() {
                 featured: !item.featured,
             })
             await loadProducts()
-            alert(!item.featured ? "Đã đặt sản phẩm nổi bật" : "Đã bỏ nổi bật")
+            toast.success(!item.featured ? "Đã đặt sản phẩm nổi bật" : "Đã bỏ nổi bật")
         } catch (error) {
             console.error(error)
-            alert("Cập nhật nổi bật thất bại")
+            toast.error("Cập nhật nổi bật thất bại")
         } finally {
             setTogglingFeaturedId(null)
         }
@@ -599,7 +611,7 @@ export default function AdminProductsPage() {
             setVariantForm((prev) => ({...prev, imageUrl: url}))
         } catch (err) {
             console.error(err)
-            alert("Upload ảnh thất bại")
+            toast.error("Upload ảnh thất bại")
         } finally {
             setVariantImgUploading(false)
         }
@@ -616,17 +628,17 @@ export default function AdminProductsPage() {
             variantForm.salePrice != null ? Number(variantForm.salePrice) : undefined
 
         if (!normalizedSku) {
-            alert("SKU khong duoc de trong")
+            toast.info("SKU khong duoc de trong")
             return
         }
 
         if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
-            alert("Gia goc phai la so >= 0")
+            toast.info("Gia goc phai la so >= 0")
             return
         }
 
         if (!Number.isFinite(normalizedStock) || normalizedStock < 0) {
-            alert("Ton kho khoi tao phai la so >= 0")
+            toast.info("Ton kho khoi tao phai la so >= 0")
             return
         }
 
@@ -634,12 +646,12 @@ export default function AdminProductsPage() {
             normalizedSalePrice != null &&
             (!Number.isFinite(normalizedSalePrice) || normalizedSalePrice < 0)
         ) {
-            alert("Gia sale phai la so >= 0")
+            toast.info("Gia sale phai la so >= 0")
             return
         }
 
         if (normalizedSalePrice != null && normalizedSalePrice > normalizedPrice) {
-            alert("Gia sale khong duoc lon hon gia goc")
+            toast.info("Gia sale khong duoc lon hon gia goc")
             return
         }
 
@@ -660,7 +672,7 @@ export default function AdminProductsPage() {
         })
 
         if (duplicatedCombo) {
-            alert(`Bi trung to hop Bo nho + Mau voi SKU ${duplicatedCombo.sku}. Moi to hop chi duoc tao 1 variant.`)
+            toast.info(`Bi trung to hop Bo nho + Mau voi SKU ${duplicatedCombo.sku}. Moi to hop chi duoc tao 1 variant.`)
             return
         }
 
@@ -695,27 +707,27 @@ export default function AdminProductsPage() {
                 setShowVariantForm(false)
                 setEditingVariant(null)
             }
-            alert(editingVariant ? "Cập nhật variant thành công" : "Thêm variant thành công")
+            toast.success(editingVariant ? "Cập nhật variant thành công" : "Thêm variant thành công")
         } catch (err) {
             console.error(err)
-            alert(getApiErrorMessage(err, "Luu variant that bai"))
+            toast.info(getApiErrorMessage(err, "Luu variant that bai"))
         } finally {
             setSubmittingVariant(false)
         }
     }
 
     const handleDeleteVariant = async (variantId: number | string) => {
-        if (!window.confirm("Xóa variant này?")) return
+        if (!await requestConfirm("Xóa variant này?")) return
 
         try {
             await deleteProductVariant(variantId)
             if (selectedProduct) {
                 await loadDetail(selectedProduct.id)
             }
-            alert("Xóa variant thành công")
+            toast.success("Xóa variant thành công")
         } catch (err) {
             console.error(err)
-            alert("Xóa variant thất bại")
+            toast.error("Xóa variant thất bại")
         }
     }
 
@@ -752,27 +764,27 @@ export default function AdminProductsPage() {
             await loadDetail(selectedProduct.id)
             setShowSpecForm(false)
             setEditingSpec(null)
-            alert(editingSpec ? "Cập nhật thông số thành công" : "Thêm thông số thành công")
+            toast.success(editingSpec ? "Cập nhật thông số thành công" : "Thêm thông số thành công")
         } catch (err) {
             console.error(err)
-            alert("Lưu thông số thất bại")
+            toast.error("Lưu thông số thất bại")
         } finally {
             setSubmittingSpec(false)
         }
     }
 
     const handleDeleteSpec = async (specId: number | string) => {
-        if (!window.confirm("Xóa thông số này?")) return
+        if (!await requestConfirm("Xóa thông số này?")) return
 
         try {
             await deleteProductSpecification(specId)
             if (selectedProduct) {
                 await loadDetail(selectedProduct.id)
             }
-            alert("Xóa thông số thành công")
+            toast.success("Xóa thông số thành công")
         } catch (err) {
             console.error(err)
-            alert("Xóa thông số thất bại")
+            toast.error("Xóa thông số thất bại")
         }
     }
 
@@ -800,10 +812,10 @@ export default function AdminProductsPage() {
 
             await loadDetail(selectedProduct.id)
             await loadProducts()
-            alert("Đã thêm ảnh từ URL")
+            toast.success("Đã thêm ảnh từ URL")
         } catch (error) {
             console.error(error)
-            alert("Thêm ảnh thất bại")
+            toast.error("Thêm ảnh thất bại")
         } finally {
             setGalleryUploading(false)
         }
@@ -841,10 +853,10 @@ export default function AdminProductsPage() {
 
             await loadDetail(selectedProduct.id)
             await loadProducts()
-            alert("Đã upload ảnh sản phẩm")
+            toast.success("Đã upload ảnh sản phẩm")
         } catch (error) {
             console.error(error)
-            alert("Upload ảnh thất bại")
+            toast.error("Upload ảnh thất bại")
         } finally {
             setGalleryUploading(false)
             e.target.value = ""
@@ -864,10 +876,10 @@ export default function AdminProductsPage() {
             })
             await loadDetail(selectedProduct.id)
             await loadProducts()
-            alert("Đã đặt ảnh đại diện")
+            toast.success("Đã đặt ảnh đại diện")
         } catch (error) {
             console.error(error)
-            alert("Không thể cập nhật ảnh đại diện")
+            toast.error("Không thể cập nhật ảnh đại diện")
         } finally {
             setGallerySaving(false)
         }
@@ -875,17 +887,17 @@ export default function AdminProductsPage() {
 
     const handleDeleteProductImage = async (imageId: number | string) => {
         if (!selectedProduct) return
-        if (!window.confirm("Xóa ảnh sản phẩm này?")) return
+        if (!await requestConfirm("Xóa ảnh sản phẩm này?")) return
 
         try {
             setGallerySaving(true)
             await deleteProductImage(imageId)
             await loadDetail(selectedProduct.id)
             await loadProducts()
-            alert("Đã xóa ảnh")
+            toast.success("Đã xóa ảnh")
         } catch (error) {
             console.error(error)
-            alert("Xóa ảnh thất bại")
+            toast.error("Xóa ảnh thất bại")
         } finally {
             setGallerySaving(false)
         }
@@ -920,10 +932,10 @@ export default function AdminProductsPage() {
                 sortOrder: image.sortOrder,
             })
             await loadDetail(selectedProduct.id)
-            alert("Đã cập nhật variant cho ảnh")
+            toast.success("Đã cập nhật variant cho ảnh")
         } catch (error) {
             console.error(error)
-            alert("Cập nhật variant ảnh thất bại")
+            toast.error("Cập nhật variant ảnh thất bại")
         } finally {
             setGallerySaving(false)
         }

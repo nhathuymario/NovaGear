@@ -86,6 +86,21 @@ export async function createAiCatalogDraft(file: File, hint?: string): Promise<A
     return response.data
 }
 
+export async function createAiCatalogDraftFromPrompt(prompt: string): Promise<AiCatalogDraftJob> {
+    const response = await axiosClient.post<AiCatalogDraftJob>("/ai/v1/catalog/drafts/prompt", {
+        prompt,
+    })
+    return response.data
+}
+
+export async function createAiCatalogDraftFromUrl(url: string, hint?: string): Promise<AiCatalogDraftJob> {
+    const response = await axiosClient.post<AiCatalogDraftJob>("/ai/v1/catalog/drafts/url", {
+        url,
+        hint,
+    })
+    return response.data
+}
+
 export async function getAiCatalogDraft(jobId: string): Promise<AiCatalogDraftJob> {
     const response = await axiosClient.get<AiCatalogDraftJob>(`/ai/v1/catalog/drafts/${jobId}`)
     return response.data

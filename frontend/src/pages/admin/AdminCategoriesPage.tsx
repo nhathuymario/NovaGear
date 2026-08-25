@@ -1,5 +1,8 @@
+import { toast } from '../../utils/toast'
+import { useUIStore } from '../../store/useUIStore'
 import { useEffect, useMemo, useState } from "react"
 import {
+
     createAdminCategory,
     deleteAdminCategory,
     getAdminCategories,
@@ -15,6 +18,8 @@ const initialForm: AdminCategoryPayload = {
 }
 
 export default function AdminCategoriesPage() {
+    const { requestConfirm } = useUIStore();
+
     const [items, setItems] = useState<AdminCategoryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [keyword, setKeyword] = useState("")
@@ -52,6 +57,8 @@ export default function AdminCategoriesPage() {
     }, [items, keyword])
 
     const resetForm = () => {
+    
+
         setForm(initialForm)
         setEditingId(null)
         setOpenForm(false)
@@ -85,25 +92,25 @@ export default function AdminCategoriesPage() {
             }
             await loadData()
             resetForm()
-            alert(editingId ? "Cập nhật category thành công" : "Tạo category thành công")
+            toast.success(editingId ? "Cập nhật category thành công" : "Tạo category thành công")
         } catch (error) {
             console.error(error)
-            alert("Lưu category thất bại")
+            toast.error("Lưu category thất bại")
         } finally {
             setSubmitting(false)
         }
     }
 
     const handleDelete = async (id: number | string) => {
-        if (!window.confirm("Bạn có chắc muốn xóa category này?")) return
+        if (!await requestConfirm("Bạn có chắc muốn xóa category này?")) return
 
         try {
             await deleteAdminCategory(id)
             await loadData()
-            alert("Xóa category thành công")
+            toast.success("Xóa category thành công")
         } catch (error) {
             console.error(error)
-            alert("Xóa category thất bại")
+            toast.error("Xóa category thất bại")
         }
     }
 

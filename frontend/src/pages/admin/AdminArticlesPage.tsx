@@ -2,7 +2,7 @@ import {useCallback, useEffect, useState} from "react"
 import {motion} from "framer-motion"
 import {
     Calendar, Check, ChevronDown, Edit3, Eye, FileText, Loader2,
-    Newspaper, Plus, Sparkles, Trash2, X, Image as ImageIcon, UploadCloud
+    Newspaper, Plus, Sparkles, Trash2, X, UploadCloud
 } from "lucide-react"
 import {
     createArticle, deleteArticle, generateArticle, getArticles,
@@ -43,13 +43,16 @@ export default function AdminArticlesPage() {
     const [tagsStr, setTagsStr] = useState("")
     const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT")
     const [images, setImages] = useState<ArticleImageItem[]>([])
+    const [coverImageUrl, setCoverImageUrl] = useState("")
     const [uploading, setUploading] = useState(false)
+    const [newImageUrl, setNewImageUrl] = useState("")
 
     // AI generate fields
     const [aiTopic, setAiTopic] = useState("")
     const [aiKeywords, setAiKeywords] = useState("")
     const [aiTone, setAiTone] = useState<"professional" | "casual" | "review" | "tutorial">("professional")
     const [aiCategory, setAiCategory] = useState("Công nghệ")
+    const [aiAutoImage, setAiAutoImage] = useState(true)
 
     const limit = 15
 
@@ -67,6 +70,7 @@ export default function AdminArticlesPage() {
     const openCreate = () => {
         setTitle(""); setSummary(""); setContent(""); setCategory("Công nghệ")
         setTagsStr(""); setStatus("DRAFT"); setImages([]); setEditingArticle(null)
+        setCoverImageUrl("")
         setModalMode("create")
     }
 
@@ -74,11 +78,12 @@ export default function AdminArticlesPage() {
         setTitle(a.title); setSummary(a.summary); setContent(a.content)
         setCategory(a.category); setTagsStr(a.tags.join(", ")); setStatus(a.status)
         setImages(a.images || []); setEditingArticle(a); setModalMode("edit")
+        setCoverImageUrl(a.cover_image_url || "")
     }
 
     const openGenerate = () => {
         setAiTopic(""); setAiKeywords(""); setAiTone("professional"); setAiCategory("Công nghệ")
-        setImages([]); setModalMode("generate")
+        setAiAutoImage(true); setImages([]); setModalMode("generate")
     }
 
     const closeModal = () => { setModalMode("closed"); setEditingArticle(null) }
@@ -89,9 +94,9 @@ export default function AdminArticlesPage() {
         try {
             const tags = tagsStr.split(",").map(t => t.trim()).filter(Boolean)
             if (modalMode === "edit" && editingArticle) {
-                await updateArticle(editingArticle.id, {title, summary, content, category, tags, status, images})
+                await updateArticle(editingArticle.id, {title, summary, content, category, tags, status, images, cover_image_url: coverImageUrl})
             } else {
-                const data: ArticleCreateRequest = {title, summary, content, category, tags, status, images}
+                const data: ArticleCreateRequest = {title, summary, content, category, tags, status, images, cover_image_url: coverImageUrl}
                 await createArticle(data)
             }
             closeModal(); fetchArticles()
@@ -104,10 +109,17 @@ export default function AdminArticlesPage() {
         setSaving(true)
         try {
             const keywords = aiKeywords.split(",").map(k => k.trim()).filter(Boolean)
-            const generated = await generateArticle({topic: aiTopic, keywords, tone: aiTone, category: aiCategory})
+            const generated = await generateArticle({
+                topic: aiTopic, 
+                keywords, 
+                tone: aiTone, 
+                category: aiCategory,
+                auto_image: aiAutoImage
+            })
             // Open edit mode with generated content
             setTitle(generated.title); setSummary(generated.summary); setContent(generated.content)
             setCategory(generated.category); setTagsStr(generated.tags.join(", ")); setStatus("DRAFT")
+            setCoverImageUrl(generated.cover_image_url || "")
             
             const generatedImages = generated.images?.map((img, idx) => ({
                 imageUrl: img.imageUrl,
@@ -115,7 +127,7 @@ export default function AdminArticlesPage() {
                 displayOrder: idx
             })) || []
             setImages(generatedImages); 
-            setEditingArticle(generated); setModalMode("edit")
+            setEditingArticle(null); setModalMode("create")
             fetchArticles()
         } catch { /* silently handle */ }
         finally { setSaving(false) }
@@ -175,7 +187,7 @@ export default function AdminArticlesPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                     {label: "Tổng bài viết", value: total, color: "bg-indigo-50 text-indigo-700"},
                     {label: "Đã xuất bản", value: articles.filter(a => a.status === "PUBLISHED").length, color: "bg-emerald-50 text-emerald-700"},
@@ -294,7 +306,7 @@ export default function AdminArticlesPage() {
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Từ khóa (cách nhau bằng dấu phẩy)</label>
                                         <input value={aiKeywords} onChange={e => setAiKeywords(e.target.value)} placeholder="GPU, gaming, benchmark" className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="mb-1 block text-sm font-semibold text-slate-700">Phong cách</label>
                                             <div className="relative">
@@ -314,12 +326,45 @@ export default function AdminArticlesPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    <label className="flex items-center space-x-3 cursor-pointer mt-4">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={aiAutoImage} 
+                                            onChange={e => setAiAutoImage(e.target.checked)}
+                                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                                        />
+                                        <span className="text-sm font-medium text-slate-700">Để AI tự động tìm và gắn ảnh minh hoạ</span>
+                                    </label>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Tiêu đề *</label>
                                         <input value={title} onChange={e => setTitle(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-semibold text-slate-700">Ảnh bìa (URL hoặc Tải lên)</label>
+                                        <div className="flex items-center gap-3">
+                                            {coverImageUrl && (
+                                                <div className="h-10 w-16 shrink-0 overflow-hidden rounded bg-slate-100">
+                                                    <img src={coverImageUrl.startsWith('http') ? coverImageUrl : (coverImageUrl.startsWith('/api') ? coverImageUrl : `/api${coverImageUrl.startsWith('/') ? '' : '/'}${coverImageUrl}`)} alt="Cover" className="h-full w-full object-cover" />
+                                                </div>
+                                            )}
+                                            <input value={coverImageUrl} onChange={e => setCoverImageUrl(e.target.value)} placeholder="https://..." className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+                                            <label className="shrink-0 cursor-pointer rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                                                Tải lên
+                                                <input type="file" accept="image/*" onChange={async (e) => {
+                                                    if (!e.target.files?.length) return
+                                                    setUploading(true)
+                                                    try {
+                                                        const url = await uploadArticleImage(e.target.files[0])
+                                                        setCoverImageUrl(url)
+                                                    } finally {
+                                                        setUploading(false)
+                                                    }
+                                                }} className="hidden" disabled={uploading} />
+                                            </label>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Tóm tắt</label>
@@ -357,10 +402,30 @@ export default function AdminArticlesPage() {
                                     
                                     <div>
                                         <label className="mb-2 block text-sm font-semibold text-slate-700">Hình ảnh bài viết</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                                        <div className="mb-4 flex gap-2">
+                                            <input 
+                                                value={newImageUrl} 
+                                                onChange={e => setNewImageUrl(e.target.value)} 
+                                                placeholder="Thêm ảnh bằng URL (https://...)" 
+                                                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" 
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    if (newImageUrl.trim()) {
+                                                        setImages([...images, { imageUrl: newImageUrl.trim(), displayOrder: images.length }]);
+                                                        setNewImageUrl("");
+                                                    }
+                                                }}
+                                                className="shrink-0 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                                            >
+                                                Thêm URL
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                                             {images.map((img, idx) => (
                                                 <div key={idx} className="relative group overflow-hidden rounded-xl border border-slate-200 bg-slate-50 aspect-video">
-                                                    <img src={`/api/admin/articles${img.imageUrl}`} alt="" className="h-full w-full object-cover" />
+                                                    <img src={img.imageUrl.startsWith('http') ? img.imageUrl : (img.imageUrl.startsWith('/api') ? img.imageUrl : `/api${img.imageUrl.startsWith('/') ? '' : '/'}${img.imageUrl}`)} alt="" className="h-full w-full object-cover" />
                                                     <button 
                                                         onClick={() => setImages(images.filter((_, i) => i !== idx))}
                                                         className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500"

@@ -3,11 +3,13 @@ import {AlertTriangle, Bot, CheckCircle2, ExternalLink, LoaderCircle, Search, Sp
 import {
     type AiCatalogDraftJob,
     createAiCatalogDraft,
+    createAiCatalogDraftFromPrompt,
+    createAiCatalogDraftFromUrl,
     waitForAiCatalogDraft,
 } from "../../../api/aiCatalogApi"
 
 type Props = {
-    onApply: (job: AiCatalogDraftJob, file: File) => Promise<void>
+    onApply: (job: AiCatalogDraftJob, file: File | null) => Promise<void>
 }
 
 function formatCurrency(value: number, currency = "VND") {
@@ -15,31 +17,49 @@ function formatCurrency(value: number, currency = "VND") {
 }
 
 export default function AiProductDraftPanel({onApply}: Readonly<Props>) {
+    const [mode, setMode] = useState<"image" | "prompt" | "url">("image")
     const [file, setFile] = useState<File | null>(null)
+    const [prompt, setPrompt] = useState("")
+    const [url, setUrl] = useState("")
     const [hint, setHint] = useState("")
     const [job, setJob] = useState<AiCatalogDraftJob | null>(null)
     const [processing, setProcessing] = useState(false)
     const [error, setError] = useState("")
 
-    const analyze = async () => {
-        if (!file) {
+        const analyze = async () => {
+        if (mode === "image" && !file) {
             setError("Vui lòng chọn ảnh sản phẩm trước.")
+            return
+        }
+        if (mode === "prompt" && !prompt.trim()) {
+            setError("Vui lòng nhập tên sản phẩm hoặc từ khóa.")
+            return
+        }
+        if (mode === "url" && !url.trim()) {
+            setError("Vui lòng nhập đường dẫn URL hợp lệ.")
             return
         }
 
         try {
             setProcessing(true)
             setError("")
-            const queuedJob = await createAiCatalogDraft(file, hint)
+            let queuedJob: AiCatalogDraftJob
+            if (mode === "image") {
+                queuedJob = await createAiCatalogDraft(file!, hint)
+            } else if (mode === "prompt") {
+                queuedJob = await createAiCatalogDraftFromPrompt(prompt)
+            } else {
+                queuedJob = await createAiCatalogDraftFromUrl(url, hint)
+            }
             setJob(queuedJob)
             const completedJob = await waitForAiCatalogDraft(queuedJob.id)
             setJob(completedJob)
             if (completedJob.status === "FAILED" || !completedJob.result) {
                 throw new Error(completedJob.error_message || "AI không tạo được dữ liệu nháp.")
             }
-            await onApply(completedJob, file)
+            await onApply(completedJob, mode === "image" ? file : null)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Phân tích ảnh thất bại")
+            setError(caught instanceof Error ? caught.message : "Phân tích thất bại")
         } finally {
             setProcessing(false)
         }
@@ -54,39 +74,103 @@ export default function AiProductDraftPanel({onApply}: Readonly<Props>) {
                     <div className="rounded-xl bg-violet-600 p-2 text-white"><Bot className="h-5 w-5"/></div>
                     <div>
                         <h2 className="font-bold text-slate-900">AI Product Draft</h2>
-                        <p className="text-xs text-slate-500">Nhận diện ảnh, tham khảo giá và điền bản nháp chờ duyệt</p>
+                        <p className="text-xs text-slate-500">Tự động tạo bản nháp sản phẩm bằng AI</p>
                     </div>
                 </div>
-                {draft && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        <CheckCircle2 className="h-3.5 w-3.5"/> Đã điền form · {Math.round(draft.confidence * 100)}%
-                    </span>
-                )}
+                
+                <div className="flex items-center gap-3">
+                    <div className="flex rounded-lg bg-violet-100 p-1">
+                        <button
+                            type="button"
+                            onClick={() => setMode("image")}
+                            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${mode === "image" ? "bg-white text-violet-700 shadow-sm" : "text-violet-600 hover:bg-violet-50"}`}
+                        >
+                            Từ hình ảnh
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode("prompt")}
+                            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${mode === "prompt" ? "bg-white text-violet-700 shadow-sm" : "text-violet-600 hover:bg-violet-50"}`}
+                        >
+                            Từ khóa
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode("url")}
+                            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${mode === "url" ? "bg-white text-violet-700 shadow-sm" : "text-violet-600 hover:bg-violet-50"}`}
+                        >
+                            Từ Link Web
+                        </button>
+                    </div>
+                    {draft && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 className="h-3.5 w-3.5"/> Đã điền form · {Math.round(draft.confidence * 100)}%
+                        </span>
+                    )}
+                </div>
             </div>
 
-            <div className="grid gap-3 p-5 md:grid-cols-[1fr_1fr_auto]">
-                <label className="block">
-                    <span className="mb-1.5 block text-xs font-semibold text-slate-600">Ảnh sản phẩm</span>
-                    <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                        className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:font-semibold file:text-violet-700"
-                    />
-                </label>
-                <label className="block">
-                    <span className="mb-1.5 block text-xs font-semibold text-slate-600">Gợi ý model (không bắt buộc)</span>
-                    <input
-                        value={hint}
-                        onChange={(event) => setHint(event.target.value)}
-                        placeholder="VD: ASUS ROG Zephyrus G14"
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
-                    />
-                </label>
+            <div className={`grid gap-3 p-5 ${mode === "image" || mode === "url" ? "md:grid-cols-[1fr_1fr_auto]" : "md:grid-cols-[1fr_auto]"}`}>
+                {mode === "image" ? (
+                    <>
+                        <label className="block">
+                            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Ảnh sản phẩm</span>
+                            <input
+                                key="image-input"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                                className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:font-semibold file:text-violet-700"
+                            />
+                        </label>
+                        <label className="block">
+                            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Gợi ý model (không bắt buộc)</span>
+                            <input
+                                value={hint}
+                                onChange={(event) => setHint(event.target.value)}
+                                placeholder="VD: ASUS ROG Zephyrus G14"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+                            />
+                        </label>
+                    </>
+                ) : mode === "prompt" ? (
+                    <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold text-slate-600">Tên sản phẩm hoặc từ khóa</span>
+                        <input
+                            key="prompt-input"
+                            value={prompt}
+                            onChange={(event) => setPrompt(event.target.value)}
+                            placeholder="VD: iPhone 16 Pro Max 256GB màu Titan"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+                        />
+                    </label>
+                ) : (
+                    <>
+                        <label className="block">
+                            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Đường dẫn URL sản phẩm</span>
+                            <input
+                                key="url-input"
+                                value={url}
+                                onChange={(event) => setUrl(event.target.value)}
+                                placeholder="VD: https://fptshop.com.vn/... hoặc https://www.thegioididong.com/..."
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+                            />
+                        </label>
+                        <label className="block">
+                            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Gợi ý model (không bắt buộc)</span>
+                            <input
+                                value={hint}
+                                onChange={(event) => setHint(event.target.value)}
+                                placeholder="VD: Bản màu xanh, 256GB"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+                            />
+                        </label>
+                    </>
+                )}
                 <button
                     type="button"
                     onClick={analyze}
-                    disabled={processing || !file}
+                    disabled={processing || (mode === "image" ? !file : mode === "prompt" ? !prompt.trim() : !url.trim())}
                     className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {processing ? <LoaderCircle className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4"/>}
@@ -96,7 +180,7 @@ export default function AiProductDraftPanel({onApply}: Readonly<Props>) {
 
             {processing && (
                 <div className="mx-5 mb-5 flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs text-cyan-800">
-                    <Search className="h-4 w-4"/> Job {job?.id?.slice(0, 8) || "đang tạo"}: nhận diện ảnh và tìm nguồn tham khảo.
+                    <Search className="h-4 w-4"/> Job {job?.id?.slice(0, 8) || "đang tạo"}: đọc dữ liệu và tìm nguồn tham khảo.
                 </div>
             )}
 

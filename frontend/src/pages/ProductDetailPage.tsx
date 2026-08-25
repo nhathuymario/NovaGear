@@ -1,3 +1,4 @@
+import { toast } from '../utils/toast'
 import {useEffect, useMemo, useState} from "react"
 import {Link, useNavigate, useParams} from "react-router-dom"
 import {motion} from "framer-motion"
@@ -18,6 +19,7 @@ import {getToken} from "../utils/auth"
 import {getFallbackImageSrc, handleImageError} from "../utils/image"
 import ProductCard from "../components/product/ProductCard"
 import {ProductDetailSkeleton} from "../components/ui/Skeletons"
+
 
 function formatCurrency(value: number) {
     return value.toLocaleString("vi-VN") + "đ"
@@ -519,7 +521,7 @@ export default function ProductDetailPage() {
 
         const normalizedRating = Number(reviewForm.rating)
         if (!Number.isFinite(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) {
-            alert("Số sao không hợp lệ")
+            toast.error("Số sao không hợp lệ")
             return
         }
 
@@ -536,10 +538,10 @@ export default function ProductDetailPage() {
                 rating: 5,
                 comment: "",
             })
-            alert("Đã gửi đánh giá")
+            toast.success("Đã gửi đánh giá")
         } catch (error) {
             console.error(error)
-            alert(extractApiErrorMessage(error))
+            toast.info(extractApiErrorMessage(error))
         } finally {
             setReviewSubmitting(false)
         }
@@ -554,12 +556,12 @@ export default function ProductDetailPage() {
         }
 
         if (product.variants.length > 0 && !selectedVariant) {
-            alert("Vui lòng chọn phiên bản")
+            toast.error("Vui lòng chọn phiên bản")
             return
         }
 
         if (availableStock <= 0) {
-            alert("Phiên bản này hiện đang hết hàng")
+            toast.info("Phiên bản này hiện đang hết hàng")
             return
         }
 
@@ -574,10 +576,10 @@ export default function ProductDetailPage() {
                 thumbnail: galleryImage,
                 price: finalPrice,
             })
-            alert("Đã thêm vào giỏ hàng")
+            toast.success("Đã thêm vào giỏ hàng")
         } catch (error) {
             console.error(error)
-            alert("Thêm vào giỏ thất bại")
+            toast.error("Thêm vào giỏ thất bại")
         } finally {
             setAdding(false)
         }
@@ -592,12 +594,12 @@ export default function ProductDetailPage() {
         }
 
         if (product.variants.length > 0 && !selectedVariant) {
-            alert("Vui lòng chọn phiên bản")
+            toast.error("Vui lòng chọn phiên bản")
             return
         }
 
         if (availableStock <= 0) {
-            alert("Phiên bản này hiện đang hết hàng")
+            toast.info("Phiên bản này hiện đang hết hàng")
             return
         }
 
@@ -615,7 +617,7 @@ export default function ProductDetailPage() {
             navigate("/cart")
         } catch (error) {
             console.error(error)
-            alert("Không thể thêm vào giỏ hàng")
+            toast.error("Không thể thêm vào giỏ hàng")
         } finally {
             setAdding(false)
         }

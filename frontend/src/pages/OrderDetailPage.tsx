@@ -1,3 +1,4 @@
+import { useUIStore } from '../store/useUIStore'
 import {useEffect, useState} from "react"
 import {Link, useNavigate, useParams} from "react-router-dom"
 import {cancelMyOrder, getOrderDetail} from "../api/orderApi"
@@ -5,6 +6,7 @@ import type {Order} from "../types/order"
 import {getToken} from "../utils/auth"
 import {getFallbackImageSrc, handleImageError} from "../utils/image"
 import {readPaymentSync} from "../utils/paymentSync"
+
 
 function getStatusText(status: Order["status"]) {
     switch (status) {
@@ -28,6 +30,8 @@ function formatCurrency(value: number) {
 }
 
 export default function OrderDetailPage() {
+    const { requestConfirm } = useUIStore();
+
     const {id = ""} = useParams()
     const navigate = useNavigate()
     const token = getToken()
@@ -98,7 +102,7 @@ export default function OrderDetailPage() {
     const handleCancelOrder = async () => {
         if (!id || !canCancel) return
 
-        const ok = globalThis.confirm("Bạn chắc chắn muốn hủy đơn hàng này?")
+        const ok = await requestConfirm("Bạn chắc chắn muốn hủy đơn hàng này?")
         if (!ok) return
 
         try {

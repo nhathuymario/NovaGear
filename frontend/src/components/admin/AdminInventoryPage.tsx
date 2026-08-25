@@ -1,7 +1,9 @@
+import { toast } from '../../utils/toast'
 import {useEffect, useMemo, useState} from "react"
 // Đồng nhất sử dụng Type từ API để tránh lỗi Incompatible types
 import type {InventoryItem, InventoryTransaction} from "../../api/inventoryApi"
 import {adjustStock, getAllInventory, getInventoryTransactions, importStock,} from "../../api/inventoryApi"
+
 
 export default function AdminInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([])
@@ -56,7 +58,7 @@ export default function AdminInventoryPage() {
     const handleImportStock = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!form.variantId) {
-            alert("Vui lòng nhập Variant ID")
+            toast.error("Vui lòng nhập Variant ID")
             return
         }
         try {
@@ -67,17 +69,17 @@ export default function AdminInventoryPage() {
                 note: form.note,
             })
             await loadData()
-            alert("Nhập kho thành công")
+            toast.success("Nhập kho thành công")
         } catch (error) {
             console.error(error)
-            alert("Nhập kho thất bại")
+            toast.error("Nhập kho thất bại")
         }
     }
 
     const handleAdjustStock = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!form.variantId) {
-            alert("Vui lòng nhập Variant ID")
+            toast.error("Vui lòng nhập Variant ID")
             return
         }
         try {
@@ -88,10 +90,10 @@ export default function AdminInventoryPage() {
                 note: form.note,
             })
             await loadData()
-            alert("Điều chỉnh kho thành công")
+            toast.success("Điều chỉnh kho thành công")
         } catch (error) {
             console.error(error)
-            alert("Điều chỉnh kho thất bại")
+            toast.error("Điều chỉnh kho thất bại")
         }
     }
 
