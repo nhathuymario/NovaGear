@@ -71,4 +71,6 @@ def _suffix_for_content_type(content_type: str) -> str:
         "image/webp": ".webp",
         "image/heic": ".heic",
         "image/heif": ".heif",
+        "text/plain": ".txt",
+        "text/uri-list": ".url",
     }.get(content_type, ".img")

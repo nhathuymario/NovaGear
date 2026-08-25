@@ -88,6 +88,15 @@ class CatalogDraftApprovalRequest(BaseModel):
     product_id: str = Field(min_length=1, max_length=100)
 
 
+class CatalogDraftPromptRequest(BaseModel):
+    prompt: str = Field(min_length=3, max_length=1000)
+
+
+class CatalogDraftUrlRequest(BaseModel):
+    url: HttpUrl
+    hint: str | None = Field(default=None, max_length=500)
+
+
 class CatalogDraftRejectionRequest(BaseModel):
     reason: str = Field(min_length=3, max_length=1000)
 
@@ -99,7 +108,7 @@ class VisionCatalogExtraction(BaseModel):
     gtin: str = Field(default="", description="GTIN/barcode nếu đọc được, nếu không để trống")
     category_hint: str = Field(default="Khác", description="Danh mục sản phẩm ngắn gọn")
     short_description: str = Field(default="", description="Mô tả ngắn, không thêm thông tin chưa xác minh")
-    description: str = Field(default="", description="Mô tả tiếng Việt dựa trên bằng chứng trong ảnh")
+    description: str = Field(default="", description="Bài viết mô tả chi tiết sản phẩm bằng HTML. BẮT BUỘC ĐỘ DÀI TRÊN 1500 CHỮ, chuẩn SEO. BẮT BUỘC dùng các thẻ <img src='...' alt='...'> (lấy từ dữ liệu [Ảnh: ...]) để minh hoạ bài viết.")
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     variants: list[CatalogVariantDraft] = Field(default_factory=list)
     specifications: list[CatalogSpecificationDraft] = Field(default_factory=list)

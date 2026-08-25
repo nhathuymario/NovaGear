@@ -9,6 +9,7 @@ public class ArticleRequest {
     private String slug;
     private String summary;
     private String content;
+    @com.fasterxml.jackson.annotation.JsonProperty("cover_image_url")
     private String coverImageUrl;
     private String category;
     private List<String> tags;

@@ -11,9 +11,10 @@ settings = get_settings()
 
 class ArticleGenerateRequest(BaseModel):
     topic: str
-    keywords: List[str] = []
+    keywords: list[str] = []
     tone: str = "Chuyên nghiệp, công nghệ"
     category: str = "Tin tức"
+    auto_image: bool = True
 
 class GeneratedArticleResponse(BaseModel):
     title: str
@@ -44,6 +45,7 @@ def generate_article(
         keywords=payload.keywords,
         tone=payload.tone,
         category=payload.category,
+        auto_image=payload.auto_image,
     )
 
     return GeneratedArticleResponse(

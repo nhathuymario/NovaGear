@@ -10,6 +10,8 @@ from app.repositories.catalog_draft_repository import CatalogDraftRepository, ma
 from app.schemas.catalog import (
     CatalogDraftApprovalRequest,
     CatalogDraftJobResponse,
+    CatalogDraftPromptRequest,
+    CatalogDraftUrlRequest,
     CatalogDraftRejectionRequest,
 )
 from app.services.catalog_draft_workflow import CatalogDraftWorkflow
@@ -56,6 +58,49 @@ async def create_catalog_draft(
         filename=safe_filename,
         content_type=content_type,
         hint=hint.strip() if hint and hint.strip() else None,
+        requested_by=x_username,
+    )
+    workflow.submit(job.id)
+    return map_job_response(job)
+
+
+@router.post("/drafts/prompt", response_model=CatalogDraftJobResponse, status_code=status.HTTP_202_ACCEPTED)
+def create_catalog_draft_from_prompt(
+    payload: CatalogDraftPromptRequest,
+    x_role: str | None = Header(default=None),
+    x_username: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> CatalogDraftJobResponse:
+    require_admin(x_role, authorization)
+    prompt = payload.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Prompt không được trống")
+
+    job = workflow.create_job(
+        file_bytes=b"dummy",
+        filename="prompt.txt",
+        content_type="text/plain",
+        hint=prompt,
+        requested_by=x_username,
+    )
+    workflow.submit(job.id)
+    return map_job_response(job)
+
+
+@router.post("/drafts/url", response_model=CatalogDraftJobResponse, status_code=status.HTTP_202_ACCEPTED)
+def create_catalog_draft_from_url(
+    payload: CatalogDraftUrlRequest,
+    x_role: str | None = Header(default=None),
+    x_username: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> CatalogDraftJobResponse:
+    require_admin(x_role, authorization)
+
+    job = workflow.create_job(
+        file_bytes=str(payload.url).encode("utf-8"),
+        filename="url.txt",
+        content_type="text/uri-list",
+        hint=payload.hint.strip() if payload.hint else None,
         requested_by=x_username,
     )
     workflow.submit(job.id)

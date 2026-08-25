@@ -28,6 +28,7 @@ class ArticleGeneratedContent:
         tags: list[str],
         category: str,
         images: list[dict] = None,
+        cover_image_url: str = None,
     ):
         self.title = title
         self.summary = summary
@@ -35,6 +36,7 @@ class ArticleGeneratedContent:
         self.tags = tags
         self.category = category
         self.images = images or []
+        self.cover_image_url = cover_image_url
 
 
 class ArticleService:
@@ -44,6 +46,7 @@ class ArticleService:
         keywords: list[str] | None = None,
         tone: ArticleTone = ArticleTone.PROFESSIONAL,
         category: str = "Công nghệ",
+        auto_image: bool = True,
     ) -> ArticleGeneratedContent:
         settings = get_settings()
         if not settings.gemini_api_key:
@@ -59,22 +62,35 @@ class ArticleService:
             tone_desc = TONE_PROMPTS.get(tone, TONE_PROMPTS[ArticleTone.PROFESSIONAL])
 
             prompt = (
-                f"Bạn là chuyên gia viết bài công nghệ cho NovaGear — cửa hàng bán lẻ thiết bị công nghệ cao cấp.\n"
-                f"Viết một bài viết blog về chủ đề: \"{topic}\"\n"
+                f"Bạn là chuyên gia công nghệ hàng đầu và biên tập viên xuất sắc tại NovaGear.\n"
+                f"Hãy viết một bài blog công nghệ cực kỳ chi tiết, sâu sắc và cuốn hút về chủ đề: \"{topic}\"\n"
                 f"Từ khóa liên quan: {keywords_str}\n"
                 f"Danh mục: {category}\n"
                 f"Phong cách viết: {tone_desc}\n\n"
-                f"Yêu cầu:\n"
-                f"- Tiêu đề hấp dẫn, SEO-friendly\n"
-                f"- Tóm tắt ngắn gọn (2-3 câu)\n"
-                f"- Nội dung đầy đủ, tối thiểu 800 từ, sử dụng Markdown formatting\n"
-                f"- Chia thành các mục rõ ràng với heading (## và ###)\n"
-                f"- Có phần mở đầu, nội dung chính và kết luận\n"
-                f"- Sử dụng tiếng Việt tự nhiên, chuyên nghiệp\n"
-                f"- Đề xuất 3-5 tags phù hợp\n"
-                f"- Đề xuất 2-3 hình ảnh minh hoạ phù hợp. Sử dụng định dạng URL: 'https://loremflickr.com/800/600/<từ-khóa-tiếng-anh>'. Ví dụ từ khóa: laptop, smartphone, gaming, tech...\n\n"
-                f"Trả về JSON với các trường:\n"
-                f'{{"title": "...", "summary": "...", "content": "... (markdown)", "tags": ["tag1", "tag2"], "category": "...", "images": [{{"imageUrl": "...", "caption": "..."}}]}}'
+                f"Yêu cầu nội dung (RẤT QUAN TRỌNG):\n"
+                f"- Độ dài bài viết phải cực kỳ chi tiết, phân tích sâu sắc.\n"
+                f"- Cấu trúc mạch lạc, sử dụng rất nhiều thẻ heading (##, ###) để phân chia bố cục.\n"
+                f"- Định dạng bằng Markdown, dùng in đậm, in nghiêng.\n\n"
+            )
+
+            if auto_image:
+                prompt += f"- Sinh ra URL ảnh bìa bằng cách sử dụng định dạng: 'https://image.pollinations.ai/prompt/<từ-khóa-tiếng-anh-ngắn-gọn-mô-tả-chủ-đề>?width=1200&height=600&nologo=true'. Ví dụ: 'https://image.pollinations.ai/prompt/iphone%2016%20pro?width=1200&height=600&nologo=true'.\n\n"
+            else:
+                prompt += f"- Để trống trường cover_image_url.\n\n"
+
+            prompt += (
+                f"BẠN PHẢI TRẢ VỀ KẾT QUẢ THEO ĐỊNH DẠNG FRONTMATTER SAU:\n"
+                f"```\n"
+                f"---\n"
+                f"title: [Tiêu đề bài viết]\n"
+                f"summary: [Tóm tắt bài viết ngắn gọn]\n"
+                f"tags: [tag1, tag2]\n"
+                f"category: [Tên danh mục]\n"
+                f"cover_image_url: [URL ảnh bìa hoặc để trống]\n"
+                f"---\n"
+                f"[Nội dung bài viết chi tiết bằng Markdown ở đây...]\n"
+                f"```\n"
+                f"KHÔNG thêm văn bản nào khác ngoài định dạng trên!"
             )
 
             response = client.models.generate_content(
@@ -82,20 +98,55 @@ class ArticleService:
                 contents=[prompt],
                 config=types.GenerateContentConfig(
                     temperature=0.7,
-                    response_mime_type="application/json",
                 ),
             )
 
-            text = response.text.strip()
-            data = json.loads(text)
+            text = response.text.strip() if response.text else ""
+            
+            # Remove markdown blocks if present
+            import re
+            match = re.search(r'^```(?:markdown)?\s*([\s\S]*?)\s*```$', text, re.IGNORECASE)
+            if match:
+                text = match.group(1).strip()
+            
+            # Parse frontmatter
+            title = topic
+            summary = ""
+            content = text
+            tags_list = keywords or []
+            cat = category
+            cover_url = ""
+
+            fm_match = re.match(r'^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)', text)
+            if fm_match:
+                fm_text = fm_match.group(1)
+                content = fm_match.group(2).strip()
+                
+                import yaml
+                try:
+                    metadata = yaml.safe_load(fm_text)
+                    if isinstance(metadata, dict):
+                        title = metadata.get("title", title)
+                        summary = metadata.get("summary", summary)
+                        cat = metadata.get("category", cat)
+                        cover_url = metadata.get("cover_image_url", "")
+                        
+                        tags_val = metadata.get("tags", [])
+                        if isinstance(tags_val, list):
+                            tags_list = tags_val
+                        elif isinstance(tags_val, str):
+                            tags_list = [t.strip() for t in tags_val.split(",") if t.strip()]
+                except Exception as yaml_exc:
+                    logger.warning(f"Failed to parse YAML frontmatter: {yaml_exc}")
 
             return ArticleGeneratedContent(
-                title=data.get("title", topic),
-                summary=data.get("summary", ""),
-                content=data.get("content", ""),
-                tags=data.get("tags", keywords or []),
-                category=data.get("category", category),
-                images=data.get("images", []),
+                title=title,
+                summary=summary,
+                content=content,
+                tags=tags_list,
+                category=cat,
+                cover_image_url=cover_url,
+                images=[],
             )
         except Exception as exc:
             logger.exception("Gemini article generation failed for topic: %s", topic)
