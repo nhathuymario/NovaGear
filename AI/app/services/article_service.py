@@ -79,14 +79,14 @@ class ArticleService:
                 prompt += f"- Để trống trường cover_image_url.\n\n"
 
             prompt += (
-                f"BẠN PHẢI TRẢ VỀ KẾT QUẢ THEO ĐỊNH DẠNG FRONTMATTER SAU:\n"
+                f"BẠN PHẢI TRẢ VỀ KẾT QUẢ THEO ĐỊNH DẠNG FRONTMATTER SAU (CHÚ Ý: Đặt các giá trị văn bản trong dấu ngoặc kép):\n"
                 f"```\n"
                 f"---\n"
-                f"title: [Tiêu đề bài viết]\n"
-                f"summary: [Tóm tắt bài viết ngắn gọn]\n"
-                f"tags: [tag1, tag2]\n"
-                f"category: [Tên danh mục]\n"
-                f"cover_image_url: [URL ảnh bìa hoặc để trống]\n"
+                f"title: \"[Tiêu đề bài viết]\"\n"
+                f"summary: \"[Tóm tắt bài viết ngắn gọn]\"\n"
+                f"tags: [\"tag1\", \"tag2\"]\n"
+                f"category: \"[Tên danh mục]\"\n"
+                f"cover_image_url: \"[URL ảnh bìa hoặc để trống]\"\n"
                 f"---\n"
                 f"[Nội dung bài viết chi tiết bằng Markdown ở đây...]\n"
                 f"```\n"
@@ -137,7 +137,21 @@ class ArticleService:
                         elif isinstance(tags_val, str):
                             tags_list = [t.strip() for t in tags_val.split(",") if t.strip()]
                 except Exception as yaml_exc:
-                    logger.warning(f"Failed to parse YAML frontmatter: {yaml_exc}")
+                    logger.warning(f"Failed to parse YAML frontmatter: {yaml_exc}. Fallback to manual parsing.")
+                    for line in fm_text.split('\n'):
+                        line = line.strip()
+                        if line.startswith('title:'):
+                            title = line[6:].strip(' "\'')
+                        elif line.startswith('summary:'):
+                            summary = line[8:].strip(' "\'')
+                        elif line.startswith('category:'):
+                            cat = line[9:].strip(' "\'')
+                        elif line.startswith('cover_image_url:'):
+                            cover_url = line[16:].strip(' "\'')
+                        elif line.startswith('tags:'):
+                            tags_str = line[5:].strip(' []"\'')
+                            if tags_str:
+                                tags_list = [t.strip(' "\'') for t in tags_str.split(',') if t.strip(' "\'')]
 
             return ArticleGeneratedContent(
                 title=title,

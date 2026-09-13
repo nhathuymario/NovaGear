@@ -113,3 +113,22 @@ class VisionCatalogExtraction(BaseModel):
     variants: list[CatalogVariantDraft] = Field(default_factory=list)
     specifications: list[CatalogSpecificationDraft] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+
+class CatalogAutoTagRequest(BaseModel):
+    text: str = Field(min_length=5, max_length=15000)
+
+
+class CatalogAutoTagResponse(BaseModel):
+    tags: list[str] = Field(default_factory=list)
+    suggested_category: str = Field(default="Khác")
+
+
+class CatalogEmbeddingRequest(BaseModel):
+    product_id: str
+    title: str
+    description: str
+
+
+class CatalogRecommendationResponse(BaseModel):
+    product_ids: list[str] = Field(default_factory=list)
