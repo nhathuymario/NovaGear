@@ -42,6 +42,9 @@ public class Product {
     @Column(length = 500)
     private String thumbnail;
 
+    @Column(columnDefinition = "TEXT")
+    private String tagsJson;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(nullable = false, length = 30)

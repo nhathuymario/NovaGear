@@ -22,4 +22,5 @@ public class ProductResponse {
     private List<ProductVariantResponse> variants;
     private List<ProductSpecificationResponse> specifications;
     private List<ProductImageResponse> images;
+    private List<String> tags;
 }

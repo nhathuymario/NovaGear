@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Collections;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,8 @@ public class ProductService {
     private final ProductImageRepository imageRepository;
     private final ProductReviewRepository reviewRepository;
     private final CategoryService categoryService;
+    private final AiServiceClient aiServiceClient;
+    private final ObjectMapper objectMapper;
 
     public Page<ProductResponse> publicSearch(String keyword, Long categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
@@ -71,6 +76,25 @@ public class ProductService {
 
         return productRepository.findRelatedProducts(product.getCategory().getId(), product.getId(), pageable)
                 .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public List<ProductResponse> getSimilarProducts(Long id, int limit) {
+        List<String> similarIds = aiServiceClient.getSimilarProductIds(String.valueOf(id), limit);
+        if (similarIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        return similarIds.stream()
+                .map(similarId -> {
+                    try {
+                        return productRepository.findById(Long.parseLong(similarId)).orElse(null);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .filter(p -> p != null && p.getStatus() == ProductStatus.ACTIVE)
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -175,11 +199,14 @@ public class ProductService {
                 .thumbnail(request.getThumbnail())
                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
                 .featured(Boolean.TRUE.equals(request.getFeatured()))
+                .tagsJson(serializeTags(request.getTags()))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return mapToResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        aiServiceClient.syncProductEmbedding(String.valueOf(saved.getId()), saved.getName(), saved.getDescription());
+        return mapToResponse(saved);
     }
 
     @Transactional
@@ -201,9 +228,12 @@ public class ProductService {
         product.setThumbnail(request.getThumbnail());
         product.setStatus(request.getStatus() != null ? request.getStatus() : product.getStatus());
         product.setFeatured(request.getFeatured() != null ? request.getFeatured() : product.getFeatured());
+        product.setTagsJson(serializeTags(request.getTags()));
         product.setUpdatedAt(LocalDateTime.now());
 
-        return mapToResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        aiServiceClient.syncProductEmbedding(String.valueOf(saved.getId()), saved.getName(), saved.getDescription());
+        return mapToResponse(saved);
     }
 
     @Transactional
@@ -451,10 +481,30 @@ public class ProductService {
                 .thumbnail(product.getThumbnail())
                 .status(product.getStatus())
                 .featured(product.getFeatured())
+                .tags(deserializeTags(product.getTagsJson()))
                 .variants(variants)
                 .specifications(specifications)
                 .images(images)
                 .build();
+    }
+
+    private String serializeTags(List<String> tags) {
+        try {
+            return tags == null ? "[]" : objectMapper.writeValueAsString(tags);
+        } catch (JsonProcessingException e) {
+            return "[]";
+        }
+    }
+
+    private List<String> deserializeTags(String tagsJson) {
+        try {
+            if (tagsJson == null || tagsJson.isBlank()) {
+                return Collections.emptyList();
+            }
+            return objectMapper.readValue(tagsJson, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (JsonProcessingException e) {
+            return Collections.emptyList();
+        }
     }
 
     private ProductVariantResponse mapVariant(ProductVariant variant) {

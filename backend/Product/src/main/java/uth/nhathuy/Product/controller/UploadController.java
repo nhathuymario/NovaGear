@@ -11,19 +11,29 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
 import java.util.Locale;
 
+import uth.nhathuy.Product.service.AiServiceClient;
+
 @RestController
 @RequestMapping("/api/uploads")
 @RequiredArgsConstructor
 public class UploadController {
 
     private final UploadStorageService uploadStorageService;
+    private final AiServiceClient aiServiceClient;
 
     @PostMapping("/{folder}")
     public ResponseEntity<UploadResponse> upload(
             @PathVariable String folder,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false, defaultValue = "false") boolean enhance
     ) {
-        String storedName = uploadStorageService.save(folder, file);
+        String storedName;
+        if (enhance) {
+            byte[] enhancedBytes = aiServiceClient.enhanceImage(file);
+            storedName = uploadStorageService.save(folder, file.getOriginalFilename(), file.getContentType(), enhancedBytes);
+        } else {
+            storedName = uploadStorageService.save(folder, file);
+        }
         String safeFolder = folder.toLowerCase(Locale.ROOT);
         return ResponseEntity.ok(new UploadResponse("/api/uploads/" + safeFolder + "/" + storedName));
     }

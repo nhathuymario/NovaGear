@@ -52,6 +52,14 @@ public class PublicProductController {
         return ResponseEntity.ok(productService.getRelatedProductsBySlug(slug, size));
     }
 
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<List<ProductResponse>> getSimilarProducts(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(productService.getSimilarProducts(id, size));
+    }
+
     @GetMapping("/{slug}/reviews")
     public ResponseEntity<ProductReviewOverviewResponse> getReviews(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getReviewsBySlug(slug));

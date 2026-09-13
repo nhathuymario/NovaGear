@@ -32,15 +32,33 @@ public class UploadStorageService {
         }
 
         try {
+            return saveInternal(safeFolder, file.getOriginalFilename(), file.getContentType(), file.getBytes());
+        } catch (IOException ex) {
+            throw new BadRequestException("Không thể đọc file upload: " + ex.getMessage());
+        }
+    }
+
+    public String save(String folder, String originalName, String contentType, byte[] fileBytes) {
+        String safeFolder = resolveFolder(folder);
+
+        if (fileBytes == null || fileBytes.length == 0) {
+            throw new BadRequestException("File upload không hợp lệ");
+        }
+
+        return saveInternal(safeFolder, originalName, contentType, fileBytes);
+    }
+
+    private String saveInternal(String safeFolder, String originalFilename, String contentType, byte[] fileBytes) {
+        try {
             Files.createDirectories(rootDir.resolve(safeFolder));
 
-            String originalName = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
+            String originalName = StringUtils.cleanPath(originalFilename == null ? "" : originalFilename);
             String extension = getExtension(originalName);
-            validateImage(file, extension);
+            validateImage(contentType, extension);
             String storedName = UUID.randomUUID() + extension;
             Path target = rootDir.resolve(safeFolder).resolve(storedName).normalize();
 
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(target, fileBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             log.info("Saved upload file to {}", target);
             return storedName;
         } catch (IOException ex) {
@@ -88,9 +106,9 @@ public class UploadStorageService {
         return ext;
     }
 
-    private void validateImage(MultipartFile file, String extension) {
-        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
-        if (!contentType.startsWith("image/")) {
+    private void validateImage(String contentType, String extension) {
+        String safeContentType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
+        if (!safeContentType.startsWith("image/")) {
             throw new BadRequestException("File upload phải là ảnh (JPG, JPEG, PNG, WEBP, GIF)");
         }
 

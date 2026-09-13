@@ -25,4 +25,5 @@ public class ProductRequest {
     private String thumbnail;
     private ProductStatus status;
     private Boolean featured;
+    private java.util.List<String> tags;
 }
