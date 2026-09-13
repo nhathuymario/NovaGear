@@ -237,13 +237,21 @@ export default function Header() {
             {/* Quick category nav bar */}
             <div className="hidden border-b border-slate-100 bg-white md:block">
                 <div className="mx-auto flex max-w-[1320px] items-center gap-1 px-4 py-1 text-xs">
-                    {["Laptop", "PC", "Màn hình", "Bàn phím", "Tai nghe", "Chuột", "Phụ kiện"].map((name) => (
+                    {[
+                        {name: "Laptop", slug: "laptop"},
+                        {name: "PC", slug: "pc"},
+                        {name: "Màn hình", slug: "man-hinh"},
+                        {name: "Bàn phím", slug: "ban-phim"},
+                        {name: "Tai nghe", slug: "tai-nghe"},
+                        {name: "Chuột", slug: "chuot"},
+                        {name: "Phụ kiện", slug: "phu-kien"},
+                    ].map((cat) => (
                         <Link
-                            key={name}
-                            to={`/products?category=${encodeURIComponent(name.toLowerCase().replace(/\s/g, '-'))}`}
+                            key={cat.slug}
+                            to={`/products?category=${cat.slug}`}
                             className="rounded-md px-3 py-1.5 font-medium text-slate-600 transition hover:bg-brand-yellow/10 hover:text-brand-dark"
                         >
-                            {name}
+                            {cat.name}
                         </Link>
                     ))}
                     <Link

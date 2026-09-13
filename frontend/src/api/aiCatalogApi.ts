@@ -135,3 +135,11 @@ export async function rejectAiCatalogDraft(jobId: string, reason: string) {
     const response = await axiosClient.post<AiCatalogDraftJob>(`/ai/v1/catalog/drafts/${jobId}/reject`, {reason})
     return response.data
 }
+
+export async function generateCatalogTags(name: string, description: string) {
+    const response = await axiosClient.post<{ tags: string[] }>("/ai/v1/catalog/auto-tag", {
+        name,
+        description
+    });
+    return response.data;
+}

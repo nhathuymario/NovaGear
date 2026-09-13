@@ -10,6 +10,7 @@ export interface AdminProductPayload {
     thumbnail?: string
     status?: "DRAFT" | "ACTIVE" | "INACTIVE"
     featured?: boolean
+    tags?: string[]
 }
 
 export interface AdminProductItem {
@@ -24,6 +25,7 @@ export interface AdminProductItem {
     thumbnail?: string
     status?: string
     featured?: boolean
+    tags?: string[]
 }
 
 export interface AdminCategorySummary {
@@ -46,6 +48,7 @@ type RawAdminProduct = {
         name?: string
     }
     description?: string
+    tags?: string[]
 }
 
 type RawAdminCategory = {
@@ -66,6 +69,7 @@ function mapAdminProduct(raw: RawAdminProduct): AdminProductItem {
         thumbnail: raw.thumbnail ?? "",
         status: raw.status ?? "",
         featured: Boolean(raw.featured),
+        tags: raw.tags ?? [],
     }
 }
 

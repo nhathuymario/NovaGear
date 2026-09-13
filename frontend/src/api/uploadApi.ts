@@ -115,8 +115,43 @@ async function uploadFile(file: File, folder: "products" | "avatars"): Promise<s
     throw lastError ?? new Error("Upload failed")
 }
 
-export async function uploadProductImage(file: File): Promise<string> {
-    return uploadFile(file, "products")
+export async function uploadProductImage(file: File, enhance: boolean = false): Promise<string> {
+    const formData = new FormData()
+    formData.append("file", file)
+    
+    const doUpload = async (baseClient: typeof gatewayUploadClient) => {
+        const url = `/uploads/products${enhance ? "?enhance=true" : ""}`
+        const res = await baseClient.post(url, formData)
+        const resUrl = (
+            res.data?.url ??
+            res.data?.imageUrl ??
+            res.data?.path ??
+            res.data?.data?.url ??
+            ""
+        )
+        return normalizeClientUploadUrl(resUrl)
+    }
+
+    const preferDirectInDev = import.meta.env.DEV
+    const clients = preferDirectInDev
+        ? [directUploadClient, gatewayUploadClient]
+        : [gatewayUploadClient, directUploadClient]
+
+    let lastError: unknown = null
+    for (const client of clients) {
+        try {
+            return await doUpload(client)
+        } catch (error) {
+            if (!axios.isAxiosError(error)) {
+                throw error
+            }
+            const status = error.response?.status
+            const retryable = status === 404 || status === 502 || status === 503 || !error.response
+            if (!retryable) throw error
+            lastError = error
+        }
+    }
+    throw lastError ?? new Error("Upload failed")
 }
 
 export async function uploadAvatarImage(file: File): Promise<string> {

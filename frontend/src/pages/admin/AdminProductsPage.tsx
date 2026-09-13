@@ -34,7 +34,7 @@ import {
 } from "../../api/adminProductDetailApi"
 import {getInventoryByVariant, importStock} from "../../api/inventoryApi"
 import {uploadProductImage} from "../../api/uploadApi"
-import {approveAiCatalogDraft, type AiCatalogDraftJob} from "../../api/aiCatalogApi"
+import {approveAiCatalogDraft, type AiCatalogDraftJob, generateCatalogTags} from "../../api/aiCatalogApi"
 import type {InventoryItem} from "../../types/inventory"
 import {getFallbackImageSrc, getImageSrc, handleImageError} from "../../utils/image"
 import StatusBadge from "./products/StatusBadge"
@@ -103,6 +103,8 @@ export default function AdminProductsPage() {
     const [descriptionImageUploading, setDescriptionImageUploading] = useState(false)
     const descriptionTextareaRef = useRef<HTMLTextAreaElement | null>(null)
     const [aiDraftJob, setAiDraftJob] = useState<AiCatalogDraftJob | null>(null)
+    const [autoEnhanceImage, setAutoEnhanceImage] = useState(true)
+    const [taggingStatus, setTaggingStatus] = useState<"IDLE" | "LOADING" | "SUCCESS" | "ERROR">("IDLE")
 
     const [selectedProduct, setSelectedProduct] = useState<AdminProductItem | null>(null)
     const [detailTab, setDetailTab] = useState<DetailTab>("variants")
@@ -323,7 +325,7 @@ export default function AdminProductsPage() {
 
         try {
             setThumbnailUploading(true)
-            const url = await uploadProductImage(file)
+            const url = await uploadProductImage(file, autoEnhanceImage)
             setProductForm((prev) => ({...prev, thumbnail: url}))
         } catch (err) {
             console.error(err)
@@ -395,7 +397,7 @@ export default function AdminProductsPage() {
 
         try {
             setDescriptionImageUploading(true)
-            const url = await uploadProductImage(file)
+            const url = await uploadProductImage(file, autoEnhanceImage)
             insertDescriptionImage(url)
         } catch (err) {
             console.error(err)
@@ -607,7 +609,7 @@ export default function AdminProductsPage() {
 
         try {
             setVariantImgUploading(true)
-            const url = await uploadProductImage(file)
+            const url = await uploadProductImage(file, autoEnhanceImage)
             setVariantForm((prev) => ({...prev, imageUrl: url}))
         } catch (err) {
             console.error(err)
@@ -835,7 +837,7 @@ export default function AdminProductsPage() {
             const uploadedUrls: string[] = []
 
             for (const file of files) {
-                const url = await uploadProductImage(file)
+                const url = await uploadProductImage(file, autoEnhanceImage)
                 uploadedUrls.push(url)
             }
 
@@ -1302,6 +1304,17 @@ export default function AdminProductsPage() {
                         </h1>
                         <p className="text-sm text-gray-500">Điền thông tin cơ bản của sản phẩm</p>
                     </div>
+                    <div className="ml-auto flex items-center">
+                        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 transition hover:bg-gray-50">
+                            <input
+                                type="checkbox"
+                                checked={autoEnhanceImage}
+                                onChange={(e) => setAutoEnhanceImage(e.target.checked)}
+                                className="h-4 w-4 rounded accent-gray-900"
+                            />
+                            <span className="text-sm font-medium text-gray-700">AI xử lý ảnh (Căn giữa)</span>
+                        </label>
+                    </div>
                 </div>
 
                 {!editingProduct && <AiProductDraftPanel onApply={handleApplyAiDraft}/>}
@@ -1377,6 +1390,49 @@ export default function AdminProductsPage() {
                                         placeholder="Mô tả tóm tắt hiển thị trong danh sách"
                                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
                                     />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-600">Tags sản phẩm</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={(productForm.tags ?? []).join(", ")}
+                                            onChange={(e) => setProductForm({
+                                                ...productForm,
+                                                tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean)
+                                            })}
+                                            placeholder="Tag1, Tag2, Tag3..."
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-gray-900"
+                                        />
+                                        <button
+                                            type="button"
+                                            disabled={taggingStatus === 'LOADING' || !productForm.name}
+                                            onClick={async () => {
+                                                if (!productForm.name) {
+                                                    toast.info('Vui lòng nhập tên sản phẩm trước khi tạo tags tự động');
+                                                    return;
+                                                }
+                                                setTaggingStatus('LOADING');
+                                                try {
+                                                    const res = await generateCatalogTags(productForm.name, productForm.description ?? '');
+                                                    setProductForm({
+                                                        ...productForm,
+                                                        tags: res.tags
+                                                    });
+                                                    toast.success('AI đã tạo tags thành công');
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    toast.error('Tạo tags tự động thất bại');
+                                                } finally {
+                                                    setTaggingStatus('IDLE');
+                                                }
+                                            }}
+                                            className="whitespace-nowrap rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+                                        >
+                                            {taggingStatus === 'LOADING' ? 'Đang tạo...' : '✨ AI Auto Tag'}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="sm:col-span-2">

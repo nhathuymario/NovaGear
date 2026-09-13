@@ -8,7 +8,7 @@ import {type InventoryItem,} from "../api/inventoryApi"
 import {
     getProductDetailBySlug,
     getProductReviewsBySlug,
-    getRelatedProductsBySlug,
+    getSimilarProductsById,
     type ProductDetailData,
     type ProductReviewOverview,
     type PublicProductVariant,
@@ -407,7 +407,7 @@ export default function ProductDetailPage() {
     }, [slug])
 
     useEffect(() => {
-        if (!slug) {
+        if (!product?.id) {
             setRelatedProducts([])
             return
         }
@@ -415,7 +415,7 @@ export default function ProductDetailPage() {
         const loadRelatedProducts = async () => {
             try {
                 setRelatedLoading(true)
-                const items = await getRelatedProductsBySlug(slug, 8)
+                const items = await getSimilarProductsById(product.id, 8)
                 setRelatedProducts(items)
             } catch (error) {
                 console.error(error)
@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
         }
 
         loadRelatedProducts()
-    }, [slug])
+    }, [product?.id])
 
     useEffect(() => {
         setIsDescriptionExpanded(false)

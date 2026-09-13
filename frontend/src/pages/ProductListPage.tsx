@@ -30,25 +30,52 @@ export default function ProductListPage() {
     const keyword = searchParams.get("keyword")?.toLowerCase() || ""
     const selectedCategorySlug = searchParams.get("category")?.toLowerCase() || ""
 
-    const currentCategoryId = useMemo(() => {
-        if (!selectedCategorySlug) return undefined
-        return categories.find(c => c.slug?.toLowerCase() === selectedCategorySlug)?.id
-    }, [categories, selectedCategorySlug])
+    // Compute category ID asynchronously to avoid rendering all products if category is empty
 
     useEffect(() => {
+        let isCancelled = false
         setLoading(true)
-        Promise.all([
-            getProducts(page, 12, currentCategoryId, keyword),
-            getPublicCategories()
-        ])
-            .then(([pageData, categoryList]) => {
-                setItems(pageData.content)
-                setTotalPages(pageData.totalPages)
-                setTotalElements(pageData.totalElements)
-                setCategories(categoryList)
-            })
-            .finally(() => setLoading(false))
-    }, [page, currentCategoryId, keyword])
+
+        async function load() {
+            try {
+                let catList = categories
+                if (catList.length === 0) {
+                    catList = await getPublicCategories()
+                    if (!isCancelled) setCategories(catList)
+                }
+
+                let targetCategoryId = undefined
+                if (selectedCategorySlug) {
+                    const cat = catList.find(c => c.slug?.toLowerCase() === selectedCategorySlug)
+                    if (cat) {
+                        targetCategoryId = cat.id
+                    } else {
+                        if (!isCancelled) {
+                            setItems([])
+                            setTotalPages(0)
+                            setTotalElements(0)
+                            setLoading(false)
+                        }
+                        return
+                    }
+                }
+
+                const pageData = await getProducts(page, 12, targetCategoryId, keyword)
+                if (!isCancelled) {
+                    setItems(pageData.content)
+                    setTotalPages(pageData.totalPages)
+                    setTotalElements(pageData.totalElements)
+                }
+            } catch (error) {
+                console.error(error)
+            } finally {
+                if (!isCancelled) setLoading(false)
+            }
+        }
+
+        load()
+        return () => { isCancelled = true }
+    }, [page, selectedCategorySlug, keyword, categories])
 
     // Reset page when category or keyword changes
     useEffect(() => {
@@ -66,7 +93,7 @@ export default function ProductListPage() {
     }
 
     const filtered = useMemo(() => {
-        let result = [...items]
+        const result = [...items]
 
         // Sort (Client side for current page)
         switch (sortBy) {

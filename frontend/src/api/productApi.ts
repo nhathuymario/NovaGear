@@ -265,6 +265,17 @@ export async function getRelatedProductsBySlug(
     return items.map(mapProduct)
 }
 
+export async function getSimilarProductsById(
+    id: number | string,
+    size = 8
+): Promise<Product[]> {
+    const res = await axiosClient.get(`/products/public/${id}/similar`, {
+        params: { size },
+    })
+    const items: ProductResponse[] = Array.isArray(res.data) ? res.data : res.data?.content ?? []
+    return items.map(mapProduct)
+}
+
 export async function getProductReviewsBySlug(
     slug: string
 ): Promise<ProductReviewOverview> {
