@@ -13,6 +13,8 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_database()
+    from app.services.job_service import start_scheduler
+    start_scheduler()
     yield
 
 app = FastAPI(

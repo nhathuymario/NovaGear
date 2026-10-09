@@ -27,6 +27,10 @@ AI/
 └── README.md
 ```
 
+## Luồng xử lí chính
+
+![img.png](img.png)
+
 ## Chạy nhanh
 
 ```powershell
@@ -34,7 +38,7 @@ cd E:\NovaGear\AI
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e .
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Endpoints chính
@@ -44,6 +48,17 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 - `POST /api/v1/rag/query` - hỏi đáp theo tài liệu
 - `POST /api/v1/search/suggest` - gợi ý tìm kiếm
 - `POST /api/v1/search/semantic` - tìm kiếm theo ngữ nghĩa
+- `POST /api/v1/catalog/drafts` - nhận ảnh và tạo AI Product Draft bất đồng bộ
+- `GET /api/v1/catalog/drafts/{id}` - theo dõi trạng thái và lấy dữ liệu nháp
+- `POST /api/v1/catalog/drafts/{id}/approve` - liên kết draft với sản phẩm đã được admin duyệt
+
+## AI Product Draft
+
+Luồng catalog mới lưu job bền vững trong database, trả `202 Accepted`, rồi xử lý ảnh ở background worker nội bộ. Khi có `GEMINI_API_KEY`, service dùng Gemini Vision với structured output. Khi chưa có key, service vẫn tạo một draft fallback để admin tiếp tục nhập liệu thủ công.
+
+Tất cả draft đều kết thúc ở `NEEDS_REVIEW`; AI không tự publish sản phẩm. Giá thu thập từ web chỉ là giá công khai tham khảo, không được coi là giá vốn.
+
+Khi chạy bằng Docker Compose, đặt `GEMINI_API_KEY` trong environment hoặc file `.env` ở thư mục gốc project rồi chạy `docker compose up --build ai-service gateway-service frontend`. Nếu chưa có key, UI vẫn hoạt động ở fallback mode và yêu cầu admin tự xác minh dữ liệu.
 
 ## Hướng phát triển tiếp theo
 
