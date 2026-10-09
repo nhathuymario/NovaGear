@@ -81,9 +81,19 @@ export interface AdminProductPageResponse {
     size: number
 }
 
-export async function getAdminProducts(page = 0, size = 10): Promise<AdminProductPageResponse> {
+export async function getAdminProducts(
+    page = 0,
+    size = 10,
+    keyword?: string,
+    categoryId?: number | string,
+): Promise<AdminProductPageResponse> {
     const res = await axiosClient.get("/admin/products", {
-        params: { page, size }
+        params: {
+            page,
+            size,
+            keyword: keyword || undefined,
+            categoryId: categoryId === "" || categoryId === undefined ? undefined : categoryId,
+        },
     })
     
     // Nếu res.data là array (fallback)
@@ -93,13 +103,13 @@ export async function getAdminProducts(page = 0, size = 10): Promise<AdminProduc
             totalPages: 1,
             totalElements: res.data.length,
             number: 0,
-            size: res.data.length
+            size: res.data.length,
         }
     }
 
     return {
         ...res.data,
-        content: (res.data.content || []).map(mapAdminProduct)
+        content: (res.data.content || []).map(mapAdminProduct),
     }
 }
 

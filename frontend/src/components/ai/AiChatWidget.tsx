@@ -49,6 +49,7 @@ export default function AiChatWidget() {
     const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE])
     const [products, setProducts] = useState<Product[]>([])
     const messageEndRef = useRef<HTMLDivElement | null>(null)
+    const [settings, setSettings] = useState<Record<string, string>>({})
 
     useEffect(() => {
         let cancelled = false
@@ -65,6 +66,17 @@ export default function AiChatWidget() {
                 }
             })
 
+        fetch("/api/ai/v1/ecosystem/settings")
+            .then(res => res.json())
+            .then(data => {
+                if (!cancelled && Array.isArray(data)) {
+                    const map: Record<string, string> = {};
+                    data.forEach((s: any) => map[s.key] = s.value);
+                    setSettings(map);
+                }
+            })
+            .catch(console.error)
+
         return () => {
             cancelled = true
         }
@@ -73,6 +85,8 @@ export default function AiChatWidget() {
     useEffect(() => {
         messageEndRef.current?.scrollIntoView({behavior: "smooth"})
     }, [messages, isSending, isOpen])
+
+    const isBotEnabled = settings["BOT_CHAT_ENABLED"] !== "false"
 
     const baseContext = useMemo(() => buildAiChatContext(products), [products])
 
@@ -117,6 +131,10 @@ export default function AiChatWidget() {
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         await sendQuestion()
+    }
+
+    if (!isBotEnabled) {
+        return null;
     }
 
     return (

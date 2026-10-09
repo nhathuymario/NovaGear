@@ -1,85 +1,96 @@
-import {Route, Routes} from "react-router-dom"
-import MainLayout from "./components/layout/MainLayout"
-import ProtectedRoute from "./components/auth/ProtectedRoute"
+import { Route, Routes } from "react-router-dom";
+import MainLayout from "./components/layout/MainLayout";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-import HomePage from "./pages/HomePage"
-import ProductListPage from "./pages/ProductListPage"
-import ProductDetailPage from "./pages/ProductDetailPage"
-import LoginPage from "./pages/LoginPage"
-import RegisterPage from "./pages/RegisterPage"
-import OAuthCallbackPage from "./pages/OAuthCallbackPage"
-import CartPage from "./pages/CartPage"
-import CheckoutPage from "./pages/CheckoutPage"
-import OrdersPage from "./pages/OrdersPage"
-import OrderDetailPage from "./pages/OrderDetailPage"
-import PaymentPage from "./pages/PaymentPage"
-import PaymentResultPage from "./pages/PaymentResultPage"
-import ProfilePage from "./pages/ProfilePage"
-import PolicyPage from "./pages/PolicyPage"
-import NotFoundPage from "./pages/NotFoundPage"
-import TechArticlesPage from "./pages/TechArticlesPage"
-import TechArticleDetailPage from "./pages/TechArticleDetailPage"
-import AdminRoute from "./components/admin/AdminRoute"
-import AdminLayout from "./components/admin/AdminLayout"
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage"
-import AdminInventoryPage from "./pages/admin/AdminInventoryPage"
-import AdminProductsPage from "./pages/admin/AdminProductsPage"
-import AdminOrdersPage from "./pages/admin/AdminOrdersPage"
-import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage"
-import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage"
-import AdminUsersPage from "./pages/admin/AdminUsersPage"
-import AdminStorefrontPage from "./pages/admin/AdminStorefrontPage"
-import AdminShippingPage from "./pages/admin/AdminShippingPage"
-import AdminArticlesPage from "./pages/admin/AdminArticlesPage"
-import ShipmentList from "./components/shipping/ShipmentList"
-import ShipmentDetail from "./components/shipping/ShipmentDetail"
-import AdminShippingCreatePage from "./pages/admin/AdminShippingCreatePage"
-
+import HomePage from "./pages/HomePage";
+import ProductListPage from "./pages/ProductListPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrdersPage from "./pages/OrdersPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
+import PaymentPage from "./pages/PaymentPage";
+import PaymentResultPage from "./pages/PaymentResultPage";
+import ProfilePage from "./pages/ProfilePage";
+import PolicyPage from "./pages/PolicyPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import TechArticlesPage from "./pages/TechArticlesPage";
+import TechArticleDetailPage from "./pages/TechArticleDetailPage";
+import AdminRoute from "./components/admin/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
+import AdminVouchersPage from "./pages/admin/AdminVouchersPage";
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
+import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminStorefrontPage from "./pages/admin/AdminStorefrontPage";
+import AdminShippingPage from "./pages/admin/AdminShippingPage";
+import AdminArticlesPage from "./pages/admin/AdminArticlesPage";
+import AdminAiSettingsPage from "./pages/admin/ai/AdminAiSettingsPage";
+import AdminAiJobsPage from "./pages/admin/ai/AdminAiJobsPage";
+import AdminAiHubPage from "./pages/admin/ai/AdminAiHubPage";
+import AdminAiProductsPage from "./pages/admin/ai/AdminAiProductsPage";
+import AdminAiArticlesPage from "./pages/admin/ai/AdminAiArticlesPage";
+import ShipmentList from "./components/shipping/ShipmentList";
+import ShipmentDetail from "./components/shipping/ShipmentDetail";
+import AdminShippingCreatePage from "./pages/admin/AdminShippingCreatePage";
 
 export default function App() {
-    return (
-        <Routes>
-            <Route element={<AdminRoute/>}>
-                <Route path="/admin" element={<AdminLayout/>}>
-                    <Route index element={<AdminDashboardPage/>}/>
-                    <Route path="products" element={<AdminProductsPage/>}/>
-                    <Route path="categories" element={<AdminCategoriesPage/>}/>
-                    <Route path="orders" element={<AdminOrdersPage/>}/>
-                    <Route path="shipping" element={<AdminShippingPage/>}/>
-                    <Route path="shipping/create" element={<AdminShippingCreatePage/>}/>
-                    <Route path="shipping/list" element={<ShipmentList/>}/>
-                    <Route path="shipping/:shipmentId" element={<ShipmentDetail/>}/>
-                    <Route path="inventory" element={<AdminInventoryPage/>}/>
-                    <Route path="users" element={<AdminUsersPage/>}/>
-                    <Route path="policies" element={<AdminPoliciesPage/>}/>
-                    <Route path="storefront" element={<AdminStorefrontPage/>}/>
-                    <Route path="articles" element={<AdminArticlesPage/>}/>
-                </Route>
-            </Route>
+  return (
+    <Routes>
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="shipping" element={<AdminShippingPage />} />
+          <Route path="shipping/create" element={<AdminShippingCreatePage />} />
+          <Route path="shipping/list" element={<ShipmentList />} />
+          <Route path="shipping/:shipmentId" element={<ShipmentDetail />} />
+          <Route path="inventory" element={<AdminInventoryPage />} />
+          <Route path="vouchers" element={<AdminVouchersPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="policies" element={<AdminPoliciesPage />} />
+          <Route path="storefront" element={<AdminStorefrontPage />} />
+          <Route path="articles" element={<AdminArticlesPage />} />
+          <Route path="ai" element={<AdminAiHubPage />} />
+          <Route path="ai/products" element={<AdminAiProductsPage />} />
+          <Route path="ai/articles" element={<AdminAiArticlesPage />} />
+          <Route path="ai/settings" element={<AdminAiSettingsPage />} />
+          <Route path="ai/jobs" element={<AdminAiJobsPage />} />
+        </Route>
+      </Route>
 
-            <Route element={<MainLayout/>}>
-                <Route path="/" element={<HomePage/>}/>
-                <Route path="/products" element={<ProductListPage/>}/>
-                <Route path="/products/:slug" element={<ProductDetailPage/>}/>
-                <Route path="/tech" element={<TechArticlesPage/>}/>
-                <Route path="/tech/:slug" element={<TechArticleDetailPage/>}/>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/products" element={<ProductListPage />} />
+        <Route path="/products/:slug" element={<ProductDetailPage />} />
+        <Route path="/tech" element={<TechArticlesPage />} />
+        <Route path="/tech/:slug" element={<TechArticleDetailPage />} />
 
-                <Route path="/login" element={<LoginPage/>}/>
-                <Route path="/register" element={<RegisterPage/>}/>
-                <Route path="/oauth2/success" element={<OAuthCallbackPage/>}/>
-                <Route path="/policies/:slug" element={<PolicyPage/>}/>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/oauth2/success" element={<OAuthCallbackPage />} />
+        <Route path="/policies/:slug" element={<PolicyPage />} />
 
-                <Route path="*" element={<NotFoundPage/>}/>
-                <Route element={<ProtectedRoute/>}>
-                    <Route path="/profile" element={<ProfilePage/>}/>
-                    <Route path="/cart" element={<CartPage/>}/>
-                    <Route path="/checkout" element={<CheckoutPage/>}/>
-                    <Route path="/orders" element={<OrdersPage/>}/>
-                    <Route path="/orders/:id" element={<OrderDetailPage/>}/>
-                    <Route path="/payment/:orderId" element={<PaymentPage/>}/>
-                    <Route path="/payment/result" element={<PaymentResultPage/>}/>
-                </Route>
-            </Route>
-        </Routes>
-    )
+        <Route path="*" element={<NotFoundPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path="/payment/:orderId" element={<PaymentPage />} />
+          <Route path="/payment/result" element={<PaymentResultPage />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
 }

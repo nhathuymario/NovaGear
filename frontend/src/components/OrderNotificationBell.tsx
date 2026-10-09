@@ -1,6 +1,6 @@
-import { useState } from "react"
-import { useOrderNotifications } from "../hooks/useOrderNotifications"
-import { Bell, X, Wifi, Loader } from "lucide-react"
+import { useState } from "react";
+import { useOrderNotifications } from "../hooks/useOrderNotifications";
+import { Bell, X, Wifi, Loader, CreditCard, Package } from "lucide-react";
 
 /**
  * Component hiển thị real-time order notifications
@@ -15,17 +15,54 @@ export function OrderNotificationBell() {
     usePolling,
     markAsRead,
     clearNotifications,
-  } = useOrderNotifications()
+  } = useOrderNotifications();
 
-  const [showPanel, setShowPanel] = useState(false)
+  const [showPanel, setShowPanel] = useState(false);
+
+  const getCategoryLabel = (category?: string) => {
+    if (category === "payment") return "Thanh toán";
+    if (category === "order") return "Đơn hàng";
+    return "Thông báo";
+  };
+
+  const getCategoryIcon = (category?: string) => {
+    if (category === "payment") {
+      return <CreditCard size={14} className="text-emerald-500" />;
+    }
+    return <Package size={14} className="text-blue-500" />;
+  };
+
+  let connectionDotClass = "bg-red-500";
+  let connectionTitle = "Disconnected";
+  let connectionLabel = <span>Offline</span>;
+
+  if (isConnected) {
+    connectionDotClass = "bg-green-500";
+    connectionTitle = "Real-time connected";
+    connectionLabel = (
+      <>
+        <Wifi size={12} className="text-green-500" />
+        <span>WebSocket</span>
+      </>
+    );
+  } else if (usePolling) {
+    connectionDotClass = "bg-yellow-500";
+    connectionTitle = "Using polling fallback";
+    connectionLabel = (
+      <>
+        <Loader size={12} className="text-yellow-500 animate-spin" />
+        <span>Polling</span>
+      </>
+    );
+  }
 
   return (
     <div className="relative">
       {/* Bell icon */}
       <button
         onClick={() => {
-          setShowPanel(!showPanel)
-          markAsRead()
+          setShowPanel(!showPanel);
+          markAsRead();
         }}
         className="relative p-2 text-gray-600 hover:text-gray-900 transition"
       >
@@ -39,16 +76,8 @@ export function OrderNotificationBell() {
 
       {/* Connection status indicator */}
       <div
-        className={`absolute bottom-1 right-1 w-2 h-2 rounded-full ${
-          isConnected ? "bg-green-500" : usePolling ? "bg-yellow-500" : "bg-red-500"
-        }`}
-        title={
-          isConnected
-            ? "Real-time connected"
-            : usePolling
-              ? "Using polling fallback"
-              : "Disconnected"
-        }
+        className={`absolute bottom-1 right-1 w-2 h-2 rounded-full ${connectionDotClass}`}
+        title={connectionTitle}
       />
 
       {/* Notifications panel */}
@@ -56,22 +85,12 @@ export function OrderNotificationBell() {
         <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-            <h3 className="font-bold text-lg">Thông báo</h3>
+            <h3 className="font-bold text-lg">
+              Thông báo đơn hàng & thanh toán
+            </h3>
             <div className="flex gap-2">
               <div className="flex items-center gap-1 text-xs text-gray-500">
-                {isConnected ? (
-                  <>
-                    <Wifi size={12} className="text-green-500" />
-                    <span>WebSocket</span>
-                  </>
-                ) : usePolling ? (
-                  <>
-                    <Loader size={12} className="text-yellow-500 animate-spin" />
-                    <span>Polling</span>
-                  </>
-                ) : (
-                  <span>Offline</span>
-                )}
+                {connectionLabel}
               </div>
               <button
                 onClick={() => setShowPanel(false)}
@@ -90,13 +109,26 @@ export function OrderNotificationBell() {
                 <p>Không có thông báo</p>
               </div>
             ) : (
-              notifications.map((notif, idx) => (
+              notifications.map((notif) => (
                 <div
-                  key={idx}
+                  key={
+                    notif.id
+                      ? String(notif.id)
+                      : `${notif.eventType}-${notif.orderId}-${notif.timestamp}`
+                  }
                   className="p-4 hover:bg-gray-50 transition cursor-pointer border-l-4 border-brand-blue"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
+                      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                        {getCategoryIcon(notif.category)}
+                        <span>{getCategoryLabel(notif.category)}</span>
+                        {notif.source && (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                            {notif.source}
+                          </span>
+                        )}
+                      </div>
                       <p className="font-semibold text-sm text-gray-800">
                         {notif.message}
                       </p>
@@ -132,6 +164,5 @@ export function OrderNotificationBell() {
         </div>
       )}
     </div>
-  )
+  );
 }
-
