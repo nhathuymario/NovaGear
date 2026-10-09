@@ -15,13 +15,14 @@ spring:
       globalcors:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
-          '[/**]':
+          "[/**]":
             allowedOrigins:
               - http://localhost:5173
             allowedMethods:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
             allowedHeaders: "*"
@@ -89,6 +90,16 @@ spring:
           uri: http://localhost:8090
           predicates:
             - Path=/api/shipments/**,/api/admin/shipments/**
+
+        - id: voucher-service-admin
+          uri: http://localhost:8092
+          predicates:
+            - Path=/api/admin/vouchers,/api/admin/vouchers/**
+
+        - id: voucher-service-public
+          uri: http://localhost:8092
+          predicates:
+            - Path=/api/vouchers,/api/vouchers/**
 
         - id: inventory-service-admin
           uri: http://localhost:8087
