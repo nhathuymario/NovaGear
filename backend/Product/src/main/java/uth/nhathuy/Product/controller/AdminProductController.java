@@ -194,6 +194,45 @@ public class AdminProductController {
                 .build());
     }
 
+    @GetMapping("/reviews/unreplied")
+    public ResponseEntity<ApiResponse<java.util.List<ProductReviewResponse>>> getUnrepliedReviews(
+            @RequestHeader("X-Role") String role,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        requireAdmin(role);
+        return ResponseEntity.ok(ApiResponse.<java.util.List<ProductReviewResponse>>builder()
+                .message("Lấy danh sách review chưa trả lời")
+                .data(productService.getUnrepliedReviews(limit))
+                .build());
+    }
+
+    @PostMapping("/reviews/{id}/reply")
+    public ResponseEntity<ApiResponse<ProductReviewResponse>> replyReview(
+            @RequestHeader("X-Role") String role,
+            @PathVariable Long id,
+            @Valid @RequestBody ProductReviewReplyRequest request
+    ) {
+        requireAdmin(role);
+        return ResponseEntity.ok(ApiResponse.<ProductReviewResponse>builder()
+                .message("Trả lời review thành công")
+                .data(productService.replyToReview(id, request.getReply()))
+                .build());
+    }
+
+    @PatchMapping("/{id}/price")
+    public ResponseEntity<ApiResponse<Object>> updatePrice(
+            @RequestHeader("X-Role") String role,
+            @PathVariable Long id,
+            @Valid @RequestBody ProductPriceUpdateRequest request
+    ) {
+        requireAdmin(role);
+        productService.updateProductBasePrice(id, request.getPrice());
+        return ResponseEntity.ok(ApiResponse.builder()
+                .message("Cập nhật giá thành công")
+                .data(null)
+                .build());
+    }
+
     private void requireAdmin(String role) {
         if (role == null || !role.contains("ROLE_ADMIN")) {
             throw new BadRequestException("Bạn không có quyền ADMIN");

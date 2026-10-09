@@ -435,6 +435,32 @@ public class ProductService {
         }
     }
 
+    public List<ProductReviewResponse> getUnrepliedReviews(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
+        return reviewRepository.findByReplyIsNull(pageable)
+                .stream()
+                .map(this::mapReview)
+                .toList();
+    }
+
+    @Transactional
+    public ProductReviewResponse replyToReview(Long reviewId, String replyText) {
+        ProductReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy review"));
+        review.setReply(replyText);
+        review.setRepliedAt(LocalDateTime.now());
+        return mapReview(reviewRepository.save(review));
+    }
+
+    @Transactional
+    public void updateProductBasePrice(Long productId, java.math.BigDecimal newPrice) {
+        Product product = getProduct(productId);
+        for (ProductVariant variant : product.getVariants()) {
+            variant.setPrice(newPrice);
+            variantRepository.save(variant);
+        }
+    }
+
     private Product getProduct(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND));
@@ -624,6 +650,8 @@ public class ProductService {
                 .username(review.getUsername())
                 .rating(review.getRating())
                 .comment(review.getComment())
+                .reply(review.getReply())
+                .repliedAt(review.getRepliedAt())
                 .createdAt(review.getCreatedAt())
                 .updatedAt(review.getUpdatedAt())
                 .build();

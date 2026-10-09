@@ -39,6 +39,12 @@ public class ProductReview {
     @Column(length = 1500)
     private String comment;
 
+    @Column(length = 1500)
+    private String reply;
+
+    @Column
+    private LocalDateTime repliedAt;
+
     @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

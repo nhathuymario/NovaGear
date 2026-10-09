@@ -13,6 +13,8 @@ public class ProductReviewResponse {
     private String username;
     private Integer rating;
     private String comment;
+    private String reply;
+    private LocalDateTime repliedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
